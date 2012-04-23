@@ -1,0 +1,309 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' Create Local SCC Tables
+'
+' Creates the local source code control tables for
+' storing information about the objects being exported
+'
+' Version history:
+' - 1.00 initial version 15/11/2011
+'
+' @author Steve Falla <steve.falla@talkjcs.com>
+' @suggestions
+' @version 1.00
+'************************************************
+Public Sub CreateLocalSCCTables()
+  Dim db As DAO.Database
+  
+  Set db = CurrentDb()
+  
+  If Not TableExists(db, "MSysSVNObjectProperties") Then CreateSCCObjectPropertiesTable db
+  If Not TableExists(db, "MSysSVNTmpObjects") Then CreateSCCTmpObjectsTable db
+  If Not TableExists(db, "MSysSVNStatus") Then CreateSCCStatusTable db
+  If Not TableExists(db, "MSysSVNPrefs") Then CreateSCCPrefsTable db
+  
+  db.Close
+  Set db = Nothing
+End Sub
+
+Private Function CreateSCCObjectPropertiesTable(db As DAO.Database)
+  Dim fd As DAO.Field
+  Dim td As DAO.TableDef
+  Dim Idx As DAO.Index
+  
+  Set td = db.CreateTableDef("MSysSVNObjectProperties")
+  
+  Set fd = AddField(td, "Temp", dbText, 1)
+  db.TableDefs.Append td
+  Set fd = AddField(td, "objType", dbLong, 0, "Object Type identifier", , , , 1)
+  Set fd = AddField(td, "objName", dbText, 255, "The name of the access object", , , , 0, , True)
+  Set fd = AddField(td, "objID", dbText, 50, "The internal ID of the access object", , , , 1, , False, True)
+  Set fd = AddField(td, "ParentID", dbLong, 0, "The object parent ID", , , , 1, , False)
+  Set fd = AddField(td, "objCreateDate", dbDouble, 0, "The object creation date")
+  Set fd = AddField(td, "objUpdateDate", dbDouble, 0, "The object update date")
+  Set fd = AddField(td, "objUpdateChecksum", dbText, 50, "The current MD5 Checksum of the object, used when date modified is not available", , , , 0, , False, True)
+  td.Fields.Delete "Temp"
+  
+  Set Idx = td.CreateIndex("PrimaryKey")
+  With Idx
+    .Fields.Append .CreateField("objType")
+    .Fields.Append .CreateField("objName")
+    .Unique = True
+    .Primary = True
+    .IgnoreNulls = False
+  End With
+  td.Indexes.Append Idx
+End Function
+
+Private Function CreateSCCTmpObjectsTable(db As DAO.Database)
+  Dim fd As DAO.Field
+  Dim td As DAO.TableDef
+  Dim Idx As DAO.Index
+  
+  Set td = db.CreateTableDef("MSysSVNTmpObjects")
+  
+  Set fd = AddField(td, "Temp", dbText, 1)
+  db.TableDefs.Append td
+  Set fd = AddField(td, "ID", dbLong, 0, "Unique identifier", , , , , True)
+  Set fd = AddField(td, "objName", dbText, 255, "The name of the access object")
+  Set fd = AddField(td, "objType", dbInteger, 0, "The object type")
+  Set fd = AddField(td, "objStatus", dbText, 100, "The object status")
+  Set fd = AddField(td, "selected", dbBoolean, 0, "If object is selected for import export", , , , , , , , True)
+  td.Fields.Delete "Temp"
+  
+  Set Idx = td.CreateIndex("primaryIndex")
+  With Idx
+    .Fields.Append .CreateField("ID")
+    .Unique = True
+    .Primary = True
+    .IgnoreNulls = False
+  End With
+  td.Indexes.Append Idx
+  
+  Set Idx = td.CreateIndex("typeName")
+  With Idx
+    .Fields.Append .CreateField("objType")
+    .Fields.Append .CreateField("objName")
+    .Unique = True
+    .Primary = False
+    .IgnoreNulls = False
+  End With
+  td.Indexes.Append Idx
+  
+End Function
+
+Public Function CreateSCCStatusTable(db As DAO.Database)
+  Dim fd As DAO.Field
+  Dim tdf As DAO.TableDef
+  Dim Idx As DAO.Index
+  
+  Set tdf = db.CreateTableDef("MSysSVNStatus")
+  Set fd = AddField(tdf, "Temp", dbText, 1)
+  db.TableDefs.Append tdf
+  Set fd = AddField(tdf, "objType", dbInteger, 0, "The object Type", , , , , True)
+  Set fd = AddField(tdf, "objName", dbText, 255, "The name of the access object")
+  Set fd = AddField(tdf, "objImportVersion", dbText, 100, "The import version")
+  Set fd = AddField(tdf, "objSVNChecksum", dbText, 100, "The current SVN checksum")
+  Set fd = AddField(tdf, "objImportDate", dbDouble, 0, "The import date")
+  Set fd = AddField(tdf, "objImportChecksum", dbText, 50, "The import MD5 Checksum of the object, used when date modified cannot be used for change check", , , , 0, , False, True)
+  Set fd = AddField(tdf, "objStatusUnknown", dbBoolean, 0, "Whether the SVN status is unknown", , , , , , , , False)
+  tdf.Fields.Delete "Temp"
+  
+  
+  With tdf
+    Set Idx = .CreateIndex("primaryIndex")
+    With Idx
+      .Fields.Append .CreateField("objType")
+      .Fields.Append .CreateField("objName")
+      .Unique = True
+      .Primary = True
+      .IgnoreNulls = False
+    End With
+    .Indexes.Append Idx
+    
+    Set Idx = .CreateIndex("nameIndex")
+    With Idx
+      .Fields.Append .CreateField("objName")
+      .Fields.Append .CreateField("objType")
+      .Unique = False
+      .Primary = False
+      .IgnoreNulls = False
+    End With
+    .Indexes.Append Idx
+    
+    Set Idx = .CreateIndex("objStatusUnknown")
+    With Idx
+      .Fields.Append .CreateField("objStatusUnknown")
+      .Unique = False
+      .Primary = False
+      .IgnoreNulls = False
+    End With
+    .Indexes.Append Idx
+  End With
+  
+End Function
+
+Private Function CreateSCCPrefsTable(db As DAO.Database)
+  Dim fd As DAO.Field
+  Dim td As DAO.TableDef
+  Dim strSQL As String
+  
+  Set td = db.CreateTableDef("MSysSVNPrefs")
+  
+  Set fd = AddField(td, "Temp", dbText, 1)
+  db.TableDefs.Append td
+  Set fd = AddField(td, "ExportPath", dbText, 255, "The export path to use in this project", , , , , , , , "C:\SVNRoot\")
+  Set fd = AddField(td, "CommitAfterExport", dbBoolean, 0, "Whether to perform an SVN commit after the export", , , , , , , , True)
+  Set fd = AddField(td, "UpdateBeforeImport", dbBoolean, 0, "Whether to perform an SVN update before an import", , , , , , , , True)
+  Set fd = AddField(td, "QueriesFlag", dbBoolean, 0, "Whether to process queries", , , , , , , , True)
+  Set fd = AddField(td, "FormsFlag", dbBoolean, 0, "Whether to process forms", , , , , , , , True)
+  Set fd = AddField(td, "ReportsFlag", dbBoolean, 0, "Whether to process reports", , , , , , , , True)
+  Set fd = AddField(td, "MacrosFlag", dbBoolean, 0, "Whether to process macros", , , , , , , , True)
+  Set fd = AddField(td, "ModulesFlag", dbBoolean, 0, "Whether to process modules", , , , , , , , True)
+  Set fd = AddField(td, "TablesFlag", dbBoolean, 0, "Whether to process tables", , , , , , , , True)
+  Set fd = AddField(td, "ToolbarsFlag", dbBoolean, 0, "Whether to process toolbars", , , , , , , , True)
+  Set fd = AddField(td, "ExtrasFlag", dbBoolean, 0, "Whether to process extras", , , , , , , , True)
+  Set fd = AddField(td, "ReferencesFlag", dbBoolean, 0, "Whether to process references", , , , , , , , True)
+  Set fd = AddField(td, "ImExSpecsFlag", dbBoolean, 0, "Whether to process import export specs", , , , , , , , True)
+  Set fd = AddField(td, "RelationshipsFlag", dbBoolean, 0, "Whether to process relationships", , , , , , , , True)
+  Set fd = AddField(td, "LastImportDate", dbDate, 0, "The Last Date of an import", , , , , , , , True)
+  Set fd = AddField(td, "LastCheckoutVersion", dbText, 50, "The last version checked out from SVN", , , , , , , , True)
+  Set fd = AddField(td, "CheckRepoOnSartup", dbBoolean, 0, "Whether to check  the repository version on startup", , , , , , , , True)
+  td.Fields.Delete "Temp"
+  
+  strSQL = "INSERT INTO [MSysSVNPrefs] (ExportPath) VALUES ('" & CurrentDbDir() & "')"
+  db.Execute strSQL
+End Function
+
+'************************************************
+' TableExists
+'
+' Tests for the existence of a specific table in
+' the passed database
+'
+' Version history:
+' - 1.00 initial version 15/11/2011
+'
+' @author Steve Falla <steve.falla@talkjcs.com>
+' @suggestions
+' @version 1.00
+' @param  DAO.Database The database to use when testing for the table
+' @param  String       The name of the table to test for
+' @return Boolean      True if table exists, False if not
+'************************************************
+Private Function TableExists(db As DAO.Database, strTableName As String) As Boolean
+  Dim td As DAO.TableDef
+  
+  On Error GoTo TableExists_Err
+  Set td = db.TableDefs(strTableName)
+  
+  TableExists = True
+TableExists_Exit:
+  Exit Function
+  
+TableExists_Err:
+  Resume TableExists_Exit
+End Function
+
+'************************************************
+' Add Field
+'
+' This sub adds a field to a tabledef but is dependent on the tabledef
+' already having been added to the tabledefs collection
+' otherwise extended properties will not be added
+'
+' The iIndexed Field has the following effect:
+'   0: No Index
+'   1: Indexed, Duplicates allowed
+'   2: Indexed, No Duplicates
+'   3: Primary Index
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @author
+' @version      1.00
+' @suggestions
+' @param        TableDef the table definition to use
+' @param        String the name of the field to add
+' @param        Integer the data type of the new field
+' @param        Integer the size of the new field
+' @param        String optional param to set the description of the new field
+' @param        String optional input mask of the new field
+' @param        String optional param to set the format of the new field
+' @param        String optional the number of decimal places of the new field
+' @param        Integer optional param to set whether the field should be indexed
+' @param        Boolean optional param to set whether the field should be auto increment
+' @param        Boolean optional param to set whether the field is required (mandatory)
+' @param        Boolean optional param to set whether the field can have zero length
+' @param        Variant optional param to set the default value of the new field
+' @return       Field the definition of the new field
+'************************************************
+Private Function AddField(td As TableDef, sNAME As String, iType As Integer, iSize As Integer, Optional sDescription As String = "", Optional sInputMask As String = "", Optional sFormat As String = "", Optional sDecimalPlaces As String = "", Optional iIndexed As Integer = 0, Optional bAutoIncrement As Boolean = False, Optional bRequired As Boolean = False, Optional bAllowZeroLength As Boolean = False, Optional vDefaultValue As Variant = Null) As Field
+  Dim fd As DAO.Field, prp As DAO.Property, Idx As DAO.Index
+  
+  If Not InFields(td.Fields, sNAME) Then
+    'Only add the field if it does not already exist
+    Set fd = td.CreateField(sNAME, iType, iSize)
+    If (iType = dbLong) And bAutoIncrement Then fd.Attributes = fd.Attributes Or dbAutoIncrField  'attributes must be changed before appending to the collection
+    If (iType = dbGUID) And bAutoIncrement Then
+      fd.Properties("DefaultValue").Value = "GenGUID()": fd.Attributes = fd.Attributes Or dbSystemField
+    Else
+      If Not IsNull(vDefaultValue) Then fd.Properties("DefaultValue").Value = vDefaultValue
+    End If
+    td.Fields.Append fd
+    If sDescription <> "" Then Set prp = fd.CreateProperty("Description", DB_TEXT, sDescription): fd.Properties.Append prp
+    If sInputMask <> "" Then Set prp = fd.CreateProperty("InputMask", DB_TEXT, sInputMask): fd.Properties.Append prp
+    If sFormat <> "" Then Set prp = fd.CreateProperty("Format", DB_TEXT, sFormat): fd.Properties.Append prp
+    If sDecimalPlaces <> "" Then Set prp = fd.CreateProperty("DecimalPlaces", DB_TEXT, sDecimalPlaces): fd.Properties.Append prp
+    fd.Required = bRequired
+    fd.AllowZeroLength = bAllowZeroLength
+
+    If iIndexed >= 1 Then
+      Set Idx = td.CreateIndex(sNAME)
+      With Idx
+        .Fields.Append .CreateField(sNAME)
+        .IgnoreNulls = False
+        If iIndexed >= 2 Then .Unique = True Else .Unique = False
+        If iIndexed = 3 Then .Primary = True Else .Primary = False
+        td.Indexes.Append Idx
+      End With
+    End If
+    Set AddField = fd
+  Else
+    Set AddField = td.Fields(sNAME)
+  End If
+End Function
+
+'************************************************
+' In Fields
+'
+' Checks if a specified key exists in a passed Fields collection
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @author
+' @version      1.00
+' @suggestions  bad naming of the fields variable
+' @param        DAO.Fields Fields, the fields collection to look into
+' @param        String sKey, the key to look for in the collection
+' @return       Boolean True if key exists, otherwise false
+'************************************************
+Public Function InFields(ByRef Fields As DAO.Fields, ByRef sKey As String) As Boolean
+  Dim tempObj As Field
+
+  On Error GoTo InFields_Err
+  
+  Set tempObj = Fields(sKey)
+  InFields = True
+
+InFields_Exit:
+  Exit Function
+  
+InFields_Err:
+  Resume InFields_Exit
+
+End Function

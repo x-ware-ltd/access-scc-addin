@@ -1,0 +1,503 @@
+Option Compare Database
+Option Explicit
+
+Private Function CmdBarCtlAsText(ByRef cBarCtl As Office.CommandBarControl, ByVal intOffset As Integer) As String
+  'The produces a string describing a CmdBarControl and uses a consistent offset of intOffset Spaces
+  Dim str As String
+  Dim sOff As String
+  Dim cBarCtlSub As Office.CommandBarControl
+  Dim cBarCtls As Office.CommandBarControls
+  Dim i As Long
+  Dim strTemp As String
+  Dim blnBuiltInFace As Boolean
+  
+  Dim oPic As stdole.IPictureDisp
+  Dim oMask As stdole.IPictureDisp
+  
+  sOff = Space(intOffset)
+  str = sOff & "Begin CommandBarControl" & vbCrLf
+    Select Case cBarCtl.Type
+      Case msoControlActiveX:             str = str & sOff & "    Type = msoControlActiveX" & vbCrLf
+      Case msoControlAutoCompleteCombo:   str = str & sOff & "    Type = msoControlAutoCompleteCombo" & vbCrLf
+      Case msoControlButton:              str = str & sOff & "    Type = msoControlButton" & vbCrLf
+      Case msoControlButtonDropdown:      str = str & sOff & "    Type = msoControlButtonDropdown" & vbCrLf
+      Case msoControlButtonPopup:         str = str & sOff & "    Type = msoControlButtonPopup" & vbCrLf
+      Case msoControlComboBox:            str = str & sOff & "    Type = msoControlComboBox" & vbCrLf
+      Case msoControlCustom:              str = str & sOff & "    Type = msoControlCustom" & vbCrLf
+      Case msoControlDropdown:            str = str & sOff & "    Type = msoControlDropdown" & vbCrLf
+      Case msoControlEdit:                str = str & sOff & "    Type = msoControlEdit" & vbCrLf
+      Case msoControlCustom:              str = str & sOff & "    Type = msoControlCustom" & vbCrLf
+      Case msoControlDropdown:            str = str & sOff & "    Type = msoControlDropdown" & vbCrLf
+      Case msoControlEdit:                str = str & sOff & "    Type = msoControlEdit" & vbCrLf
+      Case msoControlExpandingGrid:       str = str & sOff & "    Type = msoControlExpandingGrid" & vbCrLf
+      Case msoControlGauge:               str = str & sOff & "    Type = msoControlGauge" & vbCrLf
+      Case msoControlGenericDropdown:     str = str & sOff & "    Type = msoControlGenericDropdown" & vbCrLf
+      Case msoControlGraphicCombo:        str = str & sOff & "    Type = msoControlGraphicCombo" & vbCrLf
+      Case msoControlGraphicDropdown:     str = str & sOff & "    Type = msoControlGraphicDropdown" & vbCrLf
+      Case msoControlGraphicPopup:        str = str & sOff & "    Type = msoControlGraphicPopup" & vbCrLf
+      Case msoControlGrid:                str = str & sOff & "    Type = msoControlGrid" & vbCrLf
+      Case msoControlLabel:               str = str & sOff & "    Type = msoControlLabel" & vbCrLf
+      Case msoControlLabelEx:             str = str & sOff & "    Type = msoControlLabelEx" & vbCrLf
+      Case msoControlOCXDropdown:         str = str & sOff & "    Type = msoControlOCXDropdown" & vbCrLf
+      Case msoControlPane:                str = str & sOff & "    Type = msoControlPane" & vbCrLf
+      Case msoControlPopup:               str = str & sOff & "    Type = msoControlPopup" & vbCrLf
+      Case msoControlSpinner:             str = str & sOff & "    Type = msoControlSpinner" & vbCrLf
+      Case msoControlSplitButtonMRUPopup: str = str & sOff & "    Type = msoControlSplitButtonMRUPopup" & vbCrLf
+      Case msoControlSplitButtonPopup:    str = str & sOff & "    Type = msoControlSplitButtonPopup" & vbCrLf
+      Case msoControlSplitDropdown:       str = str & sOff & "    Type = msoControlSplitDropdown" & vbCrLf
+      Case msoControlSplitExpandingGrid:  str = str & sOff & "    Type = msoControlSplitExpandingGrid" & vbCrLf
+      Case msoControlWorkPane:            str = str & sOff & "    Type = msoControlWorkPane" & vbCrLf
+      Case Else
+        str = str & sOff & "    Type = Unable to Parse" & vbCrLf
+        GoTo CmdBarCtlAsText_Exit 'This Adds the End Tag only and then exits
+    End Select
+    str = str & sOff & "    Id = " & cBarCtl.id & vbCrLf
+    str = str & sOff & "    Parameter = " & cBarCtl.Parameter & vbCrLf 'We must always write the Paramter even if it is blank becasue it is used as the trigger to create a new control
+    If LenB(cBarCtl.Caption) <> 0 Then str = str & sOff & "    Caption = " & cBarCtl.Caption & vbCrLf
+    str = str & sOff & "    BeginGroup = " & cBarCtl.BeginGroup & vbCrLf
+    If LenB(cBarCtl.DescriptionText) <> 0 Then str = str & sOff & "    DescriptionText = " & cBarCtl.DescriptionText & vbCrLf
+    If cBarCtl.id = 1 Then ' Only output state for custom controls
+      str = str & sOff & "    Enabled = " & cBarCtl.Enabled & vbCrLf
+    End If
+    str = str & sOff & "    Height = " & cBarCtl.Height & vbCrLf
+    str = str & sOff & "    HelpContextId = " & cBarCtl.HelpContextId & vbCrLf
+    If LenB(cBarCtl.HelpFile) <> 0 Then str = str & sOff & "    HelpFile = " & cBarCtl.HelpFile & vbCrLf
+    str = str & sOff & "    Priority = " & cBarCtl.Priority & vbCrLf
+    If LenB(cBarCtl.Tag) <> 0 Then str = str & sOff & "    Tag = " & cBarCtl.Tag & vbCrLf
+    If LenB(cBarCtl.ToolTipText) <> 0 Then str = str & sOff & "    TooltipText = " & cBarCtl.ToolTipText & vbCrLf
+    str = str & sOff & "    Visible = " & cBarCtl.Visible & vbCrLf
+    str = str & sOff & "    Width = " & cBarCtl.Width & vbCrLf
+    str = str & CmdBarFaceAsText(cBarCtl, intOffset)
+    'Now do stuff which is specific to certain control types only
+    Select Case cBarCtl.Type
+      Case msoControlActiveX
+        str = str & sOff & "    ControlCLSID = " & cBarCtl.ControlCLSID & vbCrLf
+        str = str & sOff & "    InitWith = " & cBarCtl.InitWith & vbCrLf: Stop '!!!!!! this is of type UNKNOWN!
+      Case msoControlButton
+        'If cBarCtl.OnAction <> "" Then str = str & sOff & "    ShortcutText = " & cBarCtl.ShortcutText & vbCrLf 'Shortcut text can only be set if there is an OnAction (per msdn)
+        If cBarCtl.id = 1 Then str = str & sOff & "    ShortcutText = " & cBarCtl.ShortcutText & vbCrLf 'but in fact the OnAction can be set for Built in controls and Shortcut text cannot
+        If cBarCtl.id = 1 And cBarCtl.id = 1839 Or cBarCtl.id = 1837 Then
+          'ID<>1 => Built in action - therefore State is read only (per msdn)
+          'Also include special case 'Built In' which we are converting to custom
+          Select Case cBarCtl.State
+            Case msoButtonDown:  str = str & sOff & "    State = msoButtonDown" & vbCrLf
+            Case msoButtonMixed: str = str & sOff & "    State = msoButtonMixed" & vbCrLf
+            Case msoButtonUp:    str = str & sOff & "    State = msoButtonUp" & vbCrLf
+          End Select
+        End If
+    End Select
+    'The following Properties are available on some control types but not all - so need On Error resume Next
+    On Error Resume Next
+    strTemp = "": strTemp = cBarCtl.OnAction
+    If LenB(strTemp) <> 0 Then str = str & sOff & "    OnAction = " & cBarCtl.OnAction & vbCrLf
+    strTemp = "": strTemp = cBarCtl.HyperlinkType
+    If LenB(strTemp) <> 0 Then str = str & sOff & "    HyperlinkType = " & cBarCtl.HyperlinkType & vbCrLf
+    If cBarCtl.id = 1 Then
+      'Only write this property for custom controls
+      strTemp = "": strTemp = cBarCtl.OLEUsage
+      If LenB(strTemp) <> 0 Then str = str & sOff & "    OLEUsage = " & cBarCtl.HyperlinkType & vbCrLf
+    End If
+    If Not cBarCtl.BuiltIn Then
+      'Only write out the List Items and associated properties if this control is not Built In
+      strTemp = "": strTemp = cBarCtl.DropDownLines
+      If LenB(strTemp) <> 0 Then str = str & sOff & "    DropDownLines = " & cBarCtl.DropDownLines & vbCrLf
+      strTemp = "": strTemp = cBarCtl.DropDownWidth
+      If LenB(strTemp) <> 0 Then str = str & sOff & "    DropDownWidth = " & cBarCtl.DropDownWidth & vbCrLf
+      strTemp = "": strTemp = cBarCtl.ListCount
+      If LenB(strTemp) <> 0 Then
+        For i = 1 To cBarCtl.ListCount
+          str = str & sOff & "    Item = " & cBarCtl.List(i) & vbCrLf
+        Next
+      End If
+      strTemp = "": strTemp = cBarCtl.ListHeaderCount
+      If LenB(strTemp) <> 0 Then str = str & sOff & "    ListHeaderCount = " & cBarCtl.ListHeaderCount & vbCrLf
+      strTemp = "": strTemp = cBarCtl.Text
+      If LenB(strTemp) <> 0 Then str = str & sOff & "    Text = " & cBarCtl.Text & vbCrLf
+    End If
+    strTemp = "": strTemp = cBarCtl.Style
+    If LenB(strTemp) <> 0 Then
+      Select Case cBarCtl.Style
+        Case msoButtonAutomatic:               str = str & sOff & "    Style = msoButtonAutomatic" & vbCrLf
+        Case msoButtonCaption:                 str = str & sOff & "    Style = msoButtonCaption" & vbCrLf
+        Case msoButtonIcon:                    str = str & sOff & "    Style = msoButtonIcon" & vbCrLf
+        Case msoButtonIconAndCaption:          str = str & sOff & "    Style = msoButtonIconAndCaption" & vbCrLf
+        Case msoButtonIconAndCaptionBelow:     str = str & sOff & "    Style = msoButtonIconAndCaptionBelow" & vbCrLf
+        Case msoButtonIconAndWrapCaption:      str = str & sOff & "    Style = msoButtonIconAndWrapCaption" & vbCrLf
+        Case msoButtonIconAndWrapCaptionBelow: str = str & sOff & "    Style = msoButtonIconAndWrapCaptionBelow" & vbCrLf
+        Case msoButtonWrapCaption:             str = str & sOff & "    Style = msoButtonWrapCaption" & vbCrLf
+        Case msoComboLabel:                    str = str & sOff & "    Style = msoComboLabel" & vbCrLf
+        Case msoComboNormal:                   str = str & sOff & "    Style = msoComboNormal" & vbCrLf
+      End Select
+    End If
+    If cBarCtl.id = 1 Then
+      'Only look at the OLEMenuGroup property if the control is not built in
+      strTemp = "": strTemp = cBarCtl.OLEMenuGroup
+      If LenB(strTemp) <> 0 Then str = str & sOff & "    OLEMenuGroup = " & cBarCtl.OLEMenuGroup & vbCrLf
+    End If
+    If cBarCtl.id <> 30009 Then
+      'Only look at the controls collection if this is not built in
+      Set cBarCtls = cBarCtl.Controls
+      On Error GoTo 0
+      If Not cBarCtls Is Nothing Then
+        'There is a Controls collection
+        For Each cBarCtlSub In cBarCtl.Controls
+          str = str & CmdBarCtlAsText(cBarCtlSub, intOffset + 4) & vbCrLf
+        Next
+      End If
+    End If
+CmdBarCtlAsText_Exit:
+  CmdBarCtlAsText = str & sOff & "End"
+End Function
+Private Function CmdBarFaceAsText(ByRef cBarCtl As Office.CommandBarControl, ByVal intOffset As Integer) As String
+  Dim sOff As String
+  Dim lngFaceID As Long
+  Dim str As String
+  
+  sOff = Space(intOffset)
+  With cBarCtl
+    'Check to make syre we have Face Properties for this control
+    lngFaceID = -1
+    On Error Resume Next
+    lngFaceID = .FaceId
+    On Error GoTo 0
+    If lngFaceID = -1 Then Exit Function 'Nothing to do this type of control doesn't have face Properties
+    'This is a control which has Face Properties
+    If cBarCtl.FaceId <> 0 Then
+      'This is not a custom Face it is one of the built in faces
+      If cBarCtl.BuiltInFace Then
+        'This control has its original BuiltInface so simply set this to true
+        str = str & sOff & "    BuiltInFace = " & cBarCtl.BuiltInFace & vbCrLf
+      Else
+        'Otherwise we must set the Built in faceID which has been applied to this control
+        str = str & sOff & "    FaceId = " & cBarCtl.FaceId & vbCrLf
+      End If
+    Else
+      ' Get the OLE data from the IPictureDisp object in the control
+      ' and encode it as a hex representation of the image
+      SavePicture cBarCtl.Picture, Environ("Temp") & "\ctl_pic.bmp"  ' save the picture data to disk
+      str = str & sOff & "    Picture = " & getFileAsHexString(Environ("TEMP") & "\ctl_pic.bmp") & vbCrLf
+      Kill Environ("Temp") & "\ctl_pic.bmp"
+      
+      SavePicture cBarCtl.Mask, Environ("Temp") & "\ctl_msk.bmp"  ' save the picture data to disk
+      str = str & sOff & "    Mask = " & getFileAsHexString(Environ("TEMP") & "\ctl_msk.bmp") & vbCrLf
+      Kill Environ("Temp") & "\ctl_msk.bmp"
+    End If
+  End With
+  CmdBarFaceAsText = str
+End Function
+
+Private Function CmdBarCtlFromText(ByVal strCmdBarCtl As String, ByVal CmdBarCtls As Office.CommandBarControls) As String
+  'This creates a new command bar Control from the information in the String passed
+  Dim varLines As Variant
+  Dim cBarCtl As Office.CommandBarControl
+  Dim strCtlSub As String
+  Dim sErr As String
+  Dim var As Variant
+  Dim i As Long, x As Long
+  Dim lngType As Long
+  Dim lngId As Long
+  Dim strEnd As String
+  
+  On Error GoTo CmdBarCtlFromText_Err
+  varLines = Split(strCmdBarCtl, vbCrLf)
+  If Trim$(varLines(0)) = "Begin CommandBarControl" And Trim$(varLines(UBound(varLines))) = "End" Then
+    For i = LBound(varLines) + 1 To UBound(varLines) - 1
+      var = Split(varLines(i), "=", 2) 'Split the line into Property and it's value but only split on the first "=" character
+      Select Case Trim$(var(0))
+        Case "TypeText" 'We do nothing - this is deprecated following the changes to toolbar text presentation
+        Case "Type" 'We recognise either the String version or a Long value
+          Select Case Trim$(var(1))
+            Case "Unable to Parse"
+              'This control is of a type that can't be recreated using this object model
+              CmdBarCtlFromText = CmdBarCtlFromText & "Unable to Add Control - Unsupported By Object Model"
+              GoTo CmdBarCtlFromText_Exit
+            Case CStr(msoControlActiveX), "msoControlActiveX":                         lngType = msoControlActiveX
+            Case CStr(msoControlAutoCompleteCombo), "msoControlAutoCompleteCombo":     lngType = msoControlAutoCompleteCombo
+            Case CStr(msoControlButton), "msoControlButton":                           lngType = msoControlButton
+            Case CStr(msoControlButtonDropdown), "msoControlButtonDropdown":           lngType = msoControlButtonDropdown
+            Case CStr(msoControlButtonPopup), "msoControlButtonPopup":                 lngType = msoControlButtonPopup
+            Case CStr(msoControlComboBox), "msoControlComboBox":                       lngType = msoControlComboBox
+            Case CStr(msoControlCustom), "msoControlCustom":                           lngType = msoControlCustom
+            Case CStr(msoControlDropdown), "msoControlDropdown":                       lngType = msoControlDropdown
+            Case CStr(msoControlEdit), "msoControlEdit":                               lngType = msoControlEdit
+            Case CStr(msoControlExpandingGrid), "msoControlExpandingGrid":             lngType = msoControlExpandingGrid
+            Case CStr(msoControlGauge), "msoControlGauge":                             lngType = msoControlGauge
+            Case CStr(msoControlGenericDropdown), "msoControlGenericDropdown":         lngType = msoControlGenericDropdown
+            Case CStr(msoControlGraphicCombo), "msoControlGraphicCombo":               lngType = msoControlGraphicCombo
+            Case CStr(msoControlGraphicDropdown), "msoControlGraphicDropdown":         lngType = msoControlGraphicDropdown
+            Case CStr(msoControlGraphicPopup), "msoControlGraphicPopup":               lngType = msoControlGraphicPopup
+            Case CStr(msoControlGrid), "msoControlGrid":                               lngType = msoControlGrid
+            Case CStr(msoControlLabel), "msoControlLabel":                             lngType = msoControlLabel
+            Case CStr(msoControlLabelEx), "msoControlLabelEx":                         lngType = msoControlLabelEx
+            Case CStr(msoControlOCXDropdown), "msoControlOCXDropdown":                 lngType = msoControlOCXDropdown
+            Case CStr(msoControlPane), "msoControlPane":                               lngType = msoControlPane
+            Case CStr(msoControlPopup), "msoControlPopup":                             lngType = msoControlPopup
+            Case CStr(msoControlSpinner), "msoControlSpinner":                         lngType = msoControlSpinner
+            Case CStr(msoControlSplitButtonMRUPopup), "msoControlSplitButtonMRUPopup": lngType = msoControlSplitButtonMRUPopup
+            Case CStr(msoControlSplitButtonPopup), "msoControlSplitButtonPopup":       lngType = msoControlSplitButtonPopup
+            Case CStr(msoControlSplitDropdown), "msoControlSplitDropdown":             lngType = msoControlSplitDropdown
+            Case CStr(msoControlSplitExpandingGrid), "msoControlSplitExpandingGrid":   lngType = msoControlSplitExpandingGrid
+            Case CStr(msoControlWorkPane), "msoControlWorkPane":                       lngType = msoControlWorkPane
+          End Select
+        Case "Id":              lngId = Trim$(var(1))
+        Case "Parameter"
+          'This property is used as the trigger for creating the object
+          Select Case lngId
+            Case 32768
+              'If a bar is based on menus it should be translated when saving to text so 32768 won't happen any more
+              CmdBarCtlFromText = CmdBarCtlFromText & "Unable to Add Control Based on Macro Menu Structure"
+              GoTo CmdBarCtlFromText_Exit
+            Case 30009
+              'This is the special case of the Windows Menu
+              CommandBars("Menu Bar").Controls("Window").Copy CmdBarCtls.Parent
+              Set cBarCtl = CmdBarCtls("Window")
+            Case Else
+              On Error Resume Next
+              If lngId = 0 Then
+                Set cBarCtl = CmdBarCtls.add(lngType, , Trim$(var(1)), , False)
+              Else
+                Set cBarCtl = CmdBarCtls.add(lngType, lngId, Trim$(var(1)), , False)
+                If Err <> 0 Then
+                  CmdBarCtlFromText = CmdBarCtlFromText & "Unable to Add Control - Probably no longer a built in Item ID" & vbCrLf
+                  GoTo CmdBarCtlFromText_Exit
+                End If
+              End If
+              On Error GoTo CmdBarCtlFromText_Err
+          End Select
+        Case "BeginGroup":      cBarCtl.BeginGroup = Trim$(var(1))
+        Case "Caption":         cBarCtl.Caption = Trim$(var(1))
+        Case "DescriptionText": cBarCtl.DescriptionText = Trim$(var(1))
+        Case "Enabled"
+          If cBarCtl.id = 1 Then ' Only output state for custom controls
+            cBarCtl.Enabled = Trim$(var(1))
+          End If
+        Case "Height":          cBarCtl.Height = Trim$(var(1))
+        Case "HelpContextId":   cBarCtl.HelpContextId = Trim$(var(1))
+        Case "HelpFile":        cBarCtl.HelpFile = Trim$(var(1))
+        Case "OLEUsage":        cBarCtl.OLEUsage = Trim$(var(1))
+        Case "OnAction":        cBarCtl.OnAction = Trim$(var(1))
+        Case "Priority":        cBarCtl.Priority = Trim$(var(1))
+        Case "Tag":             cBarCtl.Tag = Trim$(var(1))
+        Case "TooltipText":     cBarCtl.ToolTipText = Trim$(var(1))
+        Case "Visible":         cBarCtl.Visible = Trim$(var(1))
+        Case "Width":           cBarCtl.Width = Trim$(var(1))
+        Case "ControlCLSID":    cBarCtl.ControlCLSID = Trim$(var(1))
+        Case "InitWidth":       cBarCtl.InitWidth = Trim$(var(1))
+        Case "BuiltInFace"
+            ' This property can only be set to True, it is more a reset
+            ' method rather than a property
+            If Trim$(var(1)) = "True" Then
+              cBarCtl.BuiltInFace = True
+            End If
+        Case "FaceId":          cBarCtl.FaceId = Trim$(var(1))
+        Case "HyperlinkType":   cBarCtl.HyperlinkType = Trim$(var(1))
+        Case "Picture"
+            ' Get the Hex Encoded picture data, save it to a temp file
+            ' and then load it into the control as an OLE IPictDisp
+            createFileFromHexString Environ("TEMP") & "\ctl_pic.bmp", Trim$(var(1))
+            cBarCtl.Picture = LoadPicture(Environ("Temp") & "\ctl_pic.bmp")
+            Kill Environ("Temp") & "\ctl_pic.bmp"
+        Case "Mask"
+            ' Get the Hex Encoded mask data, save it to a temp file
+            ' and then load it into the control mask property as an OLE IPictDisp
+            createFileFromHexString Environ("TEMP") & "\ctl_msk.bmp", Trim$(var(1))
+            cBarCtl.Mask = LoadPicture(Environ("Temp") & "\ctl_msk.bmp")
+            Kill Environ("Temp") & "\ctl_msk.bmp"
+        Case "ShortcutText":    cBarCtl.ShortcutText = Trim$(var(1))
+        Case "State"
+          Select Case Trim$(var(1))
+            Case CStr(msoButtonDown), "msoButtonDown":  cBarCtl.State = msoButtonDown
+            Case CStr(msoButtonMixed), "msoButtonMixed": cBarCtl.State = msoButtonMixed
+            Case CStr(msoButtonUp), "msoButtonUp":    cBarCtl.State = msoButtonUp
+          End Select
+        Case "Style"
+          Select Case Trim$(var(1))
+            Case CStr(msoButtonAutomatic), "msoButtonAutomatic":                             cBarCtl.Style = msoButtonAutomatic
+            Case CStr(msoButtonCaption), "msoButtonCaption":                                 cBarCtl.Style = msoButtonCaption
+            Case CStr(msoButtonIcon), "msoButtonIcon":                                       cBarCtl.Style = msoButtonIcon
+            Case CStr(msoButtonIconAndCaption), "msoButtonIconAndCaption":                   cBarCtl.Style = msoButtonIconAndCaption
+            Case CStr(msoButtonIconAndCaptionBelow), "msoButtonIconAndCaptionBelow":         cBarCtl.Style = msoButtonIconAndCaptionBelow
+            Case CStr(msoButtonIconAndWrapCaption), "msoButtonIconAndWrapCaption":           cBarCtl.Style = msoButtonIconAndWrapCaption
+            Case CStr(msoButtonIconAndWrapCaptionBelow), "msoButtonIconAndWrapCaptionBelow": cBarCtl.Style = msoButtonIconAndWrapCaptionBelow
+            Case CStr(msoButtonWrapCaption), "msoButtonWrapCaption":                         cBarCtl.Style = msoButtonWrapCaption
+            Case CStr(msoComboLabel), "msoComboLabel":                                       cBarCtl.Style = msoComboLabel
+            Case CStr(msoComboNormal), "msoComboNormal":                                     cBarCtl.Style = msoComboNormal
+          End Select
+        Case "DropDownLines":   cBarCtl.DropDownLines = Trim$(var(1))
+        Case "DropDownWidth":   cBarCtl.DropDownWidth = Trim$(var(1))
+        Case "Item":            cBarCtl.AddItem (Trim$(var(1)))
+        Case "ListHeaderCount": cBarCtl.ListHeaderCount = Trim$(var(1))
+        Case "Text":            cBarCtl.Text = Trim$(var(1))
+        Case "OLEMenuGroup":    cBarCtl.OLEMenuGroup = Trim$(var(1))
+        Case "Begin CommandBarControl"
+          'This means that this control has a controls property and has additional control(s)
+          'So we will reconstruct the string up to the point of the next 'End'
+          If CmdBarCtlFromText = "" Then 'Only try and add sub controls if we haven't got any errors with this one
+            strCtlSub = varLines(i)
+            x = InStr(strCtlSub, "Begin CommandBarControl")
+            strEnd = String$(x - 1, 32) & "End"
+            Do While varLines(i) <> strEnd 'need to find the 'End' with the same indent
+              i = i + 1
+              strCtlSub = strCtlSub & vbCrLf & varLines(i)
+            Loop
+            sErr = CmdBarCtlFromText & CmdBarCtlFromText(strCtlSub, cBarCtl.Controls)
+            'There was an error adding the control so report that error
+            If sErr <> "" Then CmdBarCtlFromText = CmdBarCtlFromText & sErr & vbCrLf
+          End If
+        Case Else: CmdBarCtlFromText = CmdBarCtlFromText & "Unrecognised Property '" & Trim$(var(0)) & "' in Text File" & vbCrLf
+      End Select
+    Next
+  Else
+    CmdBarCtlFromText = "Command Bar Control Text Format not recognised"
+  End If
+CmdBarCtlFromText_Exit:
+  If Right$(CmdBarCtlFromText, 2) = vbCrLf Then CmdBarCtlFromText = Left$(CmdBarCtlFromText, Len(CmdBarCtlFromText) - 2) 'Remove ending CrLf if there is one
+  Exit Function
+
+CmdBarCtlFromText_Err:
+  CmdBarCtlFromText = CmdBarCtlFromText & "Unspecified Error Creating Command Bar Control"
+  GoTo CmdBarCtlFromText_Exit
+
+End Function
+
+Private Function CmdBarAsText(ByRef cbar As Office.CommandBar, ByVal intOffset As Integer) As String
+  'This produces a string describing a CmdBar and uses a consistent offset of intOffset Spaces
+  Dim str As String
+  Dim sOff As String
+  Dim cBarCtl As Office.CommandBarControl
+  
+  sOff = Space(intOffset)
+  str = sOff & "Begin CommandBar" & vbCrLf
+  str = str & sOff & "    Name = " & cbar.Name & vbCrLf
+  Select Case cbar.Type
+    Case msoBarTypeNormal:  str = str & sOff & "    Type = msoBarTypeNormal" & vbCrLf
+    Case msoBarTypeMenuBar: str = str & sOff & "    Type = msoBarTypeMenuBar" & vbCrLf
+    Case msoBarTypePopup:   str = str & sOff & "    Type = msoBarTypePopup" & vbCrLf
+    Case Else:              Stop 'This should never happen
+  End Select
+  str = str & sOff & "    Position = " & cbar.Position & vbCrLf
+  If cbar.Type = msoBarTypePopup Then
+    str = str & sOff & "    AdaptiveMenu = " & cbar.AdaptiveMenu & vbCrLf
+  End If
+  str = str & sOff & "    Context = " & cbar.context & vbCrLf
+  str = str & sOff & "    Enabled = " & cbar.Enabled & vbCrLf
+  str = str & sOff & "    RowIndex = " & cbar.RowIndex & vbCrLf
+  str = str & sOff & "    Visible = " & cbar.Visible & vbCrLf
+  str = str & sOff & "    Left = " & cbar.Left & vbCrLf
+  str = str & sOff & "    Top = " & cbar.Top & vbCrLf
+'  str = str & sOff & "    Width = " & cBar.Width & vbCrLf 'these can't be set so there's no point in writing them here
+'  str = str & sOff & "    Height = " & cBar.Height & vbCrLf
+  For Each cBarCtl In cbar.Controls
+    str = str & CmdBarCtlAsText(cBarCtl, intOffset + 4) & vbCrLf
+  Next
+  str = str & sOff & "    Protection = " & cbar.Protection & vbCrLf 'NB it is vital that this is placed after all controls have been added - otherwise the picture values cannot be loaded correctly
+  str = str & sOff & "End"
+  CmdBarAsText = str
+End Function
+Private Function CmdBarFromText(ByRef strCmdBar As String, Optional ByVal strNewName As String = "") As String
+  'This creates a new command bar from the information in the String passed
+  'It returns a zero length string if successful, otherwise any error messages
+  Dim varLines As Variant
+  Dim cbar As Office.CommandBar
+  Dim strCtlSub As String
+  Dim sErr As String
+  Dim var As Variant
+  Dim i As Long, x As Long
+  Dim lngType As Long
+  Dim strEnd As String
+  
+  On Error GoTo CmdBarFromText_Err
+  
+  varLines = Split(strCmdBar, vbCrLf)
+  Do While varLines(UBound(varLines)) = ""
+    ReDim Preserve varLines(LBound(varLines) To UBound(varLines) - 1)
+  Loop
+  If Trim$(varLines(0)) = "Begin CommandBar" And Trim$(varLines(UBound(varLines))) = "End" Then
+    For i = LBound(varLines) + 1 To UBound(varLines) - 1
+      var = Split(varLines(i), "=") 'Split the line into Property and it's value
+      Select Case Trim$(var(0))
+        Case "Name"
+          If LenB(strNewName) = 0 Then strNewName = Trim$(var(1))
+        Case "TypeText" 'We ignore this it has been deprecated
+        Case "Type" 'We recognise either the String version or a Long value
+          Select Case Trim$(var(1))
+            Case CStr(msoBarTypeNormal), "msoBarTypeNormal":   lngType = msoBarTypeNormal
+            Case CStr(msoBarTypeMenuBar), "msoBarTypeMenuBar": lngType = msoBarTypeMenuBar
+            Case CStr(msoBarTypePopup), "msoBarTypePopup":     lngType = msoBarTypePopup
+            Case Else
+              'This should never happen
+              CmdBarFromText = "Type '" & Trim$(var(1)) & "' not recognised"
+              GoTo CmdBarFromText_Exit
+          End Select
+        Case "Position"
+          'This property is used as the trigger for creating the object
+          'But First we need to delete any non built in CmdBar with the same name
+          For Each cbar In Application.CommandBars
+            If Not cbar.BuiltIn And cbar.Name = strNewName Then cbar.Delete
+          Next
+          If lngType = msoBarTypePopup Then
+            Set cbar = Application.CommandBars.add(strNewName, Trim$(var(1)), False, False) ' Popup is determined by the position field
+          Else
+            Set cbar = Application.CommandBars.add(strNewName, Trim$(var(1)), lngType, False)
+          End If
+        Case "AdaptiveMenu": If lngType = msoBarTypePopup Then cbar.AdaptiveMenu = Trim$(var(1))
+        Case "Context":    cbar.context = Trim$(var(1))
+        Case "Enabled":    cbar.Enabled = Trim$(var(1))
+        Case "Protection": cbar.Protection = Trim$(var(1))
+        Case "RowIndex":   cbar.RowIndex = Trim$(var(1))
+        Case "Visible":    If lngType <> msoBarTypePopup Then cbar.Visible = Trim$(var(1))
+        Case "Left":       cbar.Left = Trim$(var(1))
+        Case "Top":        cbar.Top = Trim$(var(1))
+        Case "Begin CommandBarControl"
+          'This means that this control has a controls property and has additional control(s)
+          'So we will reconstruct the string up to the point of the next 'End'
+          If CmdBarFromText = "" Then 'Only try and add sub controls if we haven't got any errors with this one
+            strCtlSub = varLines(i)
+            x = InStr(strCtlSub, "Begin CommandBarControl")
+            strEnd = String$(x - 1, 32) & "End"
+            Do While varLines(i) <> strEnd 'need to find the 'End' with the same indent
+              i = i + 1
+              strCtlSub = strCtlSub & vbCrLf & varLines(i)
+            Loop
+            sErr = CmdBarCtlFromText(strCtlSub, cbar.Controls)
+            If sErr <> "" Then CmdBarFromText = CmdBarFromText & sErr & vbCrLf
+          Else
+            GoTo CmdBarFromText_Exit
+          End If
+      End Select
+    Next
+  Else
+    CmdBarFromText = "Command Bar Text Format not recognised"
+  End If
+CmdBarFromText_Exit:
+  If Right$(CmdBarFromText, 2) = vbCrLf Then CmdBarFromText = Left$(CmdBarFromText, Len(CmdBarFromText) - 2) 'Remove ending CrLf if there is one
+  Exit Function
+CmdBarFromText_Err:
+  CmdBarFromText = CmdBarFromText & "Unspecified Error Creating Command Bar"
+  GoTo CmdBarFromText_Exit
+End Function
+Public Sub SaveCommandBarAsText(CBarName As String, FileName As String)
+  'This function will save a commandbar as a text file
+  Dim f As Integer
+  Dim cbar As Office.CommandBar
+  On Error Resume Next 'If the command bar doesn't exist you get an error
+  Set cbar = Application.CommandBars(CBarName)
+  On Error GoTo 0
+  If Not cbar Is Nothing Then
+    f = FreeFile
+    If FileExists(FileName) Then Kill FileName
+    Open FileName For Binary As #f
+    Put #f, , CmdBarAsText(cbar, 0)
+    Close #f
+  End If
+End Sub
+Public Function LoadCommandBarFromText(ByVal CBarName As String, FileName As String) As String
+  Dim f As Integer
+  Dim str As String
+  f = FreeFile
+  Open FileName For Binary As #f
+  str = String$(LOF(f), 0)
+  Get #f, , str
+  Close #f
+  LoadCommandBarFromText = CmdBarFromText(str, CBarName)
+End Function

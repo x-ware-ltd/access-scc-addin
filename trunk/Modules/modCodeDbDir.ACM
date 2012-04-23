@@ -1,0 +1,44 @@
+Option Compare Database
+Option Explicit
+Option Private Module
+
+Function CurrentDbDir() As String
+  Dim strName As String
+  
+  strName = CurrentDb.Name
+  CurrentDbDir = Left(strName, Len(strName) - Len(Dir(strName)))
+End Function
+
+Function CodeDbDir() As String
+  Dim strName As String
+  
+  strName = CodeDb.Name
+  CodeDbDir = Left(strName, Len(strName) - Len(Dir(strName)))
+End Function
+
+Function CompileDatabase() As Boolean
+  Dim db As DAO.Database
+  Dim ctr As DAO.Container
+
+  If Not Application.IsCompiled Then
+    Set db = CurrentDb
+    Set ctr = db.Containers("Modules")
+    If ctr.Documents.Count > 0 Then
+      DoCmd.OpenModule ctr.Documents(0).Name
+      DoCmd.RunCommand acCmdCompileAndSaveAllModules
+      DoCmd.Close acModule, ctr.Documents(0).Name
+    Else
+      Set ctr = db.Containers("Forms")
+      If ctr.Documents.Count > 0 Then
+        DoCmd.OpenForm ctr.Documents(0).Name, acDesign
+        DoCmd.RunCommand acCmdViewCode
+        DoCmd.RunCommand acCmdCompileAndSaveAllModules
+        DoCmd.Close acForm, ctr.Documents(0).Name
+      End If
+    End If
+  End If
+  Set ctr = Nothing
+  db.Close: Set db = Nothing
+  CompileDatabase = Application.IsCompiled
+
+End Function

@@ -1,0 +1,283 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' Tests if an Access export file is faulty
+'
+' This function tests if a file that is an access export
+' of a form or report is subject to the bug that affects
+' some forms and reports due to the printer device names.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @author     Steve Falla <steve.falla@talkjcs.com>
+' @version    1.00
+' @param      String the full path of the filename to check
+' @return     Boolean True if faulty, False if not
+'************************************************
+Function isFaultyPrinterDeviceExport(strFilename As String) As Boolean
+  Dim intExit As Integer
+  Dim strLine As String
+  Dim strPrevLine As String
+  Dim strPrevLine2 As String
+  Dim f As Integer
+  Dim intInPrtDevName As Integer
+
+  isFaultyPrinterDeviceExport = False
+
+  f = FreeFile
+  Open strFilename For Input As #f
+  intExit = False
+  Do Until intExit = True
+    If EOF(f) Then Exit Do
+
+    Line Input #f, strLine
+    strLine = Trim(strLine)
+    If strLine = "PrtDevNames = Begin" Then
+      intInPrtDevName = True
+      Do Until intInPrtDevName = False
+        strPrevLine2 = strPrevLine
+        strPrevLine = strLine
+        Line Input #f, strLine
+        If Trim(strLine) = "End" Then
+          intInPrtDevName = False
+          If Trim(strPrevLine) = "0x00" Then
+            If Not Right$(strPrevLine2, 2) = " ," Then
+              Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
+                                        "Found faulty export: " & strFilename & vbCrLf
+              Close #f
+              isFaultyPrinterDeviceExport = True
+            End If
+          End If
+
+        End If
+      Loop
+      intExit = True
+    End If
+  Loop
+  Close #f
+End Function
+
+'************************************************
+' Find all Faulty Form Exports
+'
+' This sub loops through all form exports and tests
+' if they are faulty due to the bug in exporting printer
+' device names.
+' On detection of a faulty form it will attempt to repair it
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @author       Steve Falla <steve.falla@talkjcs.com>
+' @suggestions  Make use if the function isFaultyPrinterDeviceExport to avoid duplication
+' @version      1.00
+' @param        String the root path of the SVN checked out repository
+'************************************************
+Sub FindFormPrinterExports(strRootPath As String)
+  Dim strFormPath As String
+  Dim intExit As Integer
+  Dim strLine As String, strPrevLine As String, strPrevLine2 As String
+  Dim strSearchFor As String, strFilename As String
+  Dim f As Integer
+  Dim intInPrtDevName As Integer
+
+  DoCmd.OpenForm "Access SVN - Results", acNormal
+  strFormPath = appendSlash(strRootPath) & "Forms\"
+
+  strSearchFor = strFormPath & "*.ACF"
+  strFilename = Dir(strSearchFor)
+  Do Until strFilename = ""
+    f = FreeFile
+    Open strFormPath & strFilename For Input As #f
+    intExit = False
+    Do Until intExit = True
+      If EOF(f) Then Exit Do
+
+      Line Input #f, strLine
+      strLine = Trim(strLine)
+      If strLine = "PrtDevNames = Begin" Then
+        intInPrtDevName = True
+        Do Until intInPrtDevName = False
+          strPrevLine2 = strPrevLine
+          strPrevLine = strLine
+          Line Input #f, strLine
+          If Trim(strLine) = "End" Then
+            intInPrtDevName = False
+            If Trim(strPrevLine) = "0x00" Then
+              If Not Right$(strPrevLine2, 2) = " ," Then
+                Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
+                                          "Found faulty export: " & strFilename & vbCrLf
+                Close #f
+                FixPrinterExport (strFormPath & strFilename)
+              End If
+            End If
+
+          End If
+        Loop
+        intExit = True
+      End If
+    Loop
+    Close #f
+    strFilename = Dir()
+  Loop
+  Application.Forms![Access SVN - Results].txtStatus.Value = "Completed search"
+End Sub
+
+'************************************************
+' Find all Faulty Report Exports
+'
+' This sub loops through all report exports and tests
+' if they are faulty due to the bug in exporting printer
+' device names.
+' On detection of a faulty report it will attempt to repair it
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @author       Steve Falla <steve.falla@talkjcs.com>
+' @suggestions  Make use if the function isFaultyPrinterDeviceExport to avoid duplication
+' @version      1.00
+' @param        String the root path of the SVN checked out repository
+'************************************************
+Sub FindReportPrinterExports(strRootPath As String)
+  Dim strReportPath As String
+  Dim intExit As Integer
+  Dim strLine As String, strPrevLine As String, strPrevLine2 As String
+  Dim strSearchFor As String, strFilename As String
+  Dim f As Integer
+  Dim intInPrtDevName As Integer
+
+  strReportPath = appendSlash(strRootPath) & "Reports\"
+
+  strSearchFor = strReportPath & "*.ACR"
+  strFilename = Dir(strSearchFor)
+  Do Until strFilename = ""
+    f = FreeFile
+    Open strReportPath & strFilename For Input As #f
+    intExit = False
+    Do Until intExit = True
+      If EOF(f) Then Exit Do
+
+      Line Input #f, strLine
+      strLine = Trim(strLine)
+      If strLine = "PrtDevNames = Begin" Then
+        intInPrtDevName = True
+        Do Until intInPrtDevName = False
+          strPrevLine2 = strPrevLine
+          strPrevLine = strLine
+          Line Input #f, strLine
+          If Trim(strLine) = "End" Then
+            intInPrtDevName = False
+            If Trim(strPrevLine) = "0x00" Then
+              If Not Right$(strPrevLine2, 2) = " ," Then
+                Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
+                                          "Found faulty report export: " & strFilename & vbCrLf
+                Close #f
+                FixPrinterExport (strReportPath & strFilename)
+              End If
+            End If
+
+          End If
+        Loop
+        intExit = True
+      End If
+    Loop
+    Close #f
+    strFilename = Dir()
+  Loop
+  Application.Forms![Access SVN - Results].txtStatus.Value = "Completed search"
+End Sub
+
+'************************************************
+' Fix a faulty form or report export
+'
+' This sub will attempt to repair a faulty export
+' in situ.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @author       Steve Falla <steve.falla@talkjcs.com>
+' @version      1.00
+' @param        String the full path of the faulty export
+'************************************************
+Sub FixPrinterExport(strPath As String)
+  Dim intExit As Integer
+  Dim strLine As String, strPrevLine As String, strPrevLine2 As String
+  Dim f1 As Integer, f2 As Integer
+  Dim intInPrtDevName As Integer
+
+  Application.Forms![Access SVN - Results].txtStatus.Value = "Fixing Export: " & strPath
+  f1 = FreeFile(0)
+  f2 = FreeFile(1)
+  Open strPath For Input As #f1
+
+  If FileExists(strPath & ".tmp") Then Kill strPath & ".tmp"
+
+  Open strPath & ".tmp" For Output As #f2
+  Do Until EOF(f1)
+    Line Input #f1, strLine
+    If Trim(strLine) = "PrtDevNames = Begin" Then
+      intInPrtDevName = True
+      strPrevLine = ""
+      strPrevLine2 = ""
+      Do Until intInPrtDevName = False
+        strPrevLine2 = strPrevLine
+        strPrevLine = strLine
+        Line Input #f1, strLine
+        If Trim(strLine) = "End" Then
+          intInPrtDevName = False
+          If Trim(strPrevLine) = "0x00" Then
+            If Not Right$(strPrevLine2, 2) = " ," Then
+              strPrevLine2 = RTrim$(strPrevLine2) & " ,"
+            End If
+          End If
+
+        End If
+        If strPrevLine2 <> "" Then
+          Print #f2, strPrevLine2
+        End If
+      Loop
+      Print #f2, strPrevLine
+      Print #f2, strLine
+    Else
+      Print #f2, strLine
+    End If
+  Loop
+  Close #f1
+  Close #f2
+  Kill strPath
+  Name strPath & ".tmp" As strPath
+  Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & ".....Fixed!" & vbCrLf
+End Sub
+
+'************************************************
+' File Exists
+'
+' This function tests if a file exists.
+' It does not use DIR since it is possible that you might have
+' been in the middle of running DIR against another directory in
+' an attempt to match one directory against another.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @param        String the path of the file to check
+' @return       Boolean True if exists, False if not
+'************************************************
+Function FileExists(strPath As String) As Boolean
+  'It does not handle wildcard characters
+  Dim lSize As Long
+  On Error Resume Next
+  'Preset length to -1 because files can be zero bytes in length
+  lSize = -1
+  'Get the length of the file
+  lSize = FileLen(strPath)
+  If lSize > -1 Then
+    FileExists = True
+  Else
+    FileExists = False
+  End If
+End Function

@@ -1,0 +1,188 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' Library wrapper for Windows Crypt API
+'
+' Exposes 3 functions which allow a Hash to be calculated for
+' Strings, Byte Arrays and Files.
+' The implementation for Files only uses streaming so that
+' files of unlimited size can be handled.
+'
+' @suggestions could be extended to include Keyed algorithms if required
+' @author Barry Pitfield <barry.pitfield@talkcjs.com>
+' @version 1.000
+'************************************************
+
+Private Declare Function VarPtrArray Lib "msvbvm60.dll" Alias "VarPtr" (Ptr() As Any) As Long
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (dest As Any, Source As Any, ByVal Bytes As Long)
+
+Private Declare Function CryptAcquireContext Lib "advapi32" Alias "CryptAcquireContextA" (ByRef phProv As Long, ByVal pszContainer As String, ByVal pszProvider As String, ByVal dwProvType As Long, ByVal dwFlags As Long) As Long    'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
+Private Declare Function CryptCreateHash Lib "advapi32" (ByVal hProv As Long, ByVal algid As Long, ByVal hKey As Long, ByVal dwFlags As Long, ByRef phHash As Long) As Long                      'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
+Private Declare Function CryptDestroyHash Lib "advapi32" (ByVal hHash As Long) As Long      'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
+Private Declare Function CryptGetHashParam Lib "advapi32" (ByVal hHash As Long, ByVal dwParam As Long, ByRef pbData As Any, ByRef pdwDataLen As Long, ByVal dwFlags As Long) As Long
+Private Declare Function CryptHashData Lib "advapi32" (ByVal hHash As Long, ByRef pbData As Any, ByVal dwDataLen As Long, ByVal dwFlags As Long) As Long
+Private Declare Function CryptReleaseContext Lib "advapi32" (ByVal hProv As Long, ByVal dwFlags As Long) As Long  'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
+
+Private Const MS_DEFAULT_PROVIDER As String = "Microsoft Base Cryptographic Provider v1.0"
+Private Const PROV_RSA_FULL As Long = 1&
+Private Const CRYPT_VERIFYCONTEXT As Long = &HF0000000
+Private Const HP_HASHVAL As Long = 2&
+Private Const HP_HASHSIZE As Long = 4&
+
+Public Enum xwHashType
+  HashType_MD2 = &H8001&
+  HashType_MD4 = &H8002&
+  HashType_MD5 = &H8003&
+  HashType_SHA = &H8004&
+  HashType_SHA1 = &H8004&
+End Enum
+
+'************************************************
+' xwHashFile
+'
+' Returns a Hash for the file passed.
+'
+' Version history:
+' - 1.00 initial version
+'
+' @author Barry Pitfield <barry.pitfield@talkcjs.com>
+' @suggestions We test if the file exists but not whether we have rights to it - this would cause an unhandled error on the 'Open' call
+' @version 1.00
+' @param String Path and Filename of the file to be Hashed
+' @param xwHashType the Algorithm to be used to produce the Hash.  The default is MD5.
+' @return String The Hash for the File, or vbNullString if unsuccessful
+'************************************************
+Public Function xwHashFile(strFilename As String, Optional enmHashType As xwHashType = HashType_MD5) As String
+  
+  Const lngBlockSize = 16384& '16KB the chunk size used on the file to stream it into the API calls
+    
+  Dim hProvider As Long 'Handle to the Crypto Provider
+  Dim hHash As Long     'Handle to Hash object
+  Dim intFile As Integer
+  Dim lngFileLength As Long
+  Dim lngWholeChunks As Long
+  Dim lngRemainder As Long
+  Dim lngChunk As Long
+  Dim bytBlock() As Byte
+  
+  If CryptAcquireContext(hProvider, vbNullString, MS_DEFAULT_PROVIDER, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) = 0& Then Err.Raise vbObjectError + 14000&, "xwHash", "Failed to acquire access to CryptAPI: " & CStr(Err.LastDllError): Exit Function
+    
+  'Test to see if the file exists
+  WizHook.Key = 51488399
+  If Not WizHook.FileExists(strFilename) Then Err.Raise vbObjectError + 14004&, "xwHashFile", "Can't find the File '" & strFilename & "'": Exit Function
+  
+  If CryptCreateHash(hProvider, enmHashType, 0&, 0&, hHash) = 0& Then Err.Raise vbObjectError + 14001&, "xwHash", "Failed to create CryptoAPI Hash object: " & CStr(Err.LastDllError): Exit Function
+  
+  intFile = FreeFile
+  On Error GoTo xwHashFile_OpenFileError
+  Open strFilename For Binary Access Read As #intFile
+  On Error GoTo 0
+  
+  lngFileLength = LOF(intFile)
+  lngWholeChunks = lngFileLength \ lngBlockSize
+  lngRemainder = lngFileLength - (lngBlockSize * lngWholeChunks)
+  ReDim bytBlock(lngBlockSize - 1&)
+  For lngChunk = 1& To lngWholeChunks
+    Get #intFile, , bytBlock
+    If CryptHashData(hHash, bytBlock(LBound(bytBlock)), UBound(bytBlock) - LBound(bytBlock) + 1&, 0&) = 0& Then Err.Raise vbObjectError + 14002&, "xwHash", "Failed to hash data block: " & CStr(Err.LastDllError): GoTo xwHashFile_Exit
+  Next
+  If lngRemainder > 0& Then
+    ReDim bytBlock(lngRemainder - 1&)
+    Get #intFile, , bytBlock
+    If CryptHashData(hHash, bytBlock(LBound(bytBlock)), UBound(bytBlock) - LBound(bytBlock) + 1&, 0&) = 0& Then Err.Raise vbObjectError + 14002&, "xwHash", "Failed to hash data block: " & CStr(Err.LastDllError): GoTo xwHashFile_Exit
+  End If
+  xwHashFile = pvtGetHashValue(hHash)
+
+xwHashFile_Exit:
+  Close #intFile
+  CryptReleaseContext hProvider, 0&
+  Exit Function
+  
+xwHashFile_OpenFileError:
+  On Error GoTo 0 'Resets the Error handler so we can raise our own error
+  Err.Raise vbObjectError + 14006&, "xwHash", "Unable to open the File '" & strFilename & "'"
+
+End Function
+
+'************************************************
+' xwHashString
+'
+' Returns a Hash for the String passed.
+'
+' Version history:
+' - 1.00 initial version
+'
+' @author Barry Pitfield <barry.pitfield@talkcjs.com>
+' @version 1.00
+' @param String to be Hashed
+' @param xwHashType the Algorithm to be used to produce the Hash.  The default is MD5.
+' @return String The Hash for the String, or vbNullString if unsuccessful
+'************************************************
+Public Function xwHashString(str As String, Optional enmHashType As xwHashType = HashType_MD5) As String
+  Dim byt() As Byte
+  
+  byt() = StrConv(str, vbFromUnicode)
+  xwHashString = xwHashBytes(byt, enmHashType)
+End Function
+
+'************************************************
+' xwHashBytes
+'
+' Returns a Hash for the Byte array passed.
+'
+' Version history:
+' - 1.00 initial version
+'
+' @author Barry Pitfield <barry.pitfield@talkcjs.com>
+' @version 1.00
+' @param arrByt Byte Array to be Hashed
+' @param xwHashType the Algorithm to be used to produce the Hash.  The default is MD5.
+' @return String The Hash for the Byte Array, or vbNullString if unsuccessful
+'************************************************
+Public Function xwHashBytes(byt() As Byte, Optional enmHashType As xwHashType = HashType_MD5) As String
+  Dim hProvider As Long 'Handle to the Crypto Provider
+  Dim hHash As Long     'Handle to Hash object
+  
+  If Not pvtIsArrayDimensioned(byt) Then Err.Raise vbObjectError + 14005&, "xwHash", "Byte array has not been initialised": Exit Function
+  If CryptAcquireContext(hProvider, vbNullString, MS_DEFAULT_PROVIDER, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) = 0& Then Err.Raise vbObjectError + 14000&, "xwHash", "Failed to acquire access to CryptAPI: " & CStr(Err.LastDllError): Exit Function
+  If CryptCreateHash(hProvider, enmHashType, 0&, 0&, hHash) = 0& Then Err.Raise vbObjectError + 14001&, "xwHash", "Failed to create CryptoAPI Hash object: " & CStr(Err.LastDllError): GoTo xwHashBytes_Exit
+  If UBound(byt) >= LBound(byt) Then 'Check to make sure we have something to add
+    If CryptHashData(hHash, byt(LBound(byt)), UBound(byt) - LBound(byt) + 1&, 0&) = 0& Then Err.Raise vbObjectError + 14002&, "xwHash", "Failed to hash data block: " & CStr(Err.LastDllError): GoTo xwHashBytes_Exit
+  End If
+  xwHashBytes = pvtGetHashValue(hHash)
+
+xwHashBytes_Exit:
+  CryptReleaseContext hProvider, 0&
+End Function
+
+Private Function pvtGetHashValue(hHash As Long) As String
+  Dim lngHashSize As Long
+  Dim bytHashValue() As Byte
+  Dim intByte As Integer
+  
+  'First determine the size of the Hash (which depends on the type)
+  If CryptGetHashParam(hHash, HP_HASHSIZE, lngHashSize, 4&, 0&) = 0& Then
+    Err.Raise vbObjectError + 14003&, "xwHash", "Failed to obtain hash value length: " & CStr(Err.LastDllError)
+  Else
+    ReDim bytHashValue(lngHashSize - 1)
+    If CryptGetHashParam(hHash, HP_HASHVAL, bytHashValue(0&), lngHashSize, 0&) = 0& Then
+      Err.Raise vbObjectError + 14004&, "xwHash", "Failed to obtain hash value: " & CStr(Err.LastDllError)
+    Else
+      For intByte = 0& To lngHashSize - 1&
+        pvtGetHashValue = pvtGetHashValue & Right$("0" & Hex$(bytHashValue(intByte)), 2)
+      Next
+      CryptDestroyHash hHash
+    End If
+  End If
+End Function
+
+Private Function pvtIsArrayDimensioned(byt() As Byte) As Boolean
+  Dim ptrArray As Long 'Pointer to the Array
+  Dim ptrStruc As Long 'Pointer to Array structure
+  
+  ptrArray = VarPtrArray(byt)
+  'If the array has yet to be dimensioned the value in the array pointer location will be zero
+  CopyMemory ptrStruc, ByVal ptrArray, 4&
+  pvtIsArrayDimensioned = (ptrStruc <> 0&) 'If there is no pointer yet return False
+End Function
