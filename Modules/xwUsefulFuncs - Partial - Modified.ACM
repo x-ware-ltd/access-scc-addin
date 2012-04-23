@@ -106,7 +106,7 @@ Function URLDecode(ByVal strUrl As String) As String
   Dim pPos As Integer
 
   'replace + To Space
-  strUrl = Replace(strUrl, "+", " ", 0)
+  strUrl = Replace(strUrl, "+", " ")
 
   On Error GoTo 0
   'UfUf, this is a little slow method.
