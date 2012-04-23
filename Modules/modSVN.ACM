@@ -1,0 +1,743 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' SVN Module
+'
+' This is a collection of procedures to allow VBA
+' to talk to and initiate SVN functionality. It relies
+' on having Tortoise SVN and the SVN command line tool.
+' This has been tested with version 1.4 of the SVN tools
+'
+' @author       Steve Falla <steve.falla@talkjcs.com>
+' @Version      1.00
+'************************************************
+
+Private Type STARTUPINFO
+    cb As Long
+    lpReserved As String
+    lpDesktop As String
+    lpTitle As String
+    dwX As Long
+    dwY As Long
+    dwXSize As Long
+    dwYSize As Long
+    dwXCountChars As Long
+    dwYCountChars As Long
+    dwFillAttribute As Long
+    dwFlags As Long
+    wShowWindow As Integer
+    cbReserved2 As Integer
+    lpReserved2 As Long
+    hStdInput As Long
+    hStdOutput As Long
+    hStdError As Long
+End Type
+
+Private Type PROCESS_INFORMATION
+    hProcess As Long
+    hThread As Long
+    dwProcessID As Long
+    dwThreadID As Long
+End Type
+
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal _
+    hHandle As Long, ByVal dwMilliseconds As Long) As Long
+    
+Private Declare Function CreateProcessA Lib "kernel32" (ByVal _
+    lpApplicationName As String, ByVal lpCommandLine As String, ByVal _
+    lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, _
+    ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, _
+    ByVal lpEnvironment As Long, ByVal lpCurrentDirectory As Long, _
+    lpStartupInfo As STARTUPINFO, lpProcessInformation As _
+    PROCESS_INFORMATION) As Long
+    
+Private Declare Function CloseHandle Lib "kernel32" (ByVal _
+    hObject As Long) As Long
+    
+Private Declare Function GetExitCodeProcess Lib "kernel32" _
+      (ByVal hProcess As Long, lpExitCode As Long) As Long
+
+Private Const NORMAL_PRIORITY_CLASS = &H20&
+Private Const INFINITE = -1&
+Private Const SW_HIDE = 0
+Private Const SW_INVALIDATE = &H2
+Private Const SW_MAXIMIZE = 3
+Private Const SW_MAX = 10
+Private Const SW_MINIMIZE = 6
+Private Const SW_NORMAL = 1
+Private Const SW_AUTOPROF_LOAD_MASK = &H1
+Private Const SW_AUTOPROF_SAVE_MASK = &H2
+Private Const SW_ERASE = &H4
+Private Const SW_FORCEMINIMIZE = 11
+Private Const SW_OTHERUNZOOM = 4
+Private Const SW_OTHERZOOM = 2
+Private Const SW_PARENTCLOSING = 1
+Private Const SW_PARENTOPENING = 3
+Private Const SW_RESTORE = 9
+Private Const SW_SCROLLCHILDREN = &H1
+Private Const SW_SHOW = 5
+Private Const SW_SHOWDEFAULT = 10
+Private Const SW_SHOWMAXIMIZED = 3
+Private Const SW_SHOWMINIMIZED = 2
+Private Const SW_SHOWMINNOACTIVE = 7
+Private Const SW_SHOWNA = 8
+Private Const SW_SHOWNOACTIVATE = 4
+Private Const SW_SHOWNORMAL = 1
+Private Const SW_SMOOTHSCROLL = &H10
+Private Const STARTF_USESHOWWINDOW = &H1
+      
+Private mstrTORTOISE_SVN_PATH As String
+Private mstrSVN_CMD_PATH As String
+
+Public Type SVNITEM
+  svPath As String
+  svName As String
+  svRevision As String
+  svCheckSum As String
+  svStatus As String
+End Type
+
+Public arrExtras() As SVNITEM
+Public arrForms() As SVNITEM
+Public arrIMEXSpecs() As SVNITEM
+Public arrMacros() As SVNITEM
+Public arrModules() As SVNITEM
+Public arrQueries() As SVNITEM
+Public arrReferences() As SVNITEM
+Public arrReports() As SVNITEM
+Public arrTables() As SVNITEM
+Public arrToolbars() As SVNITEM
+
+'************************************************
+' ShellEx
+'
+' Replaces the standard Shell command so that it waits until
+' the process has finished before returning control back to
+' the calling function
+'
+' See the standard VBA Shell function for more details, as this
+' is a direct replacement.
+'
+' http://support.microsoft.com/kb/129796 How to determine when a shelled process ends
+'
+' Version history:
+' - 1.00 initial version 14/11/2011
+'
+' @author Steve Falla <steve.falla@talkjcs.com>
+' @suggestions
+' @version 1.00
+' @param String  Name of the program to execute and any required arguments or cmd line switches
+' @param Integer The style of window in which the program is to be run
+' @return Double The program's task Id if successful, otherwise it returns zero
+'************************************************
+Public Function ShellEx(PathName As String, Optional WindowStyle As VbAppWinStyle = vbMinimizedFocus) As Double
+  Dim proc As PROCESS_INFORMATION
+  Dim start As STARTUPINFO
+  Dim ret As Long
+
+  ' Initialise the STARTUP structure
+  start.cb = Len(start)
+  Select Case WindowStyle
+    Case vbHide
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_HIDE
+    Case vbMaximizedFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_SHOWMAXIMIZED
+    Case vbMinimizedFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_SHOWMINIMIZED
+    Case vbMinimizedNoFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_SHOWMINNOACTIVE
+    Case vbNormalFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_NORMAL
+    Case vbNormalNoFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_SHOWNOACTIVATE
+    Case vbNormal
+  End Select
+
+  ' Start the shelled application
+  ret& = CreateProcessA(vbNullString, PathName, 0&, 0&, 1&, _
+                        NORMAL_PRIORITY_CLASS, 0&, 0&, start, proc)
+  ' Wait for the shelled application to finish:
+  ret& = WaitForSingleObject(proc.hProcess, INFINITE)
+  Call CloseHandle(proc.hThread)
+  Call CloseHandle(proc.hProcess)
+  ShellEx = proc.dwProcessID
+End Function
+
+'************************************************
+' Triggers an SVN update using Tortoise SVN
+'
+' This sub triggers tortoise SVN to perform an SVN update
+' on the path specified.
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to wait until the update command has finished, then return [SF] 14/11/2011
+'
+' @version    1.01
+' @param      String the base path to perform an SVN update against
+'************************************************
+Public Sub SVN_Update(strPath As String)
+  Dim strCmd As String
+  
+  strCmd = GetTortoiseSVNPath() & " /command:update /path:""" & strPath & """ /closeonend:1" ' closeonend:1 forces tortoise to close after successful update
+  ShellEx strCmd, vbNormalFocus ' wait until app closes
+End Sub
+
+'************************************************
+' Triggers an SVN commit using Tortoise SVN
+'
+' This sub triggers tortoise SVN to perform an SVN commit
+' on the path specified.
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to wait for the command to exit
+'
+' @version    1.00
+' @param      String the base path to perform an SVN commit against
+'************************************************
+Public Sub SVN_Commit(strPath As String)
+  Dim strCmd As String
+
+  strCmd = GetTortoiseSVNPath() & " /command:commit /path:""" & strPath & """ /notempfile & /closeonend:3"
+  ShellEx strCmd, vbNormalFocus
+End Sub
+
+
+'************************************************
+' Triggers an SVN add using Tortoise SVN
+'
+' This sub triggers SVN to perform an SVN add
+' on the path specified. No user intervention is required
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to use command line to stop dialog boxes all the time [SF] 14/11/2011
+'
+' @version    1.01
+' @param      String the base path to perform an SVN add against
+'************************************************
+Public Function SVN_Add_File(strPath As String)
+  Dim strCmd As String, strFilename As String
+
+  ' Only perform an SVN add if the .svn folder actually exists (we are using a working svn folder)
+  If Not FileExists(asParentFolder(strPath) & "\.svn\entries") Then
+    Exit Function
+  End If
+
+  strCmd = GetSVNPath() & " add """ & stripSlash(strPath) & """"
+  strFilename = fShellRun(Environ$("COMSPEC") & " /c " & strCmd, True)
+  If strFilename = vbNullString Then
+    Exit Function
+  End If
+
+  Kill strFilename
+
+End Function
+
+'************************************************
+' Triggers an SVN delete using Tortoise SVN
+'
+' This sub triggers tortoise SVN to perform an SVN delete
+' on the path specified.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to perform an SVN delete against
+'************************************************
+Public Function SVN_Delete_File(strPath As String)
+  Dim strCmd As String
+  
+  ' Only perform an SVN delete if the .svn folder actually exists (we are using a working svn folder)
+  If FileExists(asParentFolder(strPath) & "\.svn\entries") Then
+    strCmd = GetTortoiseSVNPath() & " /command:remove /path:""" & strPath & """ /notempfile & /closeonend:0"
+    Shell strCmd, vbNormalFocus
+  End If
+End Function
+
+'************************************************
+' Gets the currently checked out version of an SVN repository
+'
+' This function uses the command line SVN tool to get the currently
+' checked out version of an SVN repository.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to use when getting the SVN version
+' @return     String the current SVN version of the code
+'************************************************
+Public Function SVN_GetVersion(strPath As String) As String
+    Dim WshShell As Object
+    Dim oExec As Object
+    Dim strInput As String
+    Dim strCmd As String
+    Dim i As Integer, j As Integer
+    Const sREVISION = "Last Changed Rev: "
+    
+    strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
+    strInput = fShellRun(Environ$("COMSPEC") & " /c " & strCmd)
+    'Debug.Print strInput
+    If strInput <> "" Then
+        i = InStr(strInput, sREVISION)
+        j = InStr(i + Len(sREVISION), strInput, vbCrLf) - (i + Len(sREVISION))
+        SVN_GetVersion = Mid(strInput, i + Len(sREVISION), j)
+    Else
+      ' Return a default of 0 if SVN has not been setup yet
+      SVN_GetVersion = "0"
+    End If
+    
+    Set WshShell = Nothing
+    Set oExec = Nothing
+End Function
+
+Public Function SVN_GetInfo(strPath As String) As SVNITEM
+    Dim strLine As String
+    Dim strFilename As String
+    Dim strCmd As String
+    Dim i As Integer, j As Integer
+    Dim oSVNItem As SVNITEM
+    Dim f As Integer
+    Const sPATH = "Path: "
+    Const sNAME = "Name: "
+    Const sREVISION = "Last Changed Rev: "
+    Const sCHECKSUM = "Checksum: "
+    
+    strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
+    strFilename = fShellRun(Environ$("COMSPEC") & " /c " & strCmd, True)
+    If strFilename = "" Then
+      Exit Function
+    End If
+    
+    f = FreeFile
+    Open strFilename For Input As #f
+    Do Until EOF(f)
+      Line Input #f, strLine
+      strLine = Trim$(strLine)
+      If InStrB(strLine, sPATH) Then
+        oSVNItem.svPath = Right$(strLine, Len(strLine) - Len(sPATH))
+      ElseIf InStrB(strLine, sNAME) Then
+        oSVNItem.svName = Right$(strLine, Len(strLine) - Len(sNAME))
+      ElseIf InStrB(strLine, sREVISION) Then
+        oSVNItem.svRevision = Right$(strLine, Len(strLine) - Len(sREVISION))
+      ElseIf InStrB(strLine, sCHECKSUM) Then
+        oSVNItem.svCheckSum = Right$(strLine, Len(strLine) - Len(sCHECKSUM))
+      End If
+    Loop
+    Close #f
+    Kill strFilename
+    
+'    oSVNItem.svStatus = SVN_GetStatus(strPath) ' removed due to performance issues
+    
+    SVN_GetInfo = oSVNItem
+End Function
+
+Public Function SVN_GetStatus(strPath As String) As String
+  Dim strCmd As String, strFilename As String, strLine As String
+  Dim f As Integer
+  
+  ' This returns "M" modified or "N" normal
+  ' It could be extended in the future according to the getstatus definition
+  
+  SVN_GetStatus = "N" ' Normal
+  
+  strCmd = GetSVNPath() & " status """ & stripSlash(strPath) & """"
+  strFilename = fShellRun(Environ$("COMSPEC") & " /c " & strCmd, True)
+  If strFilename = "" Then
+    Exit Function
+  End If
+
+  f = FreeFile
+  Open strFilename For Input As #f
+  Do Until EOF(f)
+    Line Input #f, strLine
+    If Left$(strLine, 1) = "M" Then
+      SVN_GetStatus = "M"
+    End If
+    Exit Do
+  Loop
+  Close #f
+  Kill strFilename
+
+End Function
+
+Public Sub SVN_GetAllVersions(strPath As String)
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Extras", arrExtras
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Forms", arrForms
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Macros", arrMacros
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Modules", arrModules
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Queries", arrQueries
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\References", arrReferences
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Reports", arrReports
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Tables", arrTables
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Toolbars", arrToolbars
+  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\IMEXSpecs", arrIMEXSpecs
+End Sub
+
+Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() As SVNITEM)
+    Dim strInput As String
+    Dim strFilename As String
+    Dim strCmd As String
+    Dim strLine As String
+    Dim lngLineEnd As Long
+    Dim lngLineStart As Long
+    Dim mySvnItem As SVNITEM
+    Dim i As Integer
+    Dim f As Integer
+    Dim intArrSize As Integer
+    Const sPATH = "Path: "
+    Const sNAME = "Name: "
+    Const sREVISION = "Last Changed Rev: "
+    Const sCHECKSUM = "Checksum: "
+
+    i = 0
+    intArrSize = 100
+    
+    strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """\*"
+    
+    strFilename = fShellRun(Environ$("COMSPEC") & " /c " & strCmd, True)
+    If strFilename = "" Then
+      Exit Function
+    End If
+      
+    ReDim arrFill(intArrSize)
+    f = FreeFile
+    Open strFilename For Input As #f
+    Do Until EOF(f)
+      Line Input #f, strLine
+      strLine = Trim$(strLine)
+      If InStrB(strLine, sPATH) Then
+        mySvnItem.svPath = Right$(strLine, Len(strLine) - Len(sPATH))
+      ElseIf InStrB(strLine, sNAME) Then
+        mySvnItem.svName = Right$(strLine, Len(strLine) - Len(sNAME))
+      ElseIf InStrB(strLine, sREVISION) Then
+        mySvnItem.svRevision = Right$(strLine, Len(strLine) - Len(sREVISION))
+      ElseIf InStrB(strLine, sCHECKSUM) Then
+        mySvnItem.svCheckSum = Right$(strLine, Len(strLine) - Len(sCHECKSUM))
+      ElseIf LenB(Trim$(strLine)) = 0 Then
+        If mySvnItem.svName = "" Then ' found folder skip
+        Else
+          'mySvnItem.svStatus = SVN_GetStatus(mySvnItem.svPath) ' removed due to performance issues
+          arrFill(i) = mySvnItem
+          i = i + 1
+          If i > intArrSize Then
+            intArrSize = intArrSize + 100
+            ReDim Preserve arrFill(intArrSize)
+          End If
+        End If
+        mySvnItem.svName = ""
+        mySvnItem.svPath = ""
+        mySvnItem.svRevision = ""
+        mySvnItem.svStatus = ""
+      End If
+    Loop
+    If i > 0 Then
+      ReDim Preserve arrFill(i - 1)
+    Else
+      ReDim Preserve arrFill(0)
+    End If
+    Close #f
+    Kill strFilename
+End Function
+
+Function fShellRun(sCommandStringToExecute As String, Optional bKeepFile As Boolean = False) As String
+  ' This function will accept a string as a DOS command to execute.
+  ' It will then execute the command in a shell, and capture the output into a file.
+  ' That file is then read in and its contents are returned as the value the function returns.
+  Dim oShellObject As Object
+  Dim oFileSystemObject As Object
+  Dim sShellRndTmpFile As String
+  Dim oShellOutputFileToRead As Object
+  Dim iErr As Integer
+  
+  Set oShellObject = CreateObject("Wscript.Shell")
+  Set oFileSystemObject = CreateObject("Scripting.FileSystemObject")
+  
+  sShellRndTmpFile = oShellObject.ExpandEnvironmentStrings("%temp%") & "\" & oFileSystemObject.GetTempName
+  On Error Resume Next
+  oShellObject.Run sCommandStringToExecute & " > " & sShellRndTmpFile, 0, True
+  iErr = Err.Number
+  If iErr <> 0 Then
+   fShellRun = ""
+   Exit Function
+  End If
+    
+  If Not bKeepFile Then
+    fShellRun = oFileSystemObject.OpenTextFile(sShellRndTmpFile, 1).ReadAll
+    oFileSystemObject.DeleteFile sShellRndTmpFile, True
+  Else
+    fShellRun = sShellRndTmpFile
+  End If
+End Function
+
+'************************************************
+' Gets the latest version identifier stored in an SVN repository
+'
+' This function uses the command line SVN tool to get the latest
+' version identifier of code from an SVN repository.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path of a checked out SVN module to use when getting the SVN version
+' @return     String the latest SVN version of the code in the repository
+'************************************************
+Public Function SVN_GetLatestVersion(strPath As String) As String
+    On Error GoTo Err_SVN_GetLatestVersion
+    
+    Dim WshShell As Object
+    Dim oExec As Object
+    Dim strInput As String
+    Dim strCmd As String
+    Dim i As Integer, j As Integer, x As Integer, y As Integer
+    Dim strUrl As String
+    Dim strListRepo As Variant
+    Dim strProps As Variant
+    Dim strFilename As String
+    Dim strLine As String
+    Dim f As Long
+    Dim fSuccess As Boolean
+    
+    Dim oDoc As MSXML2.DOMDocument
+    Dim oLists As MSXML2.IXMLDOMNode
+    Dim oList As MSXML2.IXMLDOMNode
+    Dim oEntry As MSXML2.IXMLDOMNode
+    Dim oChild As MSXML2.IXMLDOMNode
+    Dim oAttributes As MSXML2.IXMLDOMNamedNodeMap
+    Dim strName As String
+    Dim oRevision As MSXML2.IXMLDOMNode
+    
+    Const sURL = "URL: "
+    
+    ' get the SVN url
+    strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
+    strFilename = fShellRun(Environ$("COMSPEC") & " /c " & strCmd, True)
+    If strFilename = "" Then
+      Exit Function
+    End If
+    
+    f = FreeFile
+    Open strFilename For Input As #f
+    Do Until EOF(f)
+      Line Input #f, strLine
+      strLine = Trim$(strLine)
+      If InStrB(strLine, sURL) Then
+        strUrl = Right$(strLine, Len(strLine) - Len(sURL))
+      End If
+    Loop
+    Close #f
+    Kill strFilename
+    
+    
+    strInput = ""
+    If Right$(strUrl, 1) = "/" Then strUrl = Left$(strUrl, Len(strUrl) - 1)
+    
+    ' Get the latest version from the SVN repository
+    strCmd = GetSVNPath() & " list --xml """ & getURLParent(strUrl) & """"
+    strFilename = fShellRun(Environ$("COMSPEC") & " /c " & strCmd, True)
+    If strFilename = "" Then
+      Exit Function
+    End If
+        
+    Set oDoc = New MSXML2.DOMDocument
+    oDoc.async = False
+    oDoc.validateOnParse = False
+    fSuccess = oDoc.Load(strFilename)
+    If Not fSuccess Then
+      Exit Function
+    End If
+    
+    Set oLists = oDoc.documentElement
+    Set oList = oLists.firstChild
+    For Each oEntry In oList.childNodes
+      For Each oChild In oEntry.childNodes
+        If oChild.nodeName = "name" Then
+          strName = oChild.nodeTypedValue
+        End If
+        If oChild.nodeName = "commit" Then
+          Set oAttributes = oChild.Attributes
+          Set oRevision = oAttributes.getNamedItem("revision")
+        End If
+      Next oChild
+      
+      If Trim$(strName) = URLDecode(stripURLPath(strUrl)) Then
+        SVN_GetLatestVersion = oRevision.nodeTypedValue
+        GoTo Exit_SVN_GetLatestVersion
+      End If
+    Next oEntry
+    
+Exit_SVN_GetLatestVersion:
+    If SVN_GetLatestVersion = "" Then
+      SVN_GetLatestVersion = "0"
+    End If
+    Kill strFilename
+    Set oLists = Nothing
+    Set oList = Nothing
+    Set oEntry = Nothing
+    Set oChild = Nothing
+    Set oAttributes = Nothing
+    Set oRevision = Nothing
+    Exit Function
+    
+Err_SVN_GetLatestVersion:
+    MsgBox "An error occured getting the latest SVN repository version. Check that the local copy is set up correctly"
+    Resume Exit_SVN_GetLatestVersion
+
+End Function
+
+'************************************************
+' Gets the latest SVN
+'
+' This function uses the command line SVN tool to get the mapped
+' svn url for a working copy folder.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path of a checked out SVN module
+' @return     String the SVN URL mapped to the folder
+'************************************************
+Public Function SVN_GetWorkingFolderVersion(strPath As String) As String
+  On Error GoTo Err_SVN_GetWorkingFolderVersion
+  
+  Dim strInput As String
+  Dim strCmd As String
+  Dim strRev As String
+  Dim strFilename As String
+  Dim strLine As String
+  Dim f As Long
+  
+  Const sREVISION = "Last Changed Rev: "
+  
+  ' get the SVN revision
+  strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
+  strFilename = fShellRun(Environ$("COMSPEC") & " /c " & strCmd, True)
+  If strFilename = "" Then
+    Exit Function
+  End If
+  
+  f = FreeFile
+  Open strFilename For Input As #f
+  Do Until EOF(f)
+    Line Input #f, strLine
+    strLine = Trim$(strLine)
+    If InStrB(strLine, sREVISION) Then
+      strRev = Right$(strLine, Len(strLine) - Len(sREVISION))
+    End If
+  Loop
+  Close #f
+  
+  strInput = ""
+  
+  SVN_GetWorkingFolderVersion = strRev
+  
+Exit_SVN_GetWorkingFolderVersion:
+  If SVN_GetWorkingFolderVersion = "" Then
+    SVN_GetWorkingFolderVersion = "No SVN version found"
+  End If
+  Kill strFilename
+  Exit Function
+  
+Err_SVN_GetWorkingFolderVersion:
+  MsgBox "An error occured getting the working copy SVN version. Check that the local copy is set up correctly"
+  Resume Exit_SVN_GetWorkingFolderVersion
+  
+End Function
+
+'************************************************
+' Gets the Mapped SVN url for a working copy folder
+'
+' This function uses the command line SVN tool to get the mapped
+' svn url for a working copy folder.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path of a checked out SVN module
+' @return     String the SVN URL mapped to the folder
+'************************************************
+Public Function SVN_GetMappedUrl(strPath As String) As String
+  On Error GoTo Err_SVN_GetMappedUrl
+  
+  Dim strInput As String
+  Dim strCmd As String
+  Dim strUrl As String
+  Dim strFilename As String
+  Dim strLine As String
+  Dim f As Long
+  
+  Const sURL = "URL: "
+  
+  ' get the SVN url
+  strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
+  strFilename = fShellRun(Environ$("COMSPEC") & " /c " & strCmd, True)
+  If strFilename = "" Then
+    Exit Function
+  End If
+  
+  f = FreeFile
+  Open strFilename For Input As #f
+  Do Until EOF(f)
+    Line Input #f, strLine
+    strLine = Trim$(strLine)
+    If InStrB(strLine, sURL) Then
+      strUrl = Right$(strLine, Len(strLine) - Len(sURL))
+    End If
+  Loop
+  Close #f
+  
+  strInput = ""
+  If Right$(strUrl, 1) = "/" Then strUrl = Left$(strUrl, Len(strUrl) - 1)
+  
+  SVN_GetMappedUrl = URLDecode(strUrl)
+  
+Exit_SVN_GetMappedUrl:
+  If SVN_GetMappedUrl = "" Then
+    SVN_GetMappedUrl = "No mapped SVN URL found"
+  End If
+  Kill strFilename
+  Exit Function
+  
+Err_SVN_GetMappedUrl:
+  MsgBox "An error occured getting the SVN mapped url. Check that the local copy is set up correctly"
+  Resume Exit_SVN_GetMappedUrl
+
+End Function
+
+Public Function GetTortoiseSVNPath() As String
+  If LenB(mstrTORTOISE_SVN_PATH) = 0 Then
+    mstrTORTOISE_SVN_PATH = xwRegQueryValue(HKEY_LOCAL_MACHINE, "SOFTWARE\TortoiseSVN", "ProcPath")
+    If InStr(mstrTORTOISE_SVN_PATH, " ") Then
+      mstrTORTOISE_SVN_PATH = """" & mstrTORTOISE_SVN_PATH & """"
+    End If
+  End If
+  GetTortoiseSVNPath = mstrTORTOISE_SVN_PATH
+End Function
+
+Public Function GetSVNPath() As String
+  Dim strSVNVersion As String
+  
+'  If LenB(mstrSVN_CMD_PATH) = 0 Then
+'    strSVNVersion = xwRegQueryValue(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\CollabNet Subversion", "DisplayVersion")
+'    mstrSVN_CMD_PATH = xwRegQueryValue(HKEY_LOCAL_MACHINE, "SOFTWARE\CollabNet\Subversion\" & strSVNVersion & "\Client", "Install Location")
+'    mstrSVN_CMD_PATH = mstrSVN_CMD_PATH & "\svn.exe"
+'    If InStr(mstrSVN_CMD_PATH, " ") Then
+'      mstrSVN_CMD_PATH = """" & mstrSVN_CMD_PATH & """"
+'    End If
+'  End If
+'  GetSVNPath = mstrSVN_CMD_PATH
+  GetSVNPath = "svn.exe" ' this is needed as cmd.exe cannot handle multiple quotation pairs when called
+End Function

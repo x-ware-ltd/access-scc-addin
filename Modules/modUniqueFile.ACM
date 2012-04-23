@@ -1,0 +1,74 @@
+Option Compare Database
+Option Explicit
+Option Private Module
+
+Private Declare Function GetTempPath Lib "kernel32" Alias "GetTempPathA" _
+    (ByVal nBufferLength As Long, ByVal lpBuffer As String) As Long
+Private Declare Function GetTempFileName Lib "kernel32" Alias "GetTempFileNameA" _
+    (ByVal lpszPath As String, ByVal lpPrefixString As String, _
+    ByVal wUnique As Long, ByVal lpTempFileName As String) As Long
+
+Function TempDir() As String
+  '*******************************************
+  'Name:          TempDir (Function)
+  'Purpose:       Returns path to Win32 Temp folder
+  'Author:        Terry Kreft; Used by Dev Ashish (MMA)
+  'Date:           04 November 1998
+  'Called by:     Any
+  'Calls:           API
+  'Inputs:         None
+  'Output:        Path to Temp Folder
+  '*******************************************
+  Dim lngRet As Long
+  Dim strTempDir As String
+  Dim lngBuf As Long
+  strTempDir = String$(255, 0)
+  lngBuf = Len(strTempDir)
+  lngRet = GetTempPath(lngBuf, strTempDir)
+  If lngRet > lngBuf Then
+    strTempDir = String$(lngRet, 0)
+    lngBuf = Len(strTempDir)
+    lngRet = GetTempPath(lngBuf, strTempDir)
+  End If
+  TempDir = Left(strTempDir, lngRet)
+End Function
+
+'use the system temp directory setting
+Function TempFile(Create As Boolean, Optional lpPrefixString As Variant, Optional lpszPath As Variant) As String
+  '*******************************************
+  'Name:          TempFile (Function)
+  'Purpose:       Returns or creates a unique temporary file in
+  '                   Win32 Temp Folder
+  'Author:        Terry Kreft; Used by Dev Ashish (MMA)
+  'Date:           04 November 1998
+  'Called by:     Any
+  'Calls:           API, TempDir
+  'Inputs:         Create - If true, creates the file.  Use Kill to remove it
+  '                              if False, returns the filename, and kills
+  '                              the file automatically
+  '                   lpPrefixString (Optional) - First three characters of the temp filename
+  '                              If empty, use "TMP" internally
+  '                   lpSzPath (Optional) - Defines the directory path to the temp file
+  '                              if Empty, uses system Temp folder instead
+  'Output:        Unique temp file name
+  '*******************************************
+
+  Dim lpTempFileName As String * 255
+  Dim strTemp As String
+  Dim lngRet As Long
+  If IsMissing(lpszPath) Then
+    lpszPath = TempDir
+  End If
+  If IsMissing(lpPrefixString) Then
+    lpPrefixString = "tmp"
+  End If
+  lngRet = GetTempFileName(lpszPath, lpPrefixString, 0, lpTempFileName)
+  strTemp = lpTempFileName
+  lngRet = InStr(lpTempFileName, Chr$(0))
+  strTemp = Left(lpTempFileName, lngRet - 1)
+  If Create = False Then
+    Kill strTemp
+    Do Until Dir(strTemp) = "": DoEvents: Loop
+  End If
+  TempFile = strTemp
+End Function

@@ -1,0 +1,129 @@
+Begin TableDef
+    Updatable = True
+    Attributes = 0
+    Begin Property
+        Name = OrderByOn
+        Type = 1
+        Value = False
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "Subkey"
+        OrdinalPosition = 0
+        Size = 255
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+        Begin Property
+            Name = ColumnWidth
+            Type = 3
+            Value = 7560
+        End
+        Begin Property
+            Name = ColumnOrder
+            Type = 3
+            Value = 1
+        End
+        Begin Property
+            Name = ColumnHidden
+            Type = 1
+            Value = False
+        End
+    End
+    Begin Field
+        Attributes = 1
+        Type = 4
+        Name = "Type"
+        OrdinalPosition = 1
+        Size = 4
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+        Begin Property
+            Name = ColumnWidth
+            Type = 3
+            Value = -1
+        End
+        Begin Property
+            Name = ColumnOrder
+            Type = 3
+            Value = 0
+        End
+        Begin Property
+            Name = ColumnHidden
+            Type = 1
+            Value = False
+        End
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "ValName"
+        OrdinalPosition = 2
+        Size = 255
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+        Begin Property
+            Name = ColumnWidth
+            Type = 3
+            Value = -1
+        End
+        Begin Property
+            Name = ColumnOrder
+            Type = 3
+            Value = 0
+        End
+        Begin Property
+            Name = ColumnHidden
+            Type = 1
+            Value = False
+        End
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "Value"
+        OrdinalPosition = 3
+        Size = 255
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+        Begin Property
+            Name = ColumnWidth
+            Type = 3
+            Value = 3330
+        End
+        Begin Property
+            Name = ColumnOrder
+            Type = 3
+            Value = 0
+        End
+        Begin Property
+            Name = ColumnHidden
+            Type = 1
+            Value = False
+        End
+    End
+    Begin Index
+        Name = "Subkey"
+        Unique = False
+        Clustered = False
+        Primary = False
+        Foreign = False
+        Required = False
+        IgnoreNulls = False
+        DistinctCount = 0
+        Begin Field
+            Attributes = 0
+            Name = "Subkey"
+        End
+    End
+    Begin Data
+        ‡Subkey‡•‡Type‡•‡ValName‡•‡Value‡
+        ‡HKEY_CURRENT_ACCESS_PROFILE\Menu Add-Ins\&Subversion for Access XP‡•0•#NULL#•#NULL#
+        ‡HKEY_CURRENT_ACCESS_PROFILE\Menu Add-Ins\&Subversion for Access XP‡•1•‡Expression‡•‡=Init()‡
+        ‡HKEY_CURRENT_ACCESS_PROFILE\Menu Add-Ins\&Subversion for Access XP‡•1•‡Library‡•‡|ACCDIR\Subversion4AccessXP.mda‡
+    End
+End
