@@ -6,7 +6,7 @@
  # Close all open instances of Access.
  # Create/Open a project in Access.
  # Go to Add-In Manager (Tools->Add-Ins->Add-In manager), click Add New, select downloaded file.
-   * This will copy it into %USERPROFILE%\AppData\Roaming\Microsoft\AddIns  (Typically C:\Users\_User name_\AppData\Roaming\Microsoft\AddIns).
+   * {{{This will copy it into %USERPROFILE%\AppData\Roaming\Microsoft\AddIns  (Typically C:\Users\}}}_User name_{{{\AppData\Roaming\Microsoft\AddIns).}}}
  # Make sure it is marked as available - there should be a cross in the available column, if not, click install.
  # Close the Add-In manager.
  # To run Add-In, select it from the menu (Tools->Add-Ins->Subversion for Access XP)
