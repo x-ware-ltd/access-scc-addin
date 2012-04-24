@@ -24,5 +24,3 @@ The folder contains your Access database converted into text, which is now impor
  # Run the Add-In (Tools->Add-Ins->Subversion for Access XP).
  # Select the folder that contains the working copy as the SVN Checkout Folder.
  # Click on Import Objects, then click OK.
-
-This will recreate the database from the files you exported from Subversion.
