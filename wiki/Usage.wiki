@@ -5,7 +5,7 @@ This will guide you through the steps of managing an Access project using Subver
 
 Make sure to follow the installation guide before performing the following steps.
 
-== Exporting Access database to text ==
+== Exporting database into Subversion ==
 
  # Create a folder to use for exporting Access files to text to be imported into Subversion.
  # Run the Add-In (Tools->Add-Ins->Subversion for Access XP).
@@ -15,7 +15,9 @@ Make sure to follow the installation guide before performing the following steps
  # Click Export Objects, then click OK.
  # Once this is complete, import the folder into Subversion.
 
-The folder contains your Access database converted into text, which has been imported into Subversion. To turn this back into a database:
+The folder contains your Access database converted into text, which is now imported into Subversion.
+
+== Recreating database from Subversion
 
  # Checkout a working copy to add the extra folders and files Subversion needs to track a repository.
  # Create a new Access database.
