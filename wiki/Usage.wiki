@@ -17,7 +17,7 @@ Make sure to follow the installation guide before performing the following steps
 
 The folder contains your Access database converted into text, which is now imported into Subversion.
 
-== Recreating database from Subversion
+== Recreating database from Subversion ==
 
  # Checkout a working copy to add the extra folders and files Subversion needs to track a repository.
  # Create a new Access database.
