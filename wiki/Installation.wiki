@@ -3,6 +3,7 @@
 
 = Installation =
  # Download the current release.
+ # Rename downloaded file to *Subversion4AccessXP.mda*
  # Close all open instances of Access.
  # Create/Open a project in Access.
  # Go to Add-In Manager (Tools->Add-Ins->Add-In manager), click Add New, select downloaded file.
