@@ -9,8 +9,11 @@ Make sure to follow the installation guide before performing the following steps
  # Create a new database.
  # Use the Add-In to import objects from directory containing source
  # Remove '-svntmp' suffix from forms created incorrectly - a list of which is shown in the results.
+ # This database can then be modified to change the Add-In
  # Uninstall current version of the Add-In from Tools->Add-Ins->Add-In Manager
  # Close database, change extension from .mdb to .mda so it is recognised as an Add-In.
  # Close any instances of Access.
  # Erase previous version from {{{%USERPROFILE%\AppData\Roaming\Microsoft\AddIns}}}.
  # Follow the installation guide with the new mda.
+
+Note: Be sure to uninstall the Add-In from the Add-In manager before editing it directly.
