@@ -1,4 +1,4 @@
-#summary How to use Add-In to manage Access databases with Subversion.
+#summary How to use Subversion for Access XP.
 
 = Using Microsoft Access SCC Addin =
 This will guide you through the steps of managing an Access project using Subversion.
