@@ -13,25 +13,35 @@ Option Explicit
 ' @Version      1.00
 '************************************************
 
+Private Const STARTF_USESHOWWINDOW As Long = &H1
+Private Const STARTF_USESTDHANDLESAs Long = &H100
+Private Const SW_HIDE As Integer = 0
+
+Private Type SECURITY_ATTRIBUTES
+  nLength As Long
+  lpSecurityDescriptor As Long
+  bInheritHandle As Long
+End Type
+
 Private Type STARTUPINFO
-    cb As Long
-    lpReserved As String
-    lpDesktop As String
-    lpTitle As String
-    dwX As Long
-    dwY As Long
-    dwXSize As Long
-    dwYSize As Long
-    dwXCountChars As Long
-    dwYCountChars As Long
-    dwFillAttribute As Long
-    dwFlags As Long
-    wShowWindow As Integer
-    cbReserved2 As Integer
-    lpReserved2 As Long
-    hStdInput As Long
-    hStdOutput As Long
-    hStdError As Long
+  cb As Long
+  lpReserved As String
+  lpDesktop As String
+  lpTitle As String
+  dwX As Long
+  dwY As Long
+  dwXSize As Long
+  dwYSize As Long
+  dwXCountChars As Long
+  dwYCountChars As Long
+  dwFillAttribute As Long
+  dwFlags As Long
+  wShowWindow As Integer
+  cbReserved2 As Integer
+  lpReserved2 As Long
+  hStdInput As Long
+  hStdOutput As Long
+  hStdError As Long
 End Type
 
 Private Type PROCESS_INFORMATION
