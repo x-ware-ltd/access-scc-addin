@@ -1,5 +1,6 @@
+#summary Frequently Asked Questions
 #labels Featured
-= Frequently Asked Questions =
+<wiki:toc max_depth="2" />
 
 This page is here to answer common questions that come from people trying to use the Add-In for the first time.
 
