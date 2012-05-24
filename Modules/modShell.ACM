@@ -1,0 +1,202 @@
+Option Compare Database
+Option Explicit
+
+' API Types
+Private Type SECURITY_ATTRIBUTES
+  nLength                          As Long
+  lpSecurityDescriptor             As Long
+  bInheritHandle                   As Long
+End Type
+
+Private Type STARTUPINFO
+  cb                               As Long
+  lpReserved                       As String
+  lpDesktop                        As String
+  lpTitle                          As String
+  dwX                              As Long
+  dwY                              As Long
+  dwXSize                          As Long
+  dwYSize                          As Long
+  dwXCountChars                    As Long
+  dwYCountChars                    As Long
+  dwFillAttribute                  As Long
+  dwFlags                          As Long
+  wShowWindow                      As Integer
+  cbReserved2                      As Integer
+  lpReserved2                      As Long
+  hStdInput                        As Long
+  hStdOutput                       As Long
+  hStdError                        As Long
+End Type
+
+Private Type PROCESS_INFORMATION
+  hProcess                         As Long
+  hThread                          As Long
+  dwProcessId                      As Long
+  dwThreadId                       As Long
+End Type
+
+' API Constants
+Private Const NORMAL_PRIORITY_CLASS = &H20&
+Private Const INFINITE = -1&
+Private Const SW_HIDE = 0
+Private Const SW_INVALIDATE = &H2
+Private Const SW_MAXIMIZE = 3
+Private Const SW_MAX = 10
+Private Const SW_MINIMIZE = 6
+Private Const SW_NORMAL = 1
+Private Const SW_AUTOPROF_LOAD_MASK = &H1
+Private Const SW_AUTOPROF_SAVE_MASK = &H2
+Private Const SW_ERASE = &H4
+Private Const SW_FORCEMINIMIZE = 11
+Private Const SW_OTHERUNZOOM = 4
+Private Const SW_OTHERZOOM = 2
+Private Const SW_PARENTCLOSING = 1
+Private Const SW_PARENTOPENING = 3
+Private Const SW_RESTORE = 9
+Private Const SW_SCROLLCHILDREN = &H1
+Private Const SW_SHOW = 5
+Private Const SW_SHOWDEFAULT = 10
+Private Const SW_SHOWMAXIMIZED = 3
+Private Const SW_SHOWMINIMIZED = 2
+Private Const SW_SHOWMINNOACTIVE = 7
+Private Const SW_SHOWNA = 8
+Private Const SW_SHOWNOACTIVATE = 4
+Private Const SW_SHOWNORMAL = 1
+Private Const SW_SMOOTHSCROLL = &H10
+Private Const STARTF_USESHOWWINDOW = &H1
+Private Const STARTF_USESTDHANDLES = &H100
+
+' API Declarations
+Private Declare Function CreatePipe Lib "kernel32" (phReadPipe As Long, phWritePipe As Long, lpPipeAttributes As Any, ByVal nSize As Long) As Long
+Private Declare Function ReadFile Lib "kernel32" (ByVal hFile As Long, lpBuffer As Any, ByVal nNumberOfBytesToRead As Long, lpNumberOfBytesRead As Long, lpOverlapped As Any) As Long
+
+' There are two declarations here, as they are used in different ways by different functions in this module
+Private Declare Function CreateProcess Lib "kernel32" Alias "CreateProcessA" (ByVal lpApplicationName As String, ByVal lpCommandLine As String, _
+    lpProcessAttributes As Any, lpThreadAttributes As Any, ByVal bInheritHandles As Long, _
+    ByVal dwCreationFlags As Long, lpEnvironment As Any, ByVal lpCurrentDriectory As String, lpStartupInfo As STARTUPINFO, _
+    lpProcessInformation As PROCESS_INFORMATION) As Long
+Private Declare Function CreateProcessA Lib "kernel32" (ByVal lpApplicationName As String, ByVal lpCommandLine As String, _
+    ByVal lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, ByVal bInheritHandles As Long, _
+    ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDirectory As Long, lpStartupInfo As STARTUPINFO, _
+    lpProcessInformation As PROCESS_INFORMATION) As Long
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
+Private Declare Function GetExitCodeProcess Lib "kernel32" (ByVal hProcess As Long, lpExitCode As Long) As Long
+
+'************************************************
+' Exec And Capture
+'
+' Purpose: Excute a console app. & capture output
+'
+' Date: Dec 01, 2004
+' Call this sub to execute and capture a console app.
+' Ex: strText = ExecAndCapture("ping localhost")
+'
+' @author Dipak Auddy <dauddy@gmail.com>
+' @param  String  Cmdline to execute and any required arguments or cmd line switches
+' @param  String  A folder to start the process in
+' @return String  The output of the command as a string
+'************************************************
+Public Function ExecAndCapture(ByVal strCmdLine As String, Optional ByVal strStartInFolder As String = vbNullString) As String
+  Const BUFSIZE As Long = 1024 * 10
+  Dim hPipeRead As Long, hPipeWrite As Long, lBytesRead As Long
+  Dim sa                As SECURITY_ATTRIBUTES
+  Dim si                As STARTUPINFO
+  Dim pi                As PROCESS_INFORMATION
+  Dim baOutput(BUFSIZE) As Byte
+  Dim strOutput         As String
+    
+  With sa
+    .nLength = Len(sa)
+    .bInheritHandle = 1    ' get inheritable pipe handles
+  End With
+    
+  If CreatePipe(hPipeRead, hPipeWrite, sa, 0) = 0 Then Exit Function
+
+  With si
+    .cb = Len(si)
+    .dwFlags = STARTF_USESHOWWINDOW Or STARTF_USESTDHANDLES
+    .wShowWindow = SW_HIDE
+    .hStdOutput = hPipeWrite
+    .hStdError = hPipeWrite
+  End With
+    
+  If CreateProcess(vbNullString, strCmdLine, ByVal 0&, ByVal 0&, 1, 0&, ByVal 0&, strStartInFolder, si, pi) Then
+    Call CloseHandle(hPipeWrite)
+    Call CloseHandle(pi.hThread)
+    hPipeWrite = 0
+    Do
+      DoEvents
+      If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then Exit Do
+      strOutput = strOutput & Left$(StrConv(baOutput(), vbUnicode), lBytesRead)
+    Loop
+    Call CloseHandle(pi.hProcess)
+  End If
+  
+  ' To make sure...
+  Call CloseHandle(hPipeRead)
+  Call CloseHandle(hPipeWrite)
+  ExecAndCapture = strOutput
+End Function
+
+'************************************************
+' ShellEx
+'
+' Replaces the standard Shell command so that it waits until
+' the process has finished before returning control back to
+' the calling function
+'
+' See the standard VBA Shell function for more details, as this
+' is a direct replacement.
+'
+' http://support.microsoft.com/kb/129796 How to determine when a shelled process ends
+'
+' Version history:
+' - 1.00 initial version 14/11/2011
+'
+' @author Steve Falla <steve.falla@talkjcs.com>
+' @suggestions
+' @version 1.00
+' @param String  Name of the program to execute and any required arguments or cmd line switches
+' @param Integer The style of window in which the program is to be run
+' @return Double The program's task Id if successful, otherwise it returns zero
+'************************************************
+Public Function ShellEx(PathName As String, Optional WindowStyle As VbAppWinStyle = vbMinimizedFocus) As Double
+  Dim proc As PROCESS_INFORMATION
+  Dim start As STARTUPINFO
+  Dim ret As Long
+
+  ' Initialise the STARTUP structure
+  start.cb = Len(start)
+  Select Case WindowStyle
+    Case vbHide
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_HIDE
+    Case vbMaximizedFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_SHOWMAXIMIZED
+    Case vbMinimizedFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_SHOWMINIMIZED
+    Case vbMinimizedNoFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_SHOWMINNOACTIVE
+    Case vbNormalFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_NORMAL
+    Case vbNormalNoFocus
+      start.dwFlags = STARTF_USESHOWWINDOW
+      start.wShowWindow = SW_SHOWNOACTIVATE
+    Case vbNormal
+  End Select
+
+  ' Start the shelled application
+  ret& = CreateProcessA(vbNullString, PathName, 0&, 0&, 1&, NORMAL_PRIORITY_CLASS, 0&, 0&, start, proc)
+  
+  ' Wait for the shelled application to finish:
+  ret& = WaitForSingleObject(proc.hProcess, INFINITE)
+  Call CloseHandle(proc.hThread)
+  Call CloseHandle(proc.hProcess)
+  ShellEx = proc.dwProcessId
+End Function
