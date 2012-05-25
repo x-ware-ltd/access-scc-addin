@@ -27,8 +27,10 @@ Public Const asCommit As Integer = 104
 Public Const asModified As Integer = 105
 
 Public Function Init()
-  CreateLocalSCCTables
-  DoCmd.OpenForm "Access SVN - Options", acNormal, , , , acHidden
+  If asSupportedFileFormat() Then
+    CreateLocalSCCTables
+    DoCmd.OpenForm "Access SVN - Options", acNormal, , , , acHidden
+  End If
 End Function
     
 Public Function asRunExport()
@@ -1418,6 +1420,35 @@ Public Sub asPopulateTmpObjectsTables(intDirection As Integer)
   End Select
   DoCmd.Hourglass False
 End Sub
+
+'************************************************
+' Detect if the current file format is supported
+'
+' If the default Access options are to create an Access 2000
+' database, this addin will not work
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @return     Boolean True if supported, otherwise False
+'************************************************
+Private Function asSupportedFileFormat() As Boolean
+  Select Case CurrentProject.FileFormat
+    Case acFileFormatAccess2:       asSupportedFileFormat = False
+    Case acFileFormatAccess95:      asSupportedFileFormat = False
+    Case acFileFormatAccess97:      asSupportedFileFormat = False
+    Case acFileFormatAccess2000:    asSupportedFileFormat = False  ' Access 2000 format is NOT supported
+    Case acFileFormatAccess2002:    asSupportedFileFormat = True   ' Access XP format is supported
+    Case Else:                      asSupportedFileFormat = False
+  End Select
+  
+  If asSupportedFileFormat = False Then
+    MsgBox "This is an unsupported file format." & vbCrLf & vbCrLf & _
+           "If this is a new database, ensure that your options state " & _
+           "new databases are Access 2002 file format.", vbCritical + vbOKOnly, "Unsupported Access File Format"
+  End If
+End Function
 
 Private Sub asMkDir(strPath As String)
     If Dir(strPath, vbDirectory) > vbNullString Then
