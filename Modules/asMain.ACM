@@ -27,7 +27,7 @@ Public Const asCommit As Integer = 104
 Public Const asModified As Integer = 105
 
 Public Function Init()
-  If asSupportedFileFormat() And SCC_IsSupportedClient() Then
+  If asSupportedFileFormat() Then
     CreateLocalSCCTables
     DoCmd.OpenForm "Access SVN - Options", acNormal, , , , acHidden
   End If
