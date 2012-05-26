@@ -1,6 +1,6 @@
 Version =20
 VersionRequired =20
-Checksum =1548153522
+Checksum =1548804373
 Begin Form
     PopUp = NotDefault
     RecordSelectors = NotDefault
@@ -970,7 +970,7 @@ Begin Form
                     Height =962
                     Name ="Image6"
                     PictureData = Begin
-                        0x0e0000001a104616010000006c0000000000000000000000520000003a000000 ,
+                        0x0e000000eb09460b010000006c0000000000000000000000520000003a000000 ,
                         0x0000000000000000180900009d06000020454d46000001006487000011000000 ,
                         0x01000000000000000000000000000000900600001a040000d60100002c010000 ,
                         0x000000000000000000000000f02b0700e093040046000000b8430000ac430000 ,
@@ -2100,6 +2100,7 @@ Option Compare Database
 Option Explicit
 
 Private Sub btnImport_Click()
+  Call SCC_IsSupportedClient
   If Me.chkImport.Value = True Then
     SCC_Update Me.txtOutputLocation.Value
   End If
@@ -2182,6 +2183,8 @@ Private Sub cmdRepairPrinter_Click()
 End Sub
 
 Private Sub cmdRun_Click()
+    Call SCC_IsSupportedClient
+    
     ' put all the details in the tmpdatabase
     asPurgeTmpObjectsTables
     asPopulateTmpObjectsTables (asExport)
@@ -2233,7 +2236,7 @@ Private Sub Form_Load()
 
     Me.RecordSource = strRecordSource
 
-    ] sccSystemSubversion ' set default to use SVN
+    SetSCCSystem sccSystemSubversion   ' set default to use SVN
 
     If Me.chkRepository = True Then
         Me.txtLatestVersion.Value = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
