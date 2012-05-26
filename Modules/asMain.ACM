@@ -27,7 +27,7 @@ Public Const asCommit As Integer = 104
 Public Const asModified As Integer = 105
 
 Public Function Init()
-  If asSupportedFileFormat() Then
+  If asSupportedFileFormat() And SCC_IsSupportedClient() Then
     CreateLocalSCCTables
     DoCmd.OpenForm "Access SVN - Options", acNormal, , , , acHidden
   End If
@@ -48,7 +48,7 @@ Public Function asRunExport()
 
   Echo True
   If Application.Forms![Access SVN - Options].chkCommit.Value = True Then
-    SVN_Commit Application.Forms![Access SVN - Options].txtOutputLocation.Value
+    SCC_Commit Application.Forms![Access SVN - Options].txtOutputLocation.Value
     Echo False ' Update the revision data after the export and commit
     asUpdateVersionsFromExport appendSlash(Application.Forms![Access SVN - Options].txtOutputLocation.Value)
     Echo True
@@ -86,7 +86,7 @@ End Function
 
 Public Function UpdateObjectProperties(oType As asObjectType) As Boolean
 
-  'Populates the DateUpdated data in MSysSVNObjectProperties Table for the object type specified
+  'Populates the DateUpdated data in MSysSCCObjectProperties Table for the object type specified
   
   Dim strType As String 'The oType represented as a string
   Dim lngParentID As Long
@@ -103,7 +103,7 @@ Public Function UpdateObjectProperties(oType As asObjectType) As Boolean
   Dim strMD5Hash As String
     
   'Delete existng entries in the table
-  CurrentDb().Execute "DELETE * FROM MSysSVNObjectProperties WHERE objType = " & oType
+  CurrentDb().Execute "DELETE * FROM MSysSCCObjectProperties WHERE objType = " & oType
   
   Select Case oType
     'Assign the correct Type Description to strType
@@ -115,17 +115,17 @@ Public Function UpdateObjectProperties(oType As asObjectType) As Boolean
     Case asObjectType.acToolbar:        strType = "Cmdbars"
     Case asObjectType.acQuery
       'For Queries and Tables the correct Modified date/Time is stored in the MSysObjects Table as it was on previous versions
-      CurrentDb.Execute "INSERT INTO MSysSVNObjectProperties ( objType, objName, objCreateDate, objUpdateDate ) SELECT 1, [Name], DateCreate, DateUpdate FROM MSysObjects WHERE [Type] = 5"
+      CurrentDb.Execute "INSERT INTO MSysSCCObjectProperties ( objType, objName, objCreateDate, objUpdateDate ) SELECT 1, [Name], DateCreate, DateUpdate FROM MSysObjects WHERE [Type] = 5"
       UpdateObjectProperties = True
       Exit Function
     Case asObjectType.acTable
       'For Queries and Tables the correct Modified date/Time is stored in the MSysObjects Table as it was on previous versions
-      CurrentDb.Execute "INSERT INTO MSysSVNObjectProperties ( objType, objName, objCreateDate, objUpdateDate ) SELECT 0, [Name], DateCreate, DateUpdate FROM MSysObjects WHERE [Type] = 1 OR [Type] = 6"
+      CurrentDb.Execute "INSERT INTO MSysSCCObjectProperties ( objType, objName, objCreateDate, objUpdateDate ) SELECT 0, [Name], DateCreate, DateUpdate FROM MSysObjects WHERE [Type] = 1 OR [Type] = 6"
       UpdateObjectProperties = True
       Exit Function
     Case asObjectType.acIMEXSpecs
       'IMEX specs are stored in tables
-      CurrentDb.Execute "INSERT INTO MSysSVNObjectProperties ( objType, objName, objCreateDate, objUpdateDate ) SELECT 103, [Name], DateCreate, DateUpdate FROM MSysObjects WHERE [Name] = 'MSysIMEXSpecs' OR [Name] = 'MSysIMEXColumns'"
+      CurrentDb.Execute "INSERT INTO MSysSCCObjectProperties ( objType, objName, objCreateDate, objUpdateDate ) SELECT 103, [Name], DateCreate, DateUpdate FROM MSysObjects WHERE [Name] = 'MSysIMEXSpecs' OR [Name] = 'MSysIMEXColumns'"
       UpdateObjectProperties = True
       Exit Function
     Case asObjectType.acExtra, asObjectType.acReference
@@ -139,7 +139,7 @@ Public Function UpdateObjectProperties(oType As asObjectType) As Boolean
       End If
       strMD5Hash = xwHashFile(strRndTmpFile)
       Kill strRndTmpFile
-      CurrentDb.Execute "INSERT INTO MSysSVNObjectProperties ( objType, objName, objCreateDate, objUpdateDate, objUpdateChecksum ) VALUES(" & oType & " ,'" & strType & "', 0, 0, '" & strMD5Hash & "')"
+      CurrentDb.Execute "INSERT INTO MSysSCCObjectProperties ( objType, objName, objCreateDate, objUpdateDate, objUpdateChecksum ) VALUES(" & oType & " ,'" & strType & "', 0, 0, '" & strMD5Hash & "')"
       UpdateObjectProperties = True
       Exit Function
     Case Else
@@ -172,7 +172,7 @@ Public Function UpdateObjectProperties(oType As asObjectType) As Boolean
   Set rst = Nothing 'release rst
   
   If oType = asObjectType.acToolbar Then
-    'In the special case of toolbars (Command Bars) there are some internal objects which we do not wish to see listed in MSysSVNObjectProperties
+    'In the special case of toolbars (Command Bars) there are some internal objects which we do not wish to see listed in MSysSCCObjectProperties
     'So here we create a list of all the Command Bar objects we do want and store that list in strCmdBars with Pipe delimiter
     Dim cbar As Office.CommandBar
     strCmdBars = "|"
@@ -182,7 +182,7 @@ Public Function UpdateObjectProperties(oType As asObjectType) As Boolean
   End If
   
   'Open our destination recordset
-  Set rstObjectProps = CurrentDb().OpenRecordset("MSysSVNObjectProperties", dbOpenDynaset, dbAppendOnly, dbOptimistic)
+  Set rstObjectProps = CurrentDb().OpenRecordset("MSysSCCObjectProperties", dbOpenDynaset, dbAppendOnly, dbOptimistic)
 
   With rstObjectProps
     psnB = 4 'The position of the first delimiter
@@ -208,14 +208,14 @@ Public Function UpdateObjectProperties(oType As asObjectType) As Boolean
       psnB = psnB + reclen + 2 'Move on by reclen plus the delimiter and the reclen byte
     Loop
   End With
-  'Now use the info we have stored in MSysSVNObjectProperties and update the correct Created and Modified Date/Times
-  CurrentDb.Execute "UPDATE MSysSVNObjectProperties AS P INNER JOIN MSysAccessStorage AS S ON (S.Name = P.objID) AND (P.ParentID = S.ParentId) SET P.objCreateDate = S.DateCreate, P.objUpdateDate = S.DateUpdate WHERE P.ObjType=" & oType
+  'Now use the info we have stored in MSysSCCObjectProperties and update the correct Created and Modified Date/Times
+  CurrentDb.Execute "UPDATE MSysSCCObjectProperties AS P INNER JOIN MSysAccessStorage AS S ON (S.Name = P.objID) AND (P.ParentID = S.ParentId) SET P.objCreateDate = S.DateCreate, P.objUpdateDate = S.DateUpdate WHERE P.ObjType=" & oType
  
   If oType = asObjectType.acModule Then
     'In the case of modules we need to do some additional work because
     'unfortunately Access no longer stores the Date/Time Modified for Modules or Class Modules individually (although there is a value stored against each!!
-    'So in order to identify when Modules have been updated we store an MD5 hash of the module in our table MSysSVNObjectProperties
-    Set rst = CurrentDb().OpenRecordset("SELECT * FROM MSysSVNObjectProperties WHERE ObjType = " & asObjectType.acModule, dbOpenDynaset)
+    'So in order to identify when Modules have been updated we store an MD5 hash of the module in our table MSysSCCObjectProperties
+    Set rst = CurrentDb().OpenRecordset("SELECT * FROM MSysSCCObjectProperties WHERE ObjType = " & asObjectType.acModule, dbOpenDynaset)
     Do While Not rst.EOF
       ' Cannot use the date modified part for this so we will export the module (quick process) and get an MD5 hash of the file to see if it has changed
       strRndTmpFile = TempFile(False)
@@ -246,49 +246,49 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
       Select Case intAction
         Case asDelete
           ' Delete entry from the status table
-          strQuery = "DELETE FROM MSysSVNStatus WHERE objType = " & objType & " AND objName = '" & strName & "'"
+          strQuery = "DELETE FROM MSysSCCStatus WHERE objType = " & objType & " AND objName = '" & strName & "'"
           
         Case asAdd
           ' Add a new entry to the status table, this is a new import, so have access to the SVN revision and checksum
-          oSVNImport = SVN_GetInfo(strPath)
+          oSVNImport = SCC_GetInfo(strPath)
           
           ' If the object uses a checksum to check for changes use the checksum field in the table
           If objDBTypeUsesCheckSum(objType) Then
             'strObjModifiedChecksum = getObjectModifiedCheckSum(objType, strName)
-            strQuery = "INSERT INTO MSysSVNStatus (objType, objName, objImportVersion, objSVNChecksum, objImportChecksum) " & _
+            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportChecksum) " & _
                        "VALUES (" & objType & ", '" & strName & "', '" & oSVNImport.svRevision & "', '" & oSVNImport.svCheckSum & "', '" & oSVNImport.svCheckSum & "')"
           Else
             'dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
             dblObjModifiedDate = CDbl(Now()) ' The SVNObjectProps table has not been updated yet
-            strQuery = "INSERT INTO MSysSVNStatus (objType, objName, objImportVersion, objSVNChecksum, objImportDate) " & _
+            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportDate) " & _
                        "VALUES (" & objType & ", '" & strName & "', '" & oSVNImport.svRevision & "', '" & oSVNImport.svCheckSum & "', " & dblObjModifiedDate & ")"
           End If
         
         Case asCommit
           ' Update the status table entry after an updated import, have access to the SVN Revision and checksum
-          oSVNImport = SVN_GetInfo(strPath)
+          oSVNImport = SCC_GetInfo(strPath)
           
           ' If the object uses a checksum to check for changes use the checksum fiedl in the table
           If objDBTypeUsesCheckSum(objType) Then
             strObjModifiedChecksum = getObjectModifiedCheckSum(objType, strName)
-            strQuery = "UPDATE MSysSVNStatus SET objImportChecksum = '" & strObjModifiedChecksum & "', objImportVersion = '" & oSVNImport.svRevision & "', objSVNChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
+            strQuery = "UPDATE MSysSCCStatus SET objImportChecksum = '" & strObjModifiedChecksum & "', objImportVersion = '" & oSVNImport.svRevision & "', objSCCChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
           Else
             'dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
             dblObjModifiedDate = CDbl(Now()) ' The SVNObjectProps table has not been updated yet
-            strQuery = "UPDATE MSysSVNStatus SET objImportDate = " & dblObjModifiedDate & ", objImportVersion = '" & oSVNImport.svRevision & "', objSVNChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
+            strQuery = "UPDATE MSysSCCStatus SET objImportDate = " & dblObjModifiedDate & ", objImportVersion = '" & oSVNImport.svRevision & "', objSCCChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
           End If
       
         Case asModified
           ' Reset the import flags to ensure this object is selected again on export next time
-          oSVNImport = SVN_GetInfo(strPath)
+          oSVNImport = SCC_GetInfo(strPath)
           ' If the object uses a checksum to check for changes use the checksum fiedl in the table
           If objDBTypeUsesCheckSum(objType) Then
             strObjModifiedChecksum = "Modified" ' Force this to export again next time
-            strQuery = "UPDATE MSysSVNStatus SET objImportChecksum = '" & strObjModifiedChecksum & "', objImportVersion = '" & oSVNImport.svRevision & "', objSVNChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
+            strQuery = "UPDATE MSysSCCStatus SET objImportChecksum = '" & strObjModifiedChecksum & "', objImportVersion = '" & oSVNImport.svRevision & "', objSCCChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
           Else
             'dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
             dblObjModifiedDate = 0 ' Force this to always detect that change is required
-            strQuery = "UPDATE MSysSVNStatus SET objImportDate = " & dblObjModifiedDate & ", objImportVersion = '" & oSVNImport.svRevision & "', objSVNChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
+            strQuery = "UPDATE MSysSCCStatus SET objImportDate = " & dblObjModifiedDate & ", objImportVersion = '" & oSVNImport.svRevision & "', objSCCChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
           End If
       
       End Select
@@ -297,7 +297,7 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
       Select Case intAction
         Case asDelete
           ' delete entry from the status table
-          strQuery = "DELETE FROM MSysSVNStatus WHERE objType = " & objType & " AND objName = '" & strName & "'"
+          strQuery = "DELETE FROM MSysSCCStatus WHERE objType = " & objType & " AND objName = '" & strName & "'"
         
         Case asAdd
           ' add a new entry to the status table. This is a new export so don't know SVN revision yet, or the checksum, mark for updating later
@@ -305,31 +305,31 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
           ' If the object uses a checksum to check for changes use the checksum fiedl in the table
           If objDBTypeUsesCheckSum(objType) Then
             strObjModifiedChecksum = getObjectModifiedCheckSum(objType, strName)
-            strQuery = "INSERT INTO MSysSVNStatus (objType, objName, objImportVersion, objSVNChecksum, objImportChecksum, objStatusUnknown) " & _
+            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportChecksum, objStatusUnknown) " & _
                        "VALUES (" & objType & ", '" & strName & "', '0', '0', '" & strObjModifiedChecksum & "', True)"
           Else
             dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
-            strQuery = "INSERT INTO MSysSVNStatus (objType, objName, objImportVersion, objSVNChecksum, objImportDate, objStatusUnknown) " & _
+            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportDate, objStatusUnknown) " & _
                        "VALUES (" & objType & ", '" & strName & "', '0', '0', " & dblObjModifiedDate & ", True)"
           End If
         
         Case asCommit
           ' update the status table entry after an updated export.
           ' We don't know the new SVN revision yet, but store the current file checksum to compare later on in asUpdateVersionsFromExport
-          'oSVNImport = SVN_GetInfo(strPath)
+          'oSVNImport = SCC_GetInfo(strPath)
           strHash = xwHashFile(strPath)
           
           ' If the object uses a checksum to check for changes use the checksum fiedl in the table
           If objDBTypeUsesCheckSum(objType) Then
             strObjModifiedChecksum = getObjectModifiedCheckSum(objType, strName)
-            strQuery = "UPDATE MSysSVNStatus SET objImportChecksum = '" & strObjModifiedChecksum & "', " & _
-                                                "objSVNChecksum = '" & strHash & "', " & _
+            strQuery = "UPDATE MSysSCCStatus SET objImportChecksum = '" & strObjModifiedChecksum & "', " & _
+                                                "objSCCChecksum = '" & strHash & "', " & _
                                                 "objStatusUnknown = True " & _
                        "WHERE objType = " & objType & " AND objName = '" & strName & "'"
           Else
             dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
-            strQuery = "UPDATE MSysSVNStatus SET objImportDate = " & dblObjModifiedDate & ", " & _
-                                                "objSVNChecksum = '" & strHash & "', " & _
+            strQuery = "UPDATE MSysSCCStatus SET objImportDate = " & dblObjModifiedDate & ", " & _
+                                                "objSCCChecksum = '" & strHash & "', " & _
                                                 "objStatusUnknown = True " & _
                        "WHERE objType = " & objType & " AND objName = '" & strName & "'"
           End If
@@ -425,7 +425,7 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
   Dim booSkipObject As Boolean
   
   Set db = CurrentDb()
-  Set rst = db.OpenRecordset("SELECT * FROM MSysSVNTmpObjects WHERE objType = " & objExportType & " AND selected = True", dbOpenDynaset)
+  Set rst = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects WHERE objType = " & objExportType & " AND selected = True", dbOpenDynaset)
   
   strObjectType = asGetObjectNiceName(objExportType)
   Do Until rst.EOF
@@ -447,7 +447,7 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
       DoEvents
       Select Case rst!objStatus
         Case "Deleted"
-          SVN_Delete_File appendSlash(strExportPath) & strObjectFileName
+          SCC_Delete_File appendSlash(strExportPath) & strObjectFileName
           UpdateStatusEntry asExport, rst!objType, rst!objName, asDelete
           
         Case "New"
@@ -457,7 +457,7 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
               FixPrinterExport (appendSlash(strExportPath) & strObjectFileName)
             End If
           End If
-          SVN_Add_File appendSlash(strExportPath) & strObjectFileName
+          SCC_Add_File appendSlash(strExportPath) & strObjectFileName
           UpdateStatusEntry asExport, rst!objType, rst!objName, asAdd
         
         Case Else
@@ -583,37 +583,37 @@ Public Sub asUpdateVersionsFromExport(strExportPath As String)
   Dim strHash As String
   
   Set db = CurrentDb()
-  strQuery = "SELECT * FROM MSysSVNStatus IN '" & db.Name & "' WHERE objStatusUnknown = True"
+  strQuery = "SELECT * FROM MSysSCCStatus IN '" & db.Name & "' WHERE objStatusUnknown = True"
   Set rst = db.OpenRecordset(strQuery, dbOpenDynaset)
   Echo False
   
   Do Until rst.EOF
     strFilename = winPathSpecialChars(rst!objName) & asGetObjectExportFileExtension(rst!objType)
     strFileExportPath = appendSlash(strExportPath) & appendSlash(asGetObjectSubFolder(rst!objType)) & strFilename
-    oSVN_Item = SVN_GetInfo(strFileExportPath)
+    oSVN_Item = SCC_GetInfo(strFileExportPath)
     strHash = xwHashFile(strFileExportPath)
     
     
-    If (strHash = rst!objSVNChecksum) And (Val(oSVN_Item.svRevision) > Val(rst!objImportVersion)) Then
+    If (strHash = rst!objSCCChecksum) And (Val(oSVN_Item.svRevision) > Val(rst!objImportVersion)) Then
       ' File has been committed to SVN, checksum is the same - DO NOT IMPORT AGAIN, merely update the status table
       UpdateStatusEntry asImport, rst!objType, rst!objName, asCommit, strFileExportPath
     
-    ElseIf (strHash = rst!objSVNChecksum) And (Val(oSVN_Item.svRevision) = Val(rst!objImportVersion)) Then
+    ElseIf (strHash = rst!objSCCChecksum) And (Val(oSVN_Item.svRevision) = Val(rst!objImportVersion)) Then
       ' File has NOT been committed to SVN, checksum is the same - DO NOT IMPORT AGAIN, mark in status table as ready to export again though as has not been committed
       UpdateStatusEntry asImport, rst!objType, rst!objName, asModified, strFileExportPath
     
-    ElseIf (strHash <> rst!objSVNChecksum) And (Val(oSVN_Item.svRevision) > Val(rst!objImportVersion)) Then
+    ElseIf (strHash <> rst!objSCCChecksum) And (Val(oSVN_Item.svRevision) > Val(rst!objImportVersion)) Then
       ' File has been committed to SVN, checksum is different - IMPORT AGAIN as changes were made prior to commit
       asImportObject rst!objType, rst!objName, "Modified", asParentFolder(oSVN_Item.svPath)
       UpdateStatusEntry asImport, rst!objType, rst!objName, asCommit, strFileExportPath
       strResults = strResults & "  " & rst!objName & " - committed with changes made external to Access " & vbCrLf & "  [Changes imported back to Access]" & vbCrLf
     
-    ElseIf (strHash <> rst!objSVNChecksum) And (Val(oSVN_Item.svRevision) = Val(rst!objImportVersion)) And oSVN_Item.svStatus = "N" Then
+    ElseIf (strHash <> rst!objSCCChecksum) And (Val(oSVN_Item.svRevision) = Val(rst!objImportVersion)) And oSVN_Item.svStatus = "N" Then
       ' File has not been committed to SVN, checksum is different - IMPORT AGAIN as changes have been made outside of Access but not committed (This is equivalent to an SVN revert)
       asImportObject rst!objType, rst!objName, "Modified", asParentFolder(oSVN_Item.svPath)
       strResults = strResults & "  " & rst!objName & " - changes have been reverted to BASE" & vbCrLf & "  [BASE version imported back to Access]" & vbCrLf
     
-    ElseIf (strHash <> rst!objSVNChecksum) And (Val(oSVN_Item.svRevision) = Val(rst!objImportVersion)) And oSVN_Item.svStatus = "M" Then
+    ElseIf (strHash <> rst!objSCCChecksum) And (Val(oSVN_Item.svRevision) = Val(rst!objImportVersion)) And oSVN_Item.svStatus = "M" Then
       ' File has not been committed to SVN, checksum is different - IMPORT AGAIN as changes have been made outside of Access but not committed (Not a revert as SCC says the file is modified from BASE)
       asImportObject rst!objType, rst!objName, "Modified", asParentFolder(oSVN_Item.svPath)
       strResults = strResults & "  " & rst!objName & " - changes have been applied to BASE" & vbCrLf & "  [MODIFIED version imported back to Access]" & vbCrLf
@@ -777,7 +777,7 @@ Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As St
   Dim accessObjType As asObjectType
   
   Set db = CurrentDb()
-  Set rst = db.OpenRecordset("SELECT * FROM MSysSVNTmpObjects WHERE objType = " & objImportType & " AND selected = True", dbOpenDynaset)
+  Set rst = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects WHERE objType = " & objImportType & " AND selected = True", dbOpenDynaset)
   
   If rst.RecordCount = 0 Then
     GoTo Exit_asImportObjects
@@ -795,12 +795,12 @@ Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As St
   
   rst.MoveFirst
   Do Until rst.EOF
-    Set rstObjProps = db.OpenRecordset("SELECT * FROM MSysSVNObjectProperties WHERE objType = " & accessObjType & " AND objName = '" & rst!objName & "'", dbOpenDynaset)
+    Set rstObjProps = db.OpenRecordset("SELECT * FROM MSysSCCObjectProperties WHERE objType = " & accessObjType & " AND objName = '" & rst!objName & "'", dbOpenDynaset)
     ' If object was imported correctly, update the import date or checksum, otherwise delete from SVN status table
     If rstObjProps.RecordCount <> 0 Then
-      db.Execute ("UPDATE MSysSVNStatus SET objImportDate = " & rstObjProps!objUpdateDate & ", objImportCheckSum = '" & rstObjProps!objUpdateChecksum & "' WHERE objType = " & objImportType & " AND objName = '" & rst!objName & "'")
+      db.Execute ("UPDATE MSysSCCStatus SET objImportDate = " & rstObjProps!objUpdateDate & ", objImportCheckSum = '" & rstObjProps!objUpdateChecksum & "' WHERE objType = " & objImportType & " AND objName = '" & rst!objName & "'")
     Else
-      db.Execute ("DELETE FROM MSysSVNStatus WHERE objType = " & objImportType & " AND objName = '" & rst!objName & "'")
+      db.Execute ("DELETE FROM MSysSCCStatus WHERE objType = " & objImportType & " AND objName = '" & rst!objName & "'")
     End If
     rst.MoveNext
   Loop
@@ -1010,7 +1010,7 @@ Function getObjectModifiedTimestamp(objType As asObjectDBType, strObjName As Str
       ElseIf objType = objReference Then
         accessType = asObjectType.acReference
       End If
-      strQuery = "SELECT objUpdateDate  FROM MSysSVNObjectProperties IN '" & CurrentDb.Name & "' WHERE objType = " & accessType & " AND objName = '" & strObjName & "'"
+      strQuery = "SELECT objUpdateDate  FROM MSysSCCObjectProperties IN '" & CurrentDb.Name & "' WHERE objType = " & accessType & " AND objName = '" & strObjName & "'"
       Set rst = db.OpenRecordset(strQuery)
       If rst.RecordCount <> 0 Then
         getObjectModifiedTimestamp = rst!objUpdateDate
@@ -1058,7 +1058,7 @@ Function getObjectModifiedCheckSum(objType As asObjectDBType, strObjName As Stri
       ElseIf objType = objIMEXSpecs Then
         accessType = asObjectType.acIMEXSpecs
       End If
-      strQuery = "SELECT objUpdateChecksum FROM MSysSVNObjectProperties IN '" & CurrentDb.Name & "' WHERE objType = " & accessType & " AND objName = '" & strObjName & "'"
+      strQuery = "SELECT objUpdateChecksum FROM MSysSCCObjectProperties IN '" & CurrentDb.Name & "' WHERE objType = " & accessType & " AND objName = '" & strObjName & "'"
       Set rst = db.OpenRecordset(strQuery)
       If rst.RecordCount <> 0 Then
         getObjectModifiedCheckSum = rst!objUpdateChecksum
@@ -1090,7 +1090,7 @@ Public Function getObjectImportedTimestamp(oType As asObjectDBType, strName As S
   Dim rst1 As DAO.Recordset
   
   Set db = CurrentDb()
-  Set rst1 = db.OpenRecordset("SELECT objImportDate FROM MSysSVNStatus in '" & CurrentDb().Name & "' WHERE objType = " & oType & " AND objName = '" & strName & "'")
+  Set rst1 = db.OpenRecordset("SELECT objImportDate FROM MSysSCCStatus in '" & CurrentDb().Name & "' WHERE objType = " & oType & " AND objName = '" & strName & "'")
   If rst1.RecordCount > 0 Then
     booIsNew = False
     getObjectImportedTimestamp = CDbl(rst1!objImportDate)
@@ -1122,7 +1122,7 @@ Public Function getObjectImportedCheckSum(oType As asObjectDBType, strName As St
   Dim rst1 As DAO.Recordset
   
   Set db = CurrentDb()
-  Set rst1 = db.OpenRecordset("SELECT objImportChecksum FROM MSysSVNStatus in '" & CurrentDb().Name & "' WHERE objType = " & oType & " AND objName = '" & strName & "'")
+  Set rst1 = db.OpenRecordset("SELECT objImportChecksum FROM MSysSCCStatus in '" & CurrentDb().Name & "' WHERE objType = " & oType & " AND objName = '" & strName & "'")
   If rst1.RecordCount > 0 Then
     booIsNew = False
     If IsNull(rst1!objImportChecksum) Then
@@ -1145,7 +1145,7 @@ Public Function getObjectSVNStatus(intType As asObjectDBType, strName As String,
   Dim intNewObject As Integer
   
   Set db = CurrentDb()
-  Set rst1 = db.OpenRecordset("SELECT objImportVersion FROM MSysSVNStatus IN '" & CurrentDb.Name & "' WHERE objType = " & intType & " AND objName = '" & strName & "'")
+  Set rst1 = db.OpenRecordset("SELECT objImportVersion FROM MSysSCCStatus IN '" & CurrentDb.Name & "' WHERE objType = " & intType & " AND objName = '" & strName & "'")
   If rst1.RecordCount > 0 Then
     intNewObject = False
     strImportedVersion = rst1!objImportVersion
@@ -1166,7 +1166,7 @@ Public Function getObjectSVNStatus(intType As asObjectDBType, strName As String,
 End Function
 
 Public Sub asPurgeTmpObjectsTables()
-   CodeDb.Execute ("DELETE * FROM MSysSVNTmpObjects IN '" & CurrentDb.Name & "'")
+   CodeDb.Execute ("DELETE * FROM MSysSCCTmpObjects IN '" & CurrentDb.Name & "'")
 End Sub
 
 Private Function asGetAccessContainer(objType As asObjectDBType) As String
@@ -1206,7 +1206,7 @@ Public Sub asPopulateTmpObjectsExport(objType As asObjectDBType)
   Dim i As Integer
   
   Set db = CurrentDb()
-  Set rst1 = db.OpenRecordset("SELECT * FROM MSysSVNTmpObjects", dbOpenDynaset)
+  Set rst1 = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects", dbOpenDynaset)
 
   Select Case objType
     Case objModule, objForm, objReport, objMacro
@@ -1270,7 +1270,7 @@ Public Sub asPopulateTmpObjectsExport(objType As asObjectDBType)
   
     Case objToolbar
       UpdateObjectProperties (acToolbar)
-      Set rstTb = db.OpenRecordset("SELECT * FROM MSysSVNObjectProperties WHERE objType = " & asObjectType.acToolbar, dbOpenDynaset)
+      Set rstTb = db.OpenRecordset("SELECT * FROM MSysSCCObjectProperties WHERE objType = " & asObjectType.acToolbar, dbOpenDynaset)
       If rstTb.RecordCount > 0 Then
         Do Until rstTb.EOF
           rst1.AddNew
@@ -1302,8 +1302,8 @@ Public Sub asPopulateTmpObjectsExport(objType As asObjectDBType)
 
   ' Get a list of all objects that are in the state table (they have been imported at some time) but are not in the tmptable for export
   ' which means they have been deleted from access.
-  strDeletedQuery = "SELECT S.objName, S.objType FROM MSysSVNStatus AS S " & _
-                    "LEFT JOIN MSysSVNTmpObjects AS T " & _
+  strDeletedQuery = "SELECT S.objName, S.objType FROM MSysSCCStatus AS S " & _
+                    "LEFT JOIN MSysSCCTmpObjects AS T " & _
                     "ON S.objName = T.objName AND S.objType = T.objType WHERE T.objName IS NULL AND S.objType = " & objType
   Set rst2 = db.OpenRecordset(strDeletedQuery)
   If rst2.RecordCount > 0 Then
@@ -1329,9 +1329,9 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
   Dim j As Integer
   
   Set db = CurrentDb()
-  Set rst1 = db.OpenRecordset("SELECT * FROM MSysSVNTmpObjects", dbOpenDynaset)
+  Set rst1 = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects", dbOpenDynaset)
   
-  SVN_GetAllVersionsSubFolder strImportPath, arrSVNItems
+  SCC_GetAllVersionsSubFolder strImportPath, arrSVNItems
   For j = LBound(arrSVNItems) To UBound(arrSVNItems)
     If arrSVNItems(j).svName <> "" Then
       strObjName = winPathSpecialCharsDecode(Left$(arrSVNItems(j).svName, Len(arrSVNItems(j).svName) - 4))
@@ -1349,8 +1349,8 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
   
   ' Get a list of all objects that are in the status table (found in SVN repo) but are not in the list from Access
   ' which means they have been deleted from the latest repository.
-  strDeletedQuery = "SELECT S.objName, S.objType FROM MSysSVNStatus AS S " & _
-                    "LEFT JOIN MSysSVNTmpObjects AS T " & _
+  strDeletedQuery = "SELECT S.objName, S.objType FROM MSysSCCStatus AS S " & _
+                    "LEFT JOIN MSysSCCTmpObjects AS T " & _
                     "ON S.objName = T.objName " & _
                     "AND S.objType = T.objType " & _
                     "WHERE T.objName Is Null " & _
@@ -1404,16 +1404,16 @@ Public Sub asPopulateTmpObjectsTables(intDirection As Integer)
     Case asImport
       strImportPath = appendSlash(Application.Forms![Access SVN - Options].txtOutputLocation.Value)
     
-      If Application.Forms![Access SVN - Options].chkTables.Value = True Then asPopulateTmpObjectsImport objTable, strImportPath & "Tables", modSVN.arrTables                 ' Tables
-      If Application.Forms![Access SVN - Options].chkQueries.Value = True Then asPopulateTmpObjectsImport objQuery, strImportPath & "Queries", modSVN.arrQueries              ' Queries
-      If Application.Forms![Access SVN - Options].chkForms.Value = True Then asPopulateTmpObjectsImport objForm, strImportPath & "Forms", modSVN.arrForms                     ' Forms
-      If Application.Forms![Access SVN - Options].chkReports.Value = True Then asPopulateTmpObjectsImport objReport, strImportPath & "Reports", modSVN.arrReports             ' Reports
-      If Application.Forms![Access SVN - Options].chkMacros.Value = True Then asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSVN.arrMacros                 ' Macros
-      If Application.Forms![Access SVN - Options].chkModules.Value = True Then asPopulateTmpObjectsImport objModule, strImportPath & "Modules", modSVN.arrModules             ' Modules
-      If Application.Forms![Access SVN - Options].chkCmdBars.Value = True Then asPopulateTmpObjectsImport objToolbar, strImportPath & "Toolbars", modSVN.arrToolbars          ' Toolbars
-      If Application.Forms![Access SVN - Options].chkExtras.Value = True Then asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSVN.arrExtras                 ' Extras
-      If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asPopulateTmpObjectsImport objReference, strImportPath & "References", modSVN.arrReferences ' References
-      If Application.Forms![Access SVN - Options].chkImportExport.Value = True Then asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSVN.arrIMEXSpecs ' Import Export Sepcs
+      If Application.Forms![Access SVN - Options].chkTables.Value = True Then asPopulateTmpObjectsImport objTable, strImportPath & "Tables", modSCC.arrTables                 ' Tables
+      If Application.Forms![Access SVN - Options].chkQueries.Value = True Then asPopulateTmpObjectsImport objQuery, strImportPath & "Queries", modSCC.arrQueries              ' Queries
+      If Application.Forms![Access SVN - Options].chkForms.Value = True Then asPopulateTmpObjectsImport objForm, strImportPath & "Forms", modSCC.arrForms                     ' Forms
+      If Application.Forms![Access SVN - Options].chkReports.Value = True Then asPopulateTmpObjectsImport objReport, strImportPath & "Reports", modSCC.arrReports             ' Reports
+      If Application.Forms![Access SVN - Options].chkMacros.Value = True Then asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSCC.arrMacros                 ' Macros
+      If Application.Forms![Access SVN - Options].chkModules.Value = True Then asPopulateTmpObjectsImport objModule, strImportPath & "Modules", modSCC.arrModules             ' Modules
+      If Application.Forms![Access SVN - Options].chkCmdBars.Value = True Then asPopulateTmpObjectsImport objToolbar, strImportPath & "Toolbars", modSCC.arrToolbars          ' Toolbars
+      If Application.Forms![Access SVN - Options].chkExtras.Value = True Then asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras                 ' Extras
+      If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asPopulateTmpObjectsImport objReference, strImportPath & "References", modSCC.arrReferences ' References
+      If Application.Forms![Access SVN - Options].chkImportExport.Value = True Then asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSCC.arrIMEXSpecs ' Import Export Sepcs
     
     Case Else
       MsgBox "This function was not called with a valid import export type.", vbExclamation, "Access - SVN"
