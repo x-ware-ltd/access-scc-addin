@@ -33,17 +33,6 @@ End Type
 Private mstrTORTOISE_SVN_PATH As String
 Private mstrSVN_CMD_PATH As String
 
-Public arrExtras() As SVNITEM
-Public arrForms() As SVNITEM
-Public arrIMEXSpecs() As SVNITEM
-Public arrMacros() As SVNITEM
-Public arrModules() As SVNITEM
-Public arrQueries() As SVNITEM
-Public arrReferences() As SVNITEM
-Public arrReports() As SVNITEM
-Public arrTables() As SVNITEM
-Public arrToolbars() As SVNITEM
-
 '************************************************
 ' Triggers an SVN update using Tortoise SVN
 '
@@ -132,20 +121,19 @@ Public Function SVN_Delete_File(strPath As String)
 End Function
 
 '************************************************
-' Gets the currently checked out version of an SVN repository
+' Gets the version of the SVN client
 '
-' This function uses the command line SVN tool to get the currently
-' checked out version of an SVN repository.
+' This function returns the current version of the
+' installed SVN command line client.
 '
 ' Version history:
 '   - 1.00 initial version
-'   - 1.01 updated to remove dependency on WSH [SF] 22/05/2012
 '
-' @version    1.01
-' @param      String the base path to use when getting the SVN version
-' @return     String the current SVN version of the code
+' @version    1.00
+' @param      Boolean optional param to restrict the value to the minor version only eg. 1.5 rather than 1.5.4
+' @return     String the current version of the SVN client
 '************************************************
-Public Function SVN_ClientVersion() As String
+Public Function SVN_ClientVersion(Optional minorVersionOnly As Boolean = False) As String
   Dim strCmd As String, strRet As String
   Dim strLines() As String
     
@@ -154,6 +142,7 @@ Public Function SVN_ClientVersion() As String
   If LenB(strRet) <> 0 Then
     strLines = Split(strRet, vbCrLf)
     SVN_ClientVersion = Trim$(strLines(0))
+    If minorVersionOnly Then SVN_ClientVersion = Left$(SVN_ClientVersion, InStr(InStr(SVN_ClientVersion, ".") + 1, SVN_ClientVersion, ".") - 1)
   End If
     
 End Function
@@ -267,19 +256,6 @@ Public Function SVN_GetStatus(strPath As String) As String
   Next i
 
 End Function
-
-Public Sub SVN_GetAllVersions(strPath As String)
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Extras", arrExtras
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Forms", arrForms
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Macros", arrMacros
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Modules", arrModules
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Queries", arrQueries
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\References", arrReferences
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Reports", arrReports
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Tables", arrTables
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Toolbars", arrToolbars
-  SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\IMEXSpecs", arrIMEXSpecs
-End Sub
 
 Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() As SVNITEM)
   Dim strRet As String, strCmd As String, strLine As String

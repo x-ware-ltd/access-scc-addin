@@ -1,6 +1,6 @@
 Version =20
 VersionRequired =20
-Checksum =1882769788
+Checksum =1880873630
 Begin Form
     RecordSelectors = NotDefault
     MaxButton = NotDefault
@@ -19,10 +19,10 @@ Begin Form
     Width =10162
     DatasheetFontHeight =10
     ItemSuffix =10
-    Left =6060
-    Top =2445
-    Right =16200
-    Bottom =6180
+    Left =6465
+    Top =2805
+    Right =16605
+    Bottom =6540
     DatasheetGridlinesColor =12632256
     PaintPalette = Begin
         0x000359000000000000ccff0005cdff000aceff000fcfff0014d0ff001ad1ff00 ,
@@ -238,7 +238,7 @@ Option Compare Database
 Option Explicit
 
 Private Sub Form_Load()
-  Me.RecordSource = "SELECT * FROM MSysSVNTmpObjects IN '" & CurrentDb().Name & "'"
+  Me.RecordSource = "SELECT * FROM MSysSCCTmpObjects IN '" & CurrentDb().Name & "'"
   Me.Filter = "objType=" & objTable
   Me.FilterOn = True
   Me.OrderBy = "objName"
