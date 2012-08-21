@@ -261,10 +261,11 @@ Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() A
   Dim strRet As String, strCmd As String, strLine As String
   Dim strLines() As String
   Dim lngLineEnd As Long, lngLineStart As Long
+  Dim i As Long, j As Long
   Dim mySvnItem As SVNITEM
-  Dim i As Integer, intArrSize As Integer
+  Dim intArrSize As Integer
   
-  i = 0
+  i = 0: j = 0
   intArrSize = 100
   
   strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """\*"
@@ -273,8 +274,8 @@ Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() A
     
   ReDim arrFill(intArrSize)
   strLines = Split(strRet, vbCrLf)
-  For i = 0 To UBound(strLines) - 1
-    strLine = Trim$(strLines(i))
+  For j = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(j))
     If InStrB(strLine, SVNTAG_PATH) = 1 Then
       mySvnItem.svPath = Right$(strLine, Len(strLine) - Len(SVNTAG_PATH))
     ElseIf InStrB(strLine, SVNTAG_NAME) = 1 Then
@@ -299,7 +300,7 @@ Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() A
       mySvnItem.svRevision = vbNullString
       mySvnItem.svStatus = vbNullString
     End If
-  Next i
+  Next j
   If i > 0 Then
     ReDim Preserve arrFill(i - 1)
   Else

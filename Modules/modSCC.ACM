@@ -275,7 +275,6 @@ Public Function SCC_IsSupportedClient() As Boolean
           SCC_IsSupportedClient = False
       
       End Select
-      SCC_IsSupportedClient
     
     Case sccSystemGIT
     

@@ -1,6 +1,6 @@
 Version =20
 VersionRequired =20
-Checksum =1548804373
+Checksum =1372056079
 Begin Form
     PopUp = NotDefault
     RecordSelectors = NotDefault
@@ -21,9 +21,9 @@ Begin Form
     DatasheetFontHeight =10
     ItemSuffix =83
     Left =5895
-    Top =2835
+    Top =3225
     Right =12225
-    Bottom =10770
+    Bottom =11160
     DatasheetGridlinesColor =12632256
     RecSrcDt = Begin
         0xb319a669b144e340
@@ -970,7 +970,7 @@ Begin Form
                     Height =962
                     Name ="Image6"
                     PictureData = Begin
-                        0x0e000000eb09460b010000006c0000000000000000000000520000003a000000 ,
+                        0x0e000000ff0a467c010000006c0000000000000000000000520000003a000000 ,
                         0x0000000000000000180900009d06000020454d46000001006487000011000000 ,
                         0x01000000000000000000000000000000900600001a040000d60100002c010000 ,
                         0x000000000000000000000000f02b0700e093040046000000b8430000ac430000 ,
@@ -2207,7 +2207,7 @@ Private Sub Form_GotFocus()
   
   Me.txtLatestVersion.Value = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
   If Me.txtLatestVersion.Value <> "" And Me.txtLastVersion.Value <> "" Then
-    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtLastVersion.Value) Then
+    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value Then
       MsgBox "The SVN Repository HEAD is a newer version than the current checked out BASE!", vbExclamation
       Me.txtLatestVersion.ForeColor = 255
     Else
@@ -2238,10 +2238,10 @@ Private Sub Form_Load()
 
     SetSCCSystem sccSystemSubversion   ' set default to use SVN
 
-    If Me.chkRepository = True Then
+    If Me.chkRepository = True And Me.txtLastVersion.Value <> "" And Me.txtLastVersion.Value <> -1 Then
         Me.txtLatestVersion.Value = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
         If Me.txtLatestVersion.Value <> "" And Me.txtLastVersion.Value <> "" Then
-            If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtLastVersion.Value) Then
+            If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value <> -1 Then
                 MsgBox "Warning!" & vbCrLf & vbCrLf & _
                       "The Subversion repository HEAD is newer than " & vbCrLf & _
                       "the current checked out working copy!", vbExclamation, "Subversion for Access XP"
@@ -2337,7 +2337,7 @@ End Function
 Private Sub txtOutputLocation_AfterUpdate()
   Me.txtLatestVersion.Value = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
   If Me.txtLatestVersion.Value <> "" And Me.txtLastVersion.Value <> "" Then
-    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtLastVersion.Value) Then
+    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value <> -1 Then
       MsgBox "The SVN Repository HEAD is a newer version than the current checked out BASE!", vbExclamation
       Me.txtLatestVersion.ForeColor = 255
     Else
