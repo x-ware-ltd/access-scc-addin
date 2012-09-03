@@ -1,6 +1,6 @@
 Version =20
 VersionRequired =20
-Checksum =1372056079
+Checksum =1277365447
 Begin Form
     PopUp = NotDefault
     RecordSelectors = NotDefault
@@ -19,11 +19,11 @@ Begin Form
     GridY =10
     Width =6236
     DatasheetFontHeight =10
-    ItemSuffix =83
-    Left =5895
-    Top =3225
-    Right =12225
-    Bottom =11160
+    ItemSuffix =88
+    Left =7140
+    Top =3105
+    Right =13470
+    Bottom =11040
     DatasheetGridlinesColor =12632256
     RecSrcDt = Begin
         0xb319a669b144e340
@@ -161,6 +161,14 @@ Begin Form
             Height =7653
             Name ="Detail"
             Begin
+                Begin Rectangle
+                    OverlapFlags =93
+                    Left =238
+                    Top =1981
+                    Width =3335
+                    Height =960
+                    Name ="Box24"
+                End
                 Begin TextBox
                     OverlapFlags =85
                     Left =225
@@ -225,9 +233,9 @@ Begin Form
                     ControlTipText ="Close"
                 End
                 Begin CommandButton
-                    OverlapFlags =93
-                    Left =1858
-                    Top =2394
+                    OverlapFlags =223
+                    Left =1995
+                    Top =2535
                     Width =1520
                     Height =340
                     TabIndex =2
@@ -347,8 +355,8 @@ Begin Form
                 End
                 Begin CommandButton
                     OverlapFlags =93
-                    Left =1843
-                    Top =3465
+                    Left =1995
+                    Top =3510
                     Width =1520
                     Height =340
                     TabIndex =8
@@ -382,14 +390,6 @@ Begin Form
                         0xffffff0000000000
                     End
                 End
-                Begin Rectangle
-                    OverlapFlags =223
-                    Left =238
-                    Top =1981
-                    Width =3335
-                    Height =915
-                    Name ="Box24"
-                End
                 Begin CheckBox
                     OverlapFlags =215
                     Left =3156
@@ -403,7 +403,7 @@ Begin Form
                     DefaultValue ="=True"
                     Begin
                         Begin Label
-                            OverlapFlags =215
+                            OverlapFlags =223
                             Left =345
                             Top =2079
                             Width =2220
@@ -427,15 +427,15 @@ Begin Form
                 Begin Rectangle
                     OverlapFlags =223
                     Left =240
-                    Top =3048
+                    Top =3108
                     Width =3335
-                    Height =885
+                    Height =825
                     Name ="Box29"
                 End
                 Begin CheckBox
                     OverlapFlags =215
                     Left =3141
-                    Top =3201
+                    Top =3297
                     Width =171
                     Height =170
                     TabIndex =11
@@ -445,9 +445,9 @@ Begin Form
                     DefaultValue ="=True"
                     Begin
                         Begin Label
-                            OverlapFlags =223
+                            OverlapFlags =215
                             Left =345
-                            Top =3144
+                            Top =3240
                             Width =2385
                             Height =240
                             Name ="lblUpdate"
@@ -458,8 +458,8 @@ Begin Form
                 Begin Label
                     BackStyle =1
                     OverlapFlags =215
-                    Left =410
-                    Top =2934
+                    Left =405
+                    Top =3000
                     Width =690
                     Height =210
                     FontWeight =700
@@ -970,7 +970,7 @@ Begin Form
                     Height =962
                     Name ="Image6"
                     PictureData = Begin
-                        0x0e000000ff0a467c010000006c0000000000000000000000520000003a000000 ,
+                        0x0e000000f41446de010000006c0000000000000000000000520000003a000000 ,
                         0x0000000000000000180900009d06000020454d46000001006487000011000000 ,
                         0x01000000000000000000000000000000900600001a040000d60100002c010000 ,
                         0x000000000000000000000000f02b0700e093040046000000b8430000ac430000 ,
@@ -2087,6 +2087,36 @@ Begin Form
                         End
                     End
                 End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =3156
+                    Top =2352
+                    Width =171
+                    Height =170
+                    TabIndex =30
+                    Name ="chkNoImportExternalChanges"
+                    DefaultValue ="=False"
+                    OnClick ="[Event Procedure]"
+                    ControlTipText ="Stops the Addin from pulling in changes to objects made externally after they ha"
+                        "ve been exported"
+                    GUID = Begin
+                        0x6cd96ee08ab3a64c884ce79be152aaac
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =465
+                            Top =2295
+                            Width =2445
+                            Height =240
+                            Name ="Label87"
+                            Caption ="Do not pull in external changes...."
+                            GUID = Begin
+                                0xfcbf679df4ba174db15c14fd863453ad
+                            End
+                        End
+                    End
+                End
             End
         End
     End
@@ -2127,10 +2157,20 @@ End Sub
 
 Private Sub chkCommit_AfterUpdate()
   Application.RunCommand acCmdSaveRecord
+  Me.chkNoImportExternalChanges.Enabled = Me.chkCommit.Value
+  Me.chkNoImportExternalChanges.Value = False
 End Sub
 
 Private Sub chkImport_AfterUpdate()
   Application.RunCommand acCmdSaveRecord
+End Sub
+
+Private Sub chkNoImportExternalChanges_Click()
+  If Me.chkNoImportExternalChanges = True Then
+    MsgBox "Checking this option will stop any changes made to objects/files after they have been exported from Access, from being imported back into Access again." & vbCrLf & vbCrLf & _
+           "An example usage of this option, is when you wish to perform a partial commit of a module." & vbCrLf & vbCrLf & _
+           "You should take care that your database is kept in sync with the repository.", vbExclamation
+  End If
 End Sub
 
 Private Sub chkRepository_AfterUpdate()
@@ -2258,6 +2298,7 @@ Private Sub Form_Load()
         Me.txtFolderVersion = ""
     End If
     
+    Me.chkNoImportExternalChanges.Value = False
     Me.txtDBFile = getCurrentDBSize()
     Forms![frmSplash].TimerInterval = 3000 ' This will close the splash screen in 3 seconds
 End Sub
