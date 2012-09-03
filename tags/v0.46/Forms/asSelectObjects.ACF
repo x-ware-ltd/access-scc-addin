@@ -1,0 +1,580 @@
+Version =20
+VersionRequired =20
+Checksum =70838982
+Begin Form
+    PopUp = NotDefault
+    RecordSelectors = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    BorderStyle =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =10998
+    DatasheetFontHeight =10
+    ItemSuffix =20
+    Left =5775
+    Top =2190
+    Right =18030
+    Bottom =9765
+    DatasheetGridlinesColor =12632256
+    PaintPalette = Begin
+        0x0003100000000000800000000080000080800000000080008000800000808000 ,
+        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
+        0xffffff0000000000
+    End
+    RecSrcDt = Begin
+        0x3fa5c0764d44e340
+    End
+    Caption ="Subversion for Access XP - Select Database Objects"
+    OnOpen ="[Event Procedure]"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0xae050000a6050000a6050000a605000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x42726f7468657220484c2d323033302073657269657300000000000000000000 ,
+        0x010419039c003c0903ff8001010009009a0b3408640001000700580202000100 ,
+        0x5802030001004134000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000010060b00 ,
+        0x5052495600200000249803000000110101100000180000000000102710271027 ,
+        0x000010270000000000000000ff00000000000100000002000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000e5ed050001000500010000000000000000000001 ,
+        0x0200000000000000000064000000000000000000010001000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0xbb028804000000000000000000000000000000000000010000001a0701000000 ,
+        0x09000900000000000000ffff0800070007000700000000000000000081000000 ,
+        0x000000000000000002000000070000000000000000190000e40c000000000000 ,
+        0xb80b00007017000000000000dc05000058020000000000000000000000000000 ,
+        0xfeff0000000000000000000000000000000000000000000000000000370c0000 ,
+        0xda0c000010270000102700001027000010270000a00a0000c2060000b8060000 ,
+        0x2c04000040010000d20000000000000000000000000000000000000000000000 ,
+        0x000000000001ffff000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000530054004500560045002d00500043000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000fffffffffefffffffefffffffeffffff ,
+        0xfefffffffefffffffefffffffefffffffefffffffefffffffefffffffeffffff ,
+        0xfefffffffefffffffefffffffefffffffefffffffefffffffefffffffeffffff ,
+        0xfefffffffefffffffffffffffeffffff454e474c495348000000000000000000 ,
+        0x420052005300500031003000340042002e004500580045000000000000000000 ,
+        0x420052004c0048004c003000340042002e0044004c004c000000000000000000 ,
+        0x42005200420055004c003000340042002e0044004c004c000000000000000000 ,
+        0x42004f0032003000330030002e0049004e004900000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000007000804000000000000000000000000 ,
+        0x0100ffff000000000e0100000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000c6008800000064000000000001010000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000006000000f5ffffff00000000 ,
+        0x000000000000000000000000000000010000000041007200690061006c000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000000000000ffffff0001000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000000000000ffffffff64000000 ,
+        0x0000000000000080530074006500760065000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000010000000000000000000000000000000100000042524c48 ,
+        0x4c3034422e444c4c000000000000000001000000454f5343
+    End
+    PrtDevNames = Begin
+        0x08001f003600010042726f7468657220484c2d32303330207365726965730042 ,
+        0x726f7468657220484c2d32303330207365726965730055534230303100
+    End
+    Begin
+        Begin Label
+            BackStyle =0
+        End
+        Begin Image
+            BackStyle =0
+            OldBorderStyle =0
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+        End
+        Begin CommandButton
+            Width =1701
+            Height =283
+            FontSize =8
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="MS Sans Serif"
+        End
+        Begin CheckBox
+            SpecialEffect =2
+            LabelX =230
+            LabelY =-30
+        End
+        Begin TextBox
+            SpecialEffect =2
+            OldBorderStyle =0
+            Width =1701
+            LabelX =-1701
+        End
+        Begin Subform
+            SpecialEffect =2
+            Width =1701
+            Height =1701
+        End
+        Begin Tab
+            Width =5103
+            Height =3402
+        End
+        Begin Page
+            Width =1701
+            Height =1701
+        End
+        Begin Section
+            CanGrow = NotDefault
+            Height =5839
+            BackColor =15724527
+            Name ="Detail"
+            Begin
+                Begin Tab
+                    OverlapFlags =93
+                    Left =120
+                    Top =120
+                    Width =10710
+                    Height =5115
+                    TabFixedHeight =340
+                    Name ="tabObjectSelect"
+                    OnChange ="[Event Procedure]"
+                    Begin
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabTables"
+                            PictureData = Begin
+                                0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                                0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                                0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                                0xffff0000ffffff00dadadadadadadadaadadadadadadadadda000000000000da ,
+                                0xad0ffffffffff0adda0f00f00f00f0daad0ffffffffff0adda0f00f00f00f0da ,
+                                0xad0ffffffffff0adda0f00f00f00f0daad0ffffffffff0adda0f00f00f00f0da ,
+                                0xad0ffffffffff0adda444444444444daad444444444444addadadadadadadada ,
+                                0xadadadadadadadad
+                            End
+                            Caption ="Tables"
+                        End
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabQueries"
+                            PictureData = Begin
+                                0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                                0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                                0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                                0xffff0000ffffff00dadadadadadadadaa77777777777adad000000000007dada ,
+                                0x0fffffffff07adad0f0f0f0f0f07dada0fffffffff0777770f0f000000000007 ,
+                                0x0fff0fffff0fff070f0f0f0f0f0f0f070fff0fffff0fff0744444444444f0f07 ,
+                                0x44444444444fff07dada0f0f0f0f0f07adad0fffffffff07dada444444444447 ,
+                                0xadad44444444444d
+                            End
+                            Caption ="Queries"
+                        End
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabForms"
+                            PictureData = Begin
+                                0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                                0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                                0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                                0xffff0000ffffff00dadadadadadadadaadadadadadadadadd0000000000000da ,
+                                0xa08f8f8f8f8f80add0f8f8f00000f0daa08f8f80fff080add0f000f00000f0da ,
+                                0xa08f8f8f8f8f80add0f8f8f00000f0daa08f8f80fff080add0f000f00000f0da ,
+                                0xa08f8f8f8f8f80add4444444444444daa4444444444444addadadadadadadada ,
+                                0xadadadadadadadad
+                            End
+                            Caption ="Forms"
+                        End
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabReports"
+                            PictureData = Begin
+                                0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                                0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                                0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                                0xffff0000ffffff00dadadadadadadadaadadadadadadadaddad0000000007ada ,
+                                0xad0f066666660daddad7066666660adaad0f066666660daddad7066666660ada ,
+                                0xad0f066666660daddad7060000060adaad0f060fff060daddad7060000060ada ,
+                                0xad0f066666660daddad0000000007adaadadadadadadadaddadadadadadadada ,
+                                0xadadadadadadadad
+                            End
+                            Caption ="Reports"
+                        End
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabMacros"
+                            PictureData = Begin
+                                0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                                0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                                0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                                0xffff0000ffffff00dadadadadadadadaadadadadadadadaddad000000000dada ,
+                                0xad03838380780dadda0fbfbfb0000adaada0fbfbfb0dadaddad0bfbfbf0adada ,
+                                0xadad0fbfbfb0adaddada03838380dadaadada07777780daddad0000000070ada ,
+                                0xada0fbfbfb070daddada00000000dadaadadadadadadadaddadadadadadadada ,
+                                0xadadadadadadadad
+                            End
+                            Caption ="Macros"
+                        End
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabModules"
+                            PictureData = Begin
+                                0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                                0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                                0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                                0xffff0000ffffff00dadadadadadadadaadadadada007adaddadadada0b007ada ,
+                                0xadadadada0b00dadda7adadad700dadaa707ad7000ad700d7000770020d700e0 ,
+                                0x0050a0020da00e0d0500d700d0d000daa0a0adadad0dadaddada0ad7d0d0d7da ,
+                                0xadada0700dad707ddadada0007d7000aadadad0b00a0050ddadadad0b0d050da ,
+                                0xadadadad0dad0dad
+                            End
+                            Caption ="Modules"
+                        End
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabToolbars"
+                            PictureData = Begin
+                                0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                                0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                                0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                                0xffff0000ffffff00dadadadadadadada00000000000000000ffffffff0777770 ,
+                                0x0ffffffff0f808700f00000ff0f000700ffffffff0fffff00f000000f0000000 ,
+                                0x0ffffffff07777700f0000fff0f000700ffffffff0f808700ffffffff0fffff0 ,
+                                0x00000000000000000ffffffff00000000ffffffff00080000ffffffff0088800 ,
+                                0x0000000000000000
+                            End
+                            Caption ="Toolbars"
+                            GUID = Begin
+                                0x31668abe4be25a4084e1298ceae789ed
+                            End
+                        End
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabExtras"
+                            PictureData = Begin
+                                0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                                0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                                0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                                0xffff0000ffffff00dada0a0a0a0adadaadadadadad00adaddad00000000b0ada ,
+                                0xada0ffffff0b0daddad0f999990bb0daada0fffffff0b0addad0f9999990bb0a ,
+                                0xada0ffffffff0000dad0f999999f0110ada0ffffffff000ddad0f999f0000ada ,
+                                0xada0fffff0f0adaddad0fffff00adadaada0000000adadaddadadadadadadada ,
+                                0xadadadadadadadad
+                            End
+                            Caption ="Extras"
+                            GUID = Begin
+                                0x832640a0cdfecb469544ae650fa47d9c
+                            End
+                        End
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabReferences"
+                            PictureData = Begin
+                                0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                                0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                                0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                                0xffff0000ffffff00dadadadadadadadaadadadada000adaddadadad0033f0ada ,
+                                0xadada0033000f0add00003300bbb0f0aa0c0300bbbbbb0fdd0c00bbbbb0bbb0a ,
+                                0xa0cc0bbb0bbbb0add0cc00bbbbb000daa0cc0c0bb00660add0cc0cc00e0660da ,
+                                0xa0cc0cc0ee0660add00000c0000060daad07f70707f700addad07f70d07f70da ,
+                                0xadad0000ad000dad
+                            End
+                            Caption ="References"
+                            GUID = Begin
+                                0xd0feb112cfbcb64b8d484315920342ca
+                            End
+                        End
+                        Begin Page
+                            OverlapFlags =223
+                            Left =255
+                            Top =600
+                            Width =10440
+                            Height =4500
+                            Name ="tabIMEXSpecs"
+                            Caption ="IMEXSpecs"
+                            GUID = Begin
+                                0xa8363c512ecdf0458cce98952c5d61b6
+                            End
+                        End
+                    End
+                End
+                Begin Subform
+                    OverlapFlags =215
+                    OldBorderStyle =0
+                    Left =226
+                    Top =641
+                    Width =10430
+                    Height =4019
+                    TabIndex =1
+                    Name ="sfrObjects"
+                    SourceObject ="Form.asSelectObjectsSubForm"
+                End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =226
+                    Top =4773
+                    Width =227
+                    Height =226
+                    TabIndex =2
+                    Name ="chkSelectAll"
+                    OnClick ="[Event Procedure]"
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =453
+                            Top =4773
+                            Width =1474
+                            Height =240
+                            Name ="lblCheckAll"
+                            Caption ="Select / deselect all"
+                        End
+                    End
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =215
+                    Left =5669
+                    Top =4773
+                    Width =907
+                    Height =221
+                    TabIndex =3
+                    Name ="txtObjectType"
+                    DefaultValue ="\"table\""
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    Left =9638
+                    Top =5385
+                    Width =1190
+                    Height =341
+                    TabIndex =4
+                    Name ="butCancel"
+                    Caption ="Cancel"
+                    OnClick ="[Event Procedure]"
+                    ObjectPalette = Begin
+                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
+                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
+                        0xffffff0000000000
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    Left =8220
+                    Top =5385
+                    Width =1190
+                    Height =341
+                    TabIndex =5
+                    Name ="butOK"
+                    Caption ="OK"
+                    OnClick ="[Event Procedure]"
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+
+Private Sub butCancel_Click()
+  exitForm
+End Sub
+
+Private Sub butOK_Click()
+  Dim strImportExportType As String
+  
+  strImportExportType = Me.OpenArgs
+  
+  Select Case strImportExportType
+    Case "export"
+      asRunExport
+    
+    Case "import"
+      asRunImport
+      ' Compile the project after a build
+      If Forms("Access SVN - Options").chkSelectAllObjects Then ' Assume this is an initial build
+        If vbYes = MsgBox("Would you like to automatically compile this database?", vbQuestion + vbYesNo) Then
+          If Not CompileDatabase() Then
+            MsgBox "Could not compile the database, check your references"
+          End If
+        End If
+      End If
+    
+    Case Else
+      MsgBox "This form has not been called with an import/export type in the open args parameter. Exiting", vbExclamation, "Acess SVN"
+  
+  End Select
+  DoCmd.Close acForm, Me.Name, acSaveNo
+End Sub
+
+Private Sub chkSelectAll_Click()
+    Dim strQuery As String
+    If Me.chkSelectAll.Value = True Then
+        strQuery = "UPDATE MSysSCCTmpObjects IN '" & CurrentDb.Name & "' SET selected = TRUE WHERE objType = " & CInt(Me.txtObjectType.Value)
+    Else
+        strQuery = "UPDATE MSysSCCTmpObjects IN '" & CurrentDb.Name & "' SET selected = False WHERE objType = " & CInt(Me.txtObjectType.Value)
+    End If
+    CodeDb.Execute strQuery
+    Me.sfrObjects.Form.Refresh
+End Sub
+
+Private Sub Form_Open(Cancel As Integer)
+    tabObjectSelect_Change
+End Sub
+
+Private Sub tabObjectSelect_Change()
+    Select Case Me.tabObjectSelect.Value
+        Case 0:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objTable
+            Me.txtObjectType = objTable
+        Case 1:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objQuery
+            Me.txtObjectType = objQuery
+        Case 2:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objForm
+            Me.txtObjectType = objForm
+        Case 3:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objReport
+            Me.txtObjectType = objReport
+        Case 4:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objMacro
+            Me.txtObjectType = objMacro
+        Case 5:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objModule
+            Me.txtObjectType = objModule
+        Case 6:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objToolbar
+            Me.txtObjectType = objToolbar
+        Case 7:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objExtra
+            Me.txtObjectType = objExtra
+        Case 8:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objReference
+            Me.txtObjectType = objReference
+        Case 9:
+            Me.sfrObjects.Form.Filter = "[objType] = " & objIMEXSpecs
+            Me.txtObjectType = objIMEXSpecs
+    End Select
+    Me.sfrObjects.Form.FilterOn = True
+    updateSelectAllValue
+End Sub
+
+Public Sub updateSelectAllValue()
+    Dim db As DAO.Database
+    Dim rstObjects As DAO.Recordset
+    Dim intObjCount As Integer
+    Dim intSelectCount As Integer
+    Dim strSelectedField As String
+    
+    Set db = CurrentDb()
+    Set rstObjects = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects WHERE objType = " & CInt(Me.txtObjectType.Value), dbOpenDynaset)
+    
+    strSelectedField = "selected"
+    
+    Do Until rstObjects.EOF
+        intObjCount = intObjCount + 1
+        If rstObjects(strSelectedField) = True Then
+            intSelectCount = intSelectCount + 1
+        End If
+        rstObjects.MoveNext
+    Loop
+
+    If intSelectCount < 1 Then
+        Me.chkSelectAll.TripleState = False
+        Me.chkSelectAll.Value = False
+    ElseIf intSelectCount = intObjCount Then
+        Me.chkSelectAll.TripleState = False
+        Me.chkSelectAll.Value = True
+    Else
+        Me.chkSelectAll.TripleState = True
+        Me.chkSelectAll.Value = Null
+    End If
+    
+    Set db = Nothing
+    Set rstObjects = Nothing
+End Sub
+
+Private Sub exitForm()
+    DoCmd.Close acForm, Me.Name, acSaveNo
+End Sub

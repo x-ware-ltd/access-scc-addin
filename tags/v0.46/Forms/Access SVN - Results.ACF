@@ -1,0 +1,171 @@
+Version =20
+VersionRequired =20
+Checksum =1494946670
+Begin Form
+    PopUp = NotDefault
+    RecordSelectors = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    DefaultView =0
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =12018
+    DatasheetFontHeight =10
+    ItemSuffix =6
+    Left =390
+    Top =1605
+    Right =12660
+    Bottom =8010
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0x63a323827542e340
+    End
+    Caption ="Subversion for Access - Results"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0xae050000a6050000a6050000a605000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x4c414e494552204d502043323530302f4c443432356320525043530000000000 ,
+        0x010400049c00f80303ff80010100090000000000640001000700580202000100 ,
+        0x5802030001004134000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000001000000 ,
+        0x020000002c010000010000000000000000000000000000000000000052504353 ,
+        0x0000000052433938453137302e696e690000000030312e303000000000000000 ,
+        0x0000000030312e3030000000000000000000000052434f4d4d4f4e0005000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000705 ,
+        0x0300000003000002013fff0d0000010000000000000000000000000000707269 ,
+        0x76f8030000420100000000d404641900b3010000580258020000000000000000 ,
+        0x0000000000000000000000000000000000040000000000000000000000000000 ,
+        0x000000000000000000000000000000002c010000400000000200640064000100 ,
+        0x0100010301000000000000000000080204060005000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000417269616c0000000000 ,
+        0x000000000000000000000000000000000000000000000a000100000001033200 ,
+        0x0100010001000100000001000000000001808000000000020000000000000f03 ,
+        0x0020010100000100000000112002000100000001000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000000000000000000000000ff03 ,
+        0x1000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000011000010100000000910000000a800800b000f00dc0260000 ,
+        0xcc36000004000100c0260000cc36000004000100000100000000000000000000 ,
+        0x0005050505010100010001000100010001000100010000000000000006020300 ,
+        0x0000000000000000010003000100000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000417269616c000000000000000000000000 ,
+        0x0000000000000000000000000000000046001e00460000000000000000000000 ,
+        0x0000000000000000341700006810000000000000000000000000000000000000 ,
+        0x0000000000000000000001000100000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000304 ,
+        0x0100020002000000000000000000000001000200000000000000000000000000 ,
+        0x0000000000000000000000000000000000000300000002000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000002010000000101000000000000000100
+    End
+    PrtDevNames = Begin
+        0x08002400400001004c414e494552204d502043323530302f4c44343235632052 ,
+        0x504353004c414e494552204d502043323530302f4c4434323563205250435300 ,
+        0x49505f3139322e3136382e312e343900
+    End
+    Begin
+        Begin Label
+            BackStyle =0
+        End
+        Begin CommandButton
+            Width =1701
+            Height =283
+            FontSize =8
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="MS Sans Serif"
+        End
+        Begin TextBox
+            SpecialEffect =2
+            OldBorderStyle =0
+            Width =1701
+            LabelX =-1701
+        End
+        Begin Section
+            Height =5896
+            BackColor =-2147483633
+            Name ="Detail"
+            Begin
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    AllowAutoCorrect = NotDefault
+                    SpecialEffect =0
+                    OldBorderStyle =1
+                    OverlapFlags =85
+                    Left =125
+                    Top =226
+                    Width =10419
+                    Height =284
+                    BackColor =-2147483633
+                    BorderColor =8421504
+                    Name ="txtStatus"
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    AccessKey =67
+                    Left =10714
+                    Top =166
+                    Width =1191
+                    Height =400
+                    TabIndex =1
+                    Name ="btnClose"
+                    Caption ="&Close"
+                    OnClick ="[Event Procedure]"
+                End
+                Begin TextBox
+                    TabStop = NotDefault
+                    AllowAutoCorrect = NotDefault
+                    ScrollBars =2
+                    OverlapFlags =215
+                    Left =65
+                    Top =850
+                    Width =11840
+                    Height =4887
+                    TabIndex =2
+                    Name ="txtResults"
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            Top =850
+                            Width =525
+                            Height =240
+                            Name ="Label4"
+                            Caption ="Text3:"
+                        End
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    Left =113
+                    Top =566
+                    Width =2160
+                    Height =210
+                    Name ="Label5"
+                    Caption ="Source Code Control Results:"
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub btnClose_Click()
+    DoCmd.Close
+End Sub

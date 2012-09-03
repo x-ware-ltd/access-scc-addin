@@ -1,0 +1,389 @@
+Option Compare Database
+Option Explicit
+
+Public Enum SccSystem
+  sccSystemSubversion = 1  ' Supported
+  sccSystemGIT = 2         ' Unsupported
+  sccSystemMercurial = 3   ' Unsupported
+End Enum
+
+Private msccSystem As SccSystem ' the scc system being used
+
+Public arrExtras() As SVNITEM
+Public arrForms() As SVNITEM
+Public arrIMEXSpecs() As SVNITEM
+Public arrMacros() As SVNITEM
+Public arrModules() As SVNITEM
+Public arrQueries() As SVNITEM
+Public arrReferences() As SVNITEM
+Public arrReports() As SVNITEM
+Public arrTables() As SVNITEM
+Public arrToolbars() As SVNITEM
+
+Public Sub SetSCCSystem(System As SccSystem)
+  msccSystem = System
+End Sub
+
+Public Function GetSCCSystem() As SccSystem
+  If msccSystem = 0 Then
+    GetSCCSystem = sccSystemSubversion ' default
+  Else
+    GetSCCSystem = msccSystem
+  End If
+End Function
+
+'************************************************
+' Gets the latest version identifier stored in an SCC repository
+'
+' This is a wrapper to get the latest version identifier of code
+' from an SCC repository.
+'
+' Version history:
+'   - 1.00 initial version 25/05/2012
+'
+' @version    1.00
+' @param      String the base path of a checked out SCC object to use when getting the version
+' @return     String the latest SCC version of the object in the repository
+'************************************************
+Public Function SCC_GetLatestVersion(strPath As String) As String
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_GetLatestVersion = SVN_GetLatestVersion(strPath)
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Function
+
+'************************************************
+' Gets the Mapped SCC URL for a working copy folder
+'
+' This is a wrapper to get the mapped URL for a checked out
+' working copy folder for an SCC repository
+'
+' Version history:
+'   - 1.00 initial version 25/05/2012
+'
+' @version    1.00
+' @param      String the base path of a checked out SCC object
+' @return     String the SCC URL mapped to the folder
+'************************************************
+Public Function SCC_GetMappedUrl(strPath As String) As String
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_GetMappedUrl = SVN_GetMappedUrl(strPath)
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Function
+
+'************************************************
+' Gets the latest SCC revision for the working folder
+'
+' This is a wrapper to get the latest SCC revision of
+' the working folder. The repository may be at a later version.
+'
+' Version history:
+'   - 1.00 initial version 25/05/2012
+'
+' @version    1.01
+' @param      String the base path of a checked out SCC object
+' @return     String the latest working copy revision
+'************************************************
+Public Function SCC_GetWorkingFolderVersion(strPath As String) As String
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_GetWorkingFolderVersion = SVN_GetWorkingFolderVersion(strPath)
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Function
+
+'************************************************
+' Fills an array with all checked out objects from an SCC rfolder
+'
+' This is a wrapper to the underlying SCC functions
+'
+' Version history:
+'   - 1.00 initial version 25/05/2012
+'
+' @version    1.00
+' @param      String the base path of a checked out SCC folder
+' @param      Array list of objects as SVNITEMs
+'************************************************
+Public Sub SCC_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() As SVNITEM)
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SVN_GetAllVersionsSubFolder strPath, arrFill
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Sub
+
+'************************************************
+' Fills all arrays with all checked out objects from all SCC folders
+'
+' Version history:
+'   - 1.00 initial version 25/05/2012
+'
+' @version    1.00
+' @param      String the base path of a checked out SCC folder
+'************************************************
+Public Sub SCC_GetAllVersions(strPath As String)
+  
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Extras", arrExtras
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Forms", arrForms
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Macros", arrMacros
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Modules", arrModules
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Queries", arrQueries
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\References", arrReferences
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Reports", arrReports
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Tables", arrTables
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\Toolbars", arrToolbars
+      SVN_GetAllVersionsSubFolder stripSlash(strPath) & "\IMEXSpecs", arrIMEXSpecs
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Sub
+
+'************************************************
+' SCC Get Status
+'
+' Gathers the current status of the working copy file
+' It returns "M" modified or "N" normal
+' It could be extended in the future according to the getstatus definition
+'
+' Version history:
+'   - 1.00 initial version 25/05/2012
+'
+' @version    1.00
+' @param      String the path of the checked out file
+' @return     String status of the working copy file
+'************************************************
+Public Function SCC_GetStatus(strPath As String) As String
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_GetStatus = SVN_GetStatus(strPath)
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Function
+
+'************************************************
+' SCC Get Info
+'
+' Gathers information about a working copy file checked out from SCC
+'
+' Version history:
+'  - 1.00 initial version
+'
+' @version    1.00
+' @param      String the path of the checked out file
+' @return     SVNITEM details of the checked out file
+'************************************************
+Public Function SCC_GetInfo(strPath As String) As SVNITEM
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_GetInfo = SVN_GetInfo(strPath)
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Function
+
+'************************************************
+' Gets the currently checked out version of an SCC repository
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to use when getting the SCC version
+' @return     String the current SCC version of the code
+'************************************************
+Public Function SCC_GetVersion(strPath As String) As String
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_GetVersion = SVN_GetVersion(strPath)
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Function
+
+'************************************************
+' Determines if the installed SCC client is supported
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @return     Boolean True if supported, False if not
+'************************************************
+Public Function SCC_IsSupportedClient() As Boolean
+  Dim sngVersion As Single
+  
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      sngVersion = CSng(SVN_ClientVersion(True))
+      Select Case sngVersion
+        Case Is <= 1.7
+          SCC_IsSupportedClient = True
+        
+        Case Else
+          MsgBox "The installed command line SVN client is not supported!" & vbCrLf & vbCrLf & _
+                 " Installed version: " & sngVersion & vbCrLf & _
+                 " Latest supported version: 1.7", vbCritical + vbOKOnly, "Unsupported Client Version"
+          SCC_IsSupportedClient = False
+      
+      End Select
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Function
+
+'************************************************
+' Triggers an SCC delete
+'
+' This sub triggers a delete of the specified file
+' from the repository
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to perform an SCC delete against
+'************************************************
+Public Function SCC_Delete_File(strPath As String)
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_Delete_File = SVN_Delete_File(strPath)
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Function
+
+'************************************************
+' Triggers an SCC add file
+'
+' This sub triggers an add of the specified file
+' to the repository
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to perform an SCC add against
+'************************************************
+Public Function SCC_Add_File(strPath As String)
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_Add_File = SVN_Add_File(strPath)
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Function
+
+'************************************************
+' Triggers an SCC commit using a GUI Client
+'
+' This sub triggers the GUI client to perform a commit
+' on the path specified.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to perform an SCC commit against
+'************************************************
+Public Sub SCC_Commit(strPath As String)
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SVN_Commit strPath
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Sub
+
+'************************************************
+' Triggers an SCC update using the GUI client
+'
+' This sub triggers a GUI client to perform an SCC update
+' on the path specified.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to perform an SCC update against
+'************************************************
+Public Sub SCC_Update(strPath As String)
+  
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SVN_Update strPath
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+  
+  End Select
+
+End Sub
