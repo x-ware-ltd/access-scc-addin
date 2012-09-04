@@ -10,39 +10,34 @@ Option Explicit
 ' Version history:
 ' - 1.00 initial version 15/11/2011
 ' - 1.01 detects old version and upgrades to new SCC tables [SF] 25/05/2012
+' - 1.02 adds the new preferences to an existing schema [SF] 04/09/2012
+' - 1.03 fix to ensure that old style SVN tables get all schema updates [SF] 04/09/2012
 '
 ' @author Steve Falla <steve.falla@talkjcs.com>
 ' @suggestions
-' @version 1.01
+' @version 1.03
 '************************************************
 Public Sub CreateLocalSCCTables()
   Dim db As DAO.Database
+  Dim fd As DAO.Field
   
   Set db = CurrentDb()
   
-  If TableExists(db, "MSysSVNObjectProperties") Then ' old style SVN table
-    RenameTable db, "MSysSVNObjectProperties", "MSysSCCObjectProperties"
-  ElseIf Not TableExists(db, "MSysSCCObjectProperties") Then ' new database, does not exist
-    CreateSCCObjectPropertiesTable db
-  End If
-    
-  If TableExists(db, "MSysSVNTmpObjects") Then ' old style SVN table
-    RenameTable db, "MSysSVNTmpObjects", "MSysSCCTmpObjects"
-  ElseIf Not TableExists(db, "MSysSCCTmpObjects") Then ' new database, does not exist
-    CreateSCCTmpObjectsTable db
-  End If
-    
-  If TableExists(db, "MSysSVNStatus") Then ' old style SVN table
-    RenameTable db, "MSysSVNStatus", "MSysSCCStatus"
-    RenameField db, "MSysSCCStatus", "objSVNChecksum", "objSCCChecksum"
-  ElseIf Not TableExists(db, "MSysSCCStatus") Then ' new database, does not exist
-    CreateSCCStatusTable db
-  End If
-    
-  If TableExists(db, "MSysSVNPrefs") Then ' old style SVN table
-    RenameTable db, "MSysSVNPrefs", "MSysSCCPrefs"
-  ElseIf Not TableExists(db, "MSysSCCPrefs") Then ' new database, does not exist
-    CreateSCCPrefsTable db
+  ' Check for old style SVN tables, and rename/upgrade if needs be
+  If TableExists(db, "MSysSVNObjectProperties") Then RenameTable db, "MSysSVNObjectProperties", "MSysSCCObjectProperties"
+  If TableExists(db, "MSysSVNTmpObjects") Then RenameTable db, "MSysSVNTmpObjects", "MSysSCCTmpObjects"
+  If TableExists(db, "MSysSVNStatus") Then RenameTable db, "MSysSVNStatus", "MSysSCCStatus": RenameField db, "MSysSCCStatus", "objSVNChecksum", "objSCCChecksum"
+  If TableExists(db, "MSysSVNPrefs") Then RenameTable db, "MSysSVNPrefs", "MSysSCCPrefs"
+  
+  ' Check if no tables exist at all and create from scratch
+  If Not TableExists(db, "MSysSCCObjectProperties") Then CreateSCCObjectPropertiesTable db
+  If Not TableExists(db, "MSysSCCTmpObjects") Then CreateSCCTmpObjectsTable db
+  If Not TableExists(db, "MSysSCCStatus") Then CreateSCCStatusTable db
+  If Not TableExists(db, "MSysSCCPrefs") Then CreateSCCPrefsTable db
+  
+  If InFields(db.TableDefs("MSysSCCPrefs").Fields, "ShowCommitWindow") = False Then
+    Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "ShowCommitWindow", dbBoolean, 0, "Whether to show the commit window, or auto close it", , , , , , , , True)
+    Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "ShowUpdateWindow", dbBoolean, 0, "Whether to show the update window, or auto close it", , , , , , , , True)
   End If
   
   db.Close: Set db = Nothing
@@ -191,6 +186,8 @@ Private Function CreateSCCPrefsTable(db As DAO.Database)
   Set fd = AddField(td, "LastImportDate", dbDate, 0, "The Last Date of an import", , , , , , , , True)
   Set fd = AddField(td, "LastCheckoutVersion", dbText, 50, "The last version checked out from SVN", , , , , , , , True)
   Set fd = AddField(td, "CheckRepoOnSartup", dbBoolean, 0, "Whether to check  the repository version on startup", , , , , , , , True)
+  Set fd = AddField(td, "ShowCommitWindow", dbBoolean, 0, "Whether to show the commit window, or auto close it", , , , , , , , True)
+  Set fd = AddField(td, "ShowUpdateWindow", dbBoolean, 0, "Whether to show the update window, or auto close it", , , , , , , , True)
   td.Fields.Delete "Temp"
   
   strSQL = "INSERT INTO [MSysSCCPrefs] (ExportPath) VALUES ('" & CurrentDbDir() & "')"

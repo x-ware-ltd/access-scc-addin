@@ -255,5 +255,6 @@ Begin TableDef
         44•‡0.44‡•#04/23/2012 00:00:00#•‡Removed copyrights, improved performance‡
         45•‡0.45‡•#04/23/2012 00:00:00#•‡Fixed bug during identification of SVN folder‡
         46•‡0.46‡•#09/03/2012 00:00:00#•‡Option to stop re-import of external changes‡
+        47•‡0.47‡•#09/04/2012 00:00:00#•‡Option to keep update and commit windows open‡
     End
 End
