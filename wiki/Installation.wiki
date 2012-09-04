@@ -11,3 +11,4 @@
  # Make sure it is marked as available - there should be a cross in the available column, if not, click install.
  # Close the Add-In manager.
  # To run Add-In, select it from the menu (Tools->Add-Ins->Subversion for Access XP)
+ # If you still have issues, make sure the file is not blocked by Windows, locate the file, right click and go to properties. If the option is available to "Unblock", then select it. Your addin should now work.
