@@ -7,6 +7,12 @@ This page is here to answer common questions that come from people trying to use
 If you don't see the answer to your question here, join the project mailing list and ask the developers directly.
 
 = Issues with first time use =
+== Microsoft Access cannot open this file. ==
+The full error that may occur states:
+
+"This file is located outside your intranet or on an untrusted site. Microsoft Access will not open the file due to potential security problems"
+
+This is probably because your version of windows has blocked the file after downloading it from the Internet. To resolve this, locate the Add-in %APPDATA%\Roaming\Microsoft\AddIns, right click and select properties. If you see the option to "Unblock", do so. This will solve your issue.
 
 == The Add-In appears to hang on opening or initial import ==
 This is more than likely an issue with your setup of SubVersion and TortoiseSVN. You *MUST* have the TortoiseSVN client as well as the command line SVN utilities installed (TortoiseSVN installer offers the option of installing the command line utilities at setup time)
