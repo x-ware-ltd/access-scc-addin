@@ -344,15 +344,16 @@ End Function
 '
 ' Version history:
 '   - 1.00 initial version
+'   - 1.01 updated to pass preference to close or not close the commit screen [SF] 04/09/2012
 '
-' @version    1.00
+' @version    1.01
 ' @param      String the base path to perform an SCC commit against
 '************************************************
-Public Sub SCC_Commit(strPath As String)
+Public Sub SCC_Commit(strPath As String, blnShowCommit As Boolean)
 
   Select Case GetSCCSystem
     Case sccSystemSubversion
-      SVN_Commit strPath
+      SVN_Commit strPath, blnShowCommit
     
     Case sccSystemGIT
     
@@ -370,15 +371,16 @@ End Sub
 '
 ' Version history:
 '   - 1.00 initial version
+'   - 1.01 updated to pass preference to close or not close the update screen [SF] 04/09/2012
 '
-' @version    1.00
+' @version    1.01
 ' @param      String the base path to perform an SCC update against
 '************************************************
-Public Sub SCC_Update(strPath As String)
+Public Sub SCC_Update(strPath As String, blnShowUpdates As Boolean)
   
   Select Case GetSCCSystem
     Case sccSystemSubversion
-      SVN_Update strPath
+      SVN_Update strPath, blnShowUpdates
     
     Case sccSystemGIT
     

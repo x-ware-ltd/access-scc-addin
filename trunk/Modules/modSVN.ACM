@@ -42,14 +42,21 @@ Private mstrSVN_CMD_PATH As String
 ' Version history:
 '   - 1.00 initial version
 '   - 1.01 updated to wait until the update command has finished, then return [SF] 14/11/2011
+'   - 1.02 updated to pass preference to close the update screen or not [SF] 04/09/2012
 '
-' @version    1.01
+' @version    1.02
 ' @param      String the base path to perform an SVN update against
 '************************************************
-Public Sub SVN_Update(strPath As String)
+Public Sub SVN_Update(strPath As String, blnShowUpdates As Boolean)
   Dim strCmd As String
   
-  strCmd = GetTortoiseSVNPath() & " /command:update /path:""" & strPath & """ /closeonend:1" ' closeonend:1 forces tortoise to close after successful update
+  strCmd = GetTortoiseSVNPath() & " /command:update /path:""" & strPath & """"
+  
+  If blnShowUpdates Then
+    strCmd = strCmd & " /closeonend:0" ' closeonend:0 stops tortoise from closing (may need to setfocus to it though)
+  Else
+    strCmd = strCmd & " /closeonend:1" ' closeonend:1 forces tortoise to close after successful update
+  End If
   ShellEx strCmd, vbNormalFocus ' wait until app closes
 End Sub
 
@@ -63,13 +70,18 @@ End Sub
 '   - 1.00 initial version
 '   - 1.01 updated to wait for the command to exit
 '
-' @version    1.00
+' @version    1.01
 ' @param      String the base path to perform an SVN commit against
 '************************************************
-Public Sub SVN_Commit(strPath As String)
+Public Sub SVN_Commit(strPath As String, blnShowCommit As Boolean)
   Dim strCmd As String
-
-  strCmd = GetTortoiseSVNPath() & " /command:commit /path:""" & strPath & """ /notempfile & /closeonend:3"
+  
+  strCmd = GetTortoiseSVNPath() & " /command:commit /path:""" & strPath & """"
+  If blnShowCommit Then
+    strCmd = strCmd & """ /closeonend:0" ' stop tortoise from closing
+  Else
+    strCmd = strCmd & """ /closeonend:3" ' force close if no errors
+  End If
   ShellEx strCmd, vbNormalFocus
 End Sub
 

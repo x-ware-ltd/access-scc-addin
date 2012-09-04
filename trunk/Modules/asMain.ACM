@@ -48,7 +48,7 @@ Public Function asRunExport()
 
   Echo True
   If Application.Forms![Access SVN - Options].chkCommit.Value = True Then
-    SCC_Commit Application.Forms![Access SVN - Options].txtOutputLocation.Value
+    SCC_Commit Application.Forms![Access SVN - Options].txtOutputLocation.Value, Application.Forms![Access SVN - Options].chkShowCommit.Value
     
     If Application.Forms![Access SVN - Options].chkNoImportExternalChanges.Value = False Then
       Echo False ' Update the revision data after the export and commit
