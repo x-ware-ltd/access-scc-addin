@@ -37,3 +37,5 @@ If not then it may be disabled, or not installed.
 [http://www.ehow.com/how_8392805_enable-script-host-windows-7.html Enable Script Host]
 
 [http://www.ehow.com/how_7432762_install-windows-script-host.html Install Script Host]
+
+*Note:* The dependency on windows scripting host was removed from version 0.45. If you are using a version prior to this, upgrade to the latest version.
