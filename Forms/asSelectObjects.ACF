@@ -463,6 +463,7 @@ End Sub
 
 Private Sub butOK_Click()
   Dim strImportExportType As String
+  Dim f As Form
   
   strImportExportType = Me.OpenArgs
   
@@ -485,6 +486,8 @@ Private Sub butOK_Click()
       MsgBox "This form has not been called with an import/export type in the open args parameter. Exiting", vbExclamation, "Acess SVN"
   
   End Select
+  Set f = Forms("Access SVN - Options")
+  f.UpdateVersionDetails
   DoCmd.Close acForm, Me.Name, acSaveNo
 End Sub
 

@@ -1425,6 +1425,42 @@ Public Sub asPopulateTmpObjectsTables(intDirection As Integer)
 End Sub
 
 '************************************************
+' asGetLatestImportVersion
+'
+' Gets the version of the newest object imported into
+' access from the tool. Rather long winded approach, but
+' needed for now as the revision is stored locally as a string
+' rather than a number!!!
+'
+' Version history:
+' - 1.00 initial version 04/09/2012
+'
+' @author Steve Falla <steve.falla@talkjcs.com>
+' @suggestions
+' @version 1.00
+' @return Variant Latest Revision Number
+'************************************************
+Public Function asGetLatestImportVersion()
+  Dim db As DAO.Database
+  Dim rs As DAO.Recordset
+  Dim ret As Long
+  
+  Set db = CurrentDb()
+  Set rs = db.OpenRecordset("MSysSCCStatus", dbOpenSnapshot)
+  Do While Not rs.EOF
+    If CLng(rs("objImportVersion").Value) > ret Then ret = CLng(rs("objImportVersion").Value)
+    rs.MoveNext
+  Loop
+  asGetLatestImportVersion = ret
+  rs.Close: Set rs = Nothing
+  db.Close: Set db = Nothing
+End Function
+
+Public Function asGetLatestImportDate()
+  asGetLatestImportDate = DMax("objImportDate", "MSysSCCStatus")
+End Function
+
+'************************************************
 ' Detect if the current file format is supported
 '
 ' If the default Access options are to create an Access 2000

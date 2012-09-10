@@ -95,18 +95,30 @@ End Sub
 '   - 1.00 initial version
 '   - 1.01 updated to use command line to stop dialog boxes all the time [SF] 14/11/2011
 '   - 1.02 updated to remove dependency on WSH [SF] 22/05/2012
+'   - 1.03 added error handling to detect SVN errors [SF] 04/09/2012
 '
-' @version    1.02
+' @version    1.03
 ' @param      String the base path to perform an SVN add against
 '************************************************
 Public Function SVN_Add_File(strPath As String)
-  Dim strCmd As String, strFilename As String
+  Dim strCmd As String, strFilename As String, strRet As String
 
   ' Only perform an SVN add if the .svn folder actually exists (we are using a working svn folder)
   If Not FileExists(asParentFolder(strPath) & "\.svn\entries") Then Exit Function
 
+  On Error GoTo SVN_Add_File_Err
+  
   strCmd = GetSVNPath() & " add """ & stripSlash(strPath) & """"
-  Call ExecAndCapture(strCmd)
+  strRet = ExecAndCapture(strCmd)
+  If Left$(strRet, 2) <> "A " Then Err.Raise vbObjectError + 1000
+  
+SVN_Add_File_Exit:
+  Exit Function
+  
+SVN_Add_File_Err:
+  MsgBox "An error occured whilst scheduling a file to be added to the repository." & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_Add_File_Exit
 
 End Function
 
@@ -118,18 +130,31 @@ End Function
 '
 ' Version history:
 '   - 1.00 initial version
+'   - 1.01 added error handling to detect SVN errors, uses direct SVN cmd line interface now [SF] 04/09/2012
 '
-' @version    1.00
+' @version    1.01
 ' @param      String the base path to perform an SVN delete against
 '************************************************
 Public Function SVN_Delete_File(strPath As String)
-  Dim strCmd As String
+  Dim strCmd As String, strRet As String
   
   ' Only perform an SVN delete if the .svn folder actually exists (we are using a working svn folder)
-  If FileExists(asParentFolder(strPath) & "\.svn\entries") Then
-    strCmd = GetTortoiseSVNPath() & " /command:remove /path:""" & strPath & """ /notempfile & /closeonend:0"
-    Shell strCmd, vbNormalFocus
-  End If
+  If Not FileExists(asParentFolder(strPath) & "\.svn\entries") Then Exit Function
+  
+  On Error GoTo SVN_Delete_File_Err
+  
+  strCmd = GetSVNPath() & " delete """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd)
+  If Left$(strRet, 2) <> "D " Then Err.Raise vbObjectError + 1000
+
+SVN_Delete_File_Exit:
+  Exit Function
+  
+SVN_Delete_File_Err:
+  MsgBox "An error occured whilst scheduling a file to be deleted from the repository." & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_Delete_File_Exit
+
 End Function
 
 '************************************************
@@ -168,25 +193,42 @@ End Function
 ' Version history:
 '   - 1.00 initial version
 '   - 1.01 updated to remove dependency on WSH [SF] 22/05/2012
+'   - 1.02 more reliable trapping of version
+'          Added error trapping for SVN errors [SF] 04/09/2012
 '
-' @version    1.01
+' @version    1.02
 ' @param      String the base path to use when getting the SVN version
 ' @return     String the current SVN version of the code
 '************************************************
 Public Function SVN_GetVersion(strPath As String) As String
-  Dim strCmd As String, strRet As String
+  Dim strCmd As String, strRet As String, strLines() As String, strLine As String
   Dim i As Integer, j As Integer
     
+  On Error GoTo SVN_GetVersion_Err
+  
   strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
   strRet = ExecAndCapture(strCmd)
-  If LenB(strRet) <> 0 Then
-    i = InStr(strRet, SVNTAG_REVISION)
-    j = InStr(i + Len(SVNTAG_REVISION), strRet, vbCrLf) - (i + Len(SVNTAG_REVISION))
-    SVN_GetVersion = Mid(strRet, i + Len(SVNTAG_REVISION), j)
-  Else
-    ' Return a default of 0 if SVN has not been setup yet
-    SVN_GetVersion = "0"
-  End If
+  If LenB(strRet) = 0 Then SVN_GetVersion = "0": Exit Function
+  
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
+  
+  strLines = Split(strRet, vbCrLf)
+  For i = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(i))
+    If InStrB(strLine, SVNTAG_REVISION) = 1 Then
+      SVN_GetVersion = Right$(strLine, Len(strLine) - Len(SVNTAG_REVISION))
+      Exit For
+    End If
+  Next i
+  
+SVN_GetVersion_Exit:
+  Exit Function
+  
+SVN_GetVersion_Err:
+  MsgBox "An error occured whilst getting working copy version." & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_GetVersion_Exit
     
 End Function
 
@@ -212,6 +254,9 @@ Public Function SVN_GetInfo(strPath As String) As SVNITEM
   strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
   strRet = ExecAndCapture(strCmd, TempDir()) ' run in a temp folder, to ensure the path output is absolute, not relative
   If LenB(strRet) = 0 Then Exit Function
+  
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
     
   strLines = Split(strRet, vbCrLf)
   For i = 0 To UBound(strLines) - 1
@@ -280,9 +325,14 @@ Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() A
   i = 0: j = 0
   intArrSize = 100
   
-  strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """\*"
+  On Error GoTo SVN_GetAllVersionsSubFolder_Err
+  
+  strCmd = GetSVNPath() & " info -R """ & stripSlash(strPath) & """"
   strRet = ExecAndCapture(strCmd, TempDir()) ' run in a temp folder, to ensure the path output is absolute, not relative
   If LenB(strRet) = 0 Then Exit Function
+    
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
     
   ReDim arrFill(intArrSize)
   strLines = Split(strRet, vbCrLf)
@@ -313,11 +363,20 @@ Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() A
       mySvnItem.svStatus = vbNullString
     End If
   Next j
+  
+SVN_GetAllVersionsSubFolder_Exit:
   If i > 0 Then
     ReDim Preserve arrFill(i - 1)
   Else
     ReDim Preserve arrFill(0)
   End If
+  Exit Function
+  
+SVN_GetAllVersionsSubFolder_Err:
+  MsgBox "An error occured getting folder SVN information." & vbCrLf & vbCrLf & _
+         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_GetAllVersionsSubFolder_Exit
 End Function
 
 '************************************************
@@ -329,64 +388,48 @@ End Function
 ' Version history:
 '   - 1.00 initial version
 '   - 1.01 updated to eliminate dependency on WSH and to support version 1.7 of SVN [SF] 22/05/2012
+'   - 1.02 added error detection on the SVN result
+'          converted to basic rather than XML output
+'          added more reliable detection on repository version [SF] 04/09/2012
 '
-' @version    1.01
+' @version    1.02
 ' @param      String the base path of a checked out SVN module to use when getting the SVN version
 ' @return     String the latest SVN version of the code in the repository
 '************************************************
 Public Function SVN_GetLatestVersion(strPath As String) As String
-  Dim strCmd As String, strRet As String, strUrl As String, strName As String
-  Dim fSuccess As Boolean
-  Dim oDoc As MSXML2.DOMDocument
-  Dim oLists As MSXML2.IXMLDOMNode, oList As MSXML2.IXMLDOMNode, oEntry As MSXML2.IXMLDOMNode
-  Dim oChild As MSXML2.IXMLDOMNode, oAttributes As MSXML2.IXMLDOMNamedNodeMap, oRevision As MSXML2.IXMLDOMNode
-    
+  Dim strRet As String, strCmd As String, strRev As String, strLine As String
+  Dim strLines() As String
+  Dim i As Long
+  
   On Error GoTo SVN_GetLatestVersion_Err
   
-  strUrl = SVN_GetMappedUrl(strPath)
-  
-  ' Get the latest version from the SVN repository
-  strCmd = GetSVNPath() & " list --xml """ & getURLParent(strUrl) & """"
+  ' Get the latest revision in the repository by requesting the HEAD
+  strCmd = GetSVNPath() & " info -r ""HEAD"" """ & stripSlash(strPath) & """"
   strRet = ExecAndCapture(strCmd)
   If LenB(strRet) = 0 Then Exit Function
-      
-  Set oDoc = New MSXML2.DOMDocument
-  oDoc.async = False
-  oDoc.validateOnParse = False
-  fSuccess = oDoc.loadXML(strRet)
-  If Not fSuccess Then Exit Function
   
-  Set oLists = oDoc.documentElement
-  Set oList = oLists.firstChild
-  For Each oEntry In oList.childNodes
-    For Each oChild In oEntry.childNodes
-      If oChild.nodeName = "name" Then
-        strName = oChild.nodeTypedValue
-      End If
-      If oChild.nodeName = "commit" Then
-        Set oAttributes = oChild.Attributes
-        Set oRevision = oAttributes.getNamedItem("revision")
-      End If
-    Next oChild
-    
-    If Trim$(strName) = URLDecode(stripURLPath(strUrl)) Then
-      SVN_GetLatestVersion = oRevision.nodeTypedValue
-      GoTo SVN_GetLatestVersion_Exit
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
+  
+  strLines = Split(strRet, vbCrLf)
+  For i = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(i))
+    If InStrB(strLine, SVNTAG_REVISION) = 1 Then
+      strRev = Right$(strLine, Len(strLine) - Len(SVNTAG_REVISION))
+      Exit For
     End If
-  Next oEntry
-    
+  Next i
+  
+  SVN_GetLatestVersion = strRev
+  
 SVN_GetLatestVersion_Exit:
-  If LenB(SVN_GetLatestVersion) = 0 Then SVN_GetLatestVersion = "0"
-  Set oLists = Nothing
-  Set oList = Nothing
-  Set oEntry = Nothing
-  Set oChild = Nothing
-  Set oAttributes = Nothing
-  Set oRevision = Nothing
+  If LenB(SVN_GetLatestVersion) = 0 Then SVN_GetLatestVersion = "No SVN version found"
   Exit Function
-    
+  
 SVN_GetLatestVersion_Err:
-  MsgBox "An error occured getting the latest SVN repository version. Check that the local copy is set up correctly"
+  MsgBox "An error occured getting the HEAD repository version." & vbCrLf & vbCrLf & _
+         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
   Resume SVN_GetLatestVersion_Exit
 
 End Function
@@ -401,8 +444,10 @@ End Function
 ' Version history:
 '   - 1.00 initial version
 '   - 1.01 updated to eliminate dependency on WSH and to support version 1.7 of SVN [SF] 22/05/2012
+'   - 1.02 added error detection on the SVN result
+'          added more reliable detection on repository version [SF] 04/09/2012
 '
-' @version    1.01
+' @version    1.02
 ' @param      String the base path of a checked out SVN module
 ' @return     String the latest working copy revision
 '************************************************
@@ -417,6 +462,9 @@ Public Function SVN_GetWorkingFolderVersion(strPath As String) As String
   strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
   strRet = ExecAndCapture(strCmd)
   If LenB(strRet) = 0 Then Exit Function
+  
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
   
   strLines = Split(strRet, vbCrLf)
   For i = 0 To UBound(strLines) - 1
@@ -434,7 +482,9 @@ SVN_GetWorkingFolderVersion_Exit:
   Exit Function
   
 SVN_GetWorkingFolderVersion_Err:
-  MsgBox "An error occured getting the working copy SVN version. Check that the local copy is set up correctly"
+  MsgBox "An error occured getting the latest working copy version." & vbCrLf & vbCrLf & _
+         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
   Resume SVN_GetWorkingFolderVersion_Exit
   
 End Function
@@ -448,8 +498,10 @@ End Function
 ' Version history:
 '   - 1.00 initial version
 '   - 1.01 updated to eliminate dependency on WSH and to support version 1.7 of SVN [SF] 22/05/2012
+'   - 1.02 added error detection on the SVN result
+'          added more reliable detection on repository version [SF] 04/09/2012
 '
-' @version    1.01
+' @version    1.02
 ' @param      String the base path of a checked out SVN module
 ' @return     String the SVN URL mapped to the folder
 '************************************************
@@ -464,6 +516,9 @@ Public Function SVN_GetMappedUrl(strPath As String) As String
   strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
   strRet = ExecAndCapture(strCmd)
   If LenB(strRet) = 0 Then Exit Function
+  
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
   
   strLines = Split(strRet, vbCrLf)
   For i = 0 To UBound(strLines) - 1
@@ -483,7 +538,9 @@ SVN_GetMappedUrl_Exit:
   Exit Function
   
 SVN_GetMappedUrl_Err:
-  MsgBox "An error occured getting the SVN mapped url. Check that the local copy is set up correctly"
+  MsgBox "An error occured getting the SVN mapped URL." & vbCrLf & vbCrLf & _
+         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
   Resume SVN_GetMappedUrl_Exit
 
 End Function

@@ -1,6 +1,6 @@
 Version =20
 VersionRequired =20
-Checksum =1265028100
+Checksum =-1959006273
 Begin Form
     PopUp = NotDefault
     RecordSelectors = NotDefault
@@ -175,7 +175,7 @@ Begin Form
                     Top =1212
                     Width =5403
                     Height =280
-                    TabIndex =3
+                    TabIndex =2
                     Name ="txtOutputLocation"
                     ControlSource ="ExportPath"
                     AfterUpdate ="[Event Procedure]"
@@ -206,39 +206,12 @@ Begin Form
                     FontName ="Arial"
                 End
                 Begin CommandButton
-                    Cancel = NotDefault
-                    OverlapFlags =85
-                    Left =5790
-                    Top =120
-                    Width =335
-                    Height =325
-                    Name ="cmdSave"
-                    Caption ="Close"
-                    OnClick ="[Event Procedure]"
-                    PictureData = Begin
-                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
-                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
-                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
-                        0xffff0000ffffff00dadadadadadadadaadadadadadada1fddad1fadadadadada ,
-                        0xad111fadadad1fadda111fdadad1fadaada111fdad11fdaddada111fd11fdada ,
-                        0xadada11111fdadaddadada111fdadadaadada11111fdadaddada111fd1fadada ,
-                        0xad1111fdad11fdadd1111fdadad11fdaa11fadadadad11fddadadadadadadada ,
-                        0xadadadadadadadad
-                    End
-                    ObjectPalette = Begin
-                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
-                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
-                        0xffffff0000000000
-                    End
-                    ControlTipText ="Close"
-                End
-                Begin CommandButton
                     OverlapFlags =215
                     Left =1995
                     Top =2850
                     Width =1520
                     Height =340
-                    TabIndex =11
+                    TabIndex =10
                     Name ="cmdRun"
                     Caption ="Export Objects"
                     OnClick ="[Event Procedure]"
@@ -249,7 +222,7 @@ Begin Form
                     Top =2764
                     Width =113
                     Height =170
-                    TabIndex =10
+                    TabIndex =9
                     Name ="chkQueries"
                     ControlSource ="QueriesFlag"
                     DefaultValue ="True"
@@ -271,7 +244,7 @@ Begin Form
                     Top =3047
                     Width =113
                     Height =170
-                    TabIndex =12
+                    TabIndex =11
                     Name ="chkForms"
                     ControlSource ="FormsFlag"
                     DefaultValue ="True"
@@ -293,7 +266,7 @@ Begin Form
                     Top =3331
                     Width =113
                     Height =170
-                    TabIndex =13
+                    TabIndex =12
                     Name ="chkReports"
                     ControlSource ="ReportsFlag"
                     DefaultValue ="True"
@@ -315,7 +288,7 @@ Begin Form
                     Top =3614
                     Width =113
                     Height =170
-                    TabIndex =15
+                    TabIndex =14
                     Name ="chkMacros"
                     ControlSource ="MacrosFlag"
                     DefaultValue ="True"
@@ -337,7 +310,7 @@ Begin Form
                     Top =3898
                     Width =113
                     Height =170
-                    TabIndex =17
+                    TabIndex =16
                     Name ="chkModules"
                     ControlSource ="ModulesFlag"
                     DefaultValue ="True"
@@ -359,7 +332,7 @@ Begin Form
                     Top =4125
                     Width =1520
                     Height =340
-                    TabIndex =18
+                    TabIndex =17
                     Name ="btnImport"
                     Caption ="Import Objects"
                     OnClick ="[Event Procedure]"
@@ -370,7 +343,7 @@ Begin Form
                     Top =1200
                     Width =394
                     Height =325
-                    TabIndex =2
+                    TabIndex =1
                     Name ="cmdFolderDialog"
                     Caption ="Select SVN Folder"
                     OnClick ="[Event Procedure]"
@@ -396,7 +369,7 @@ Begin Form
                     Top =2136
                     Width =171
                     Height =170
-                    TabIndex =5
+                    TabIndex =4
                     Name ="chkCommit"
                     ControlSource ="CommitAfterExport"
                     AfterUpdate ="[Event Procedure]"
@@ -438,7 +411,7 @@ Begin Form
                     Top =3612
                     Width =171
                     Height =170
-                    TabIndex =14
+                    TabIndex =13
                     Name ="chkImport"
                     ControlSource ="UpdateBeforeImport"
                     AfterUpdate ="[Event Procedure]"
@@ -491,7 +464,7 @@ Begin Form
                     Top =2193
                     Width =113
                     Height =170
-                    TabIndex =6
+                    TabIndex =5
                     Name ="chkSelectAllObjects"
                     DefaultValue ="True"
                     OnClick ="[Event Procedure]"
@@ -533,10 +506,10 @@ Begin Form
                     OverlapFlags =215
                     Left =1466
                     Top =4935
-                    Width =1631
+                    Width =2021
                     Height =238
                     FontWeight =600
-                    TabIndex =22
+                    TabIndex =21
                     BorderColor =8421504
                     Name ="txtLastImported"
                     ControlSource ="LastImportDate"
@@ -561,10 +534,10 @@ Begin Form
                     TextAlign =3
                     Left =2546
                     Top =5250
-                    Width =551
+                    Width =926
                     Height =238
                     FontWeight =600
-                    TabIndex =24
+                    TabIndex =23
                     BorderColor =8421504
                     Name ="txtLastVersion"
                     ControlSource ="LastCheckoutVersion"
@@ -588,10 +561,10 @@ Begin Form
                     TextAlign =3
                     Left =2546
                     Top =5880
-                    Width =551
+                    Width =926
                     Height =238
                     FontWeight =600
-                    TabIndex =27
+                    TabIndex =26
                     BorderColor =8421504
                     Name ="txtLatestVersion"
                     Begin
@@ -612,7 +585,7 @@ Begin Form
                     Top =2483
                     Width =113
                     Height =170
-                    TabIndex =8
+                    TabIndex =7
                     Name ="chkTables"
                     ControlSource ="TablesFlag"
                     DefaultValue ="True"
@@ -634,7 +607,7 @@ Begin Form
                     Top =4189
                     Width =113
                     Height =170
-                    TabIndex =19
+                    TabIndex =18
                     Name ="chkCmdBars"
                     ControlSource ="ToolbarsFlag"
                     DefaultValue ="True"
@@ -657,7 +630,7 @@ Begin Form
                     Top =5039
                     Width =113
                     Height =170
-                    TabIndex =23
+                    TabIndex =22
                     Name ="chkImportExport"
                     ControlSource ="ImExSpecsFlag"
                     DefaultValue ="True"
@@ -682,7 +655,7 @@ Begin Form
                     Top =5323
                     Width =113
                     Height =170
-                    TabIndex =25
+                    TabIndex =24
                     Name ="chkRelationships"
                     ControlSource ="RelationshipsFlag"
                     Begin
@@ -704,7 +677,7 @@ Begin Form
                     Top =6228
                     Width =170
                     Height =170
-                    TabIndex =28
+                    TabIndex =27
                     Name ="chkRepository"
                     ControlSource ="CheckRepoOnSartup"
                     AfterUpdate ="[Event Procedure]"
@@ -727,7 +700,7 @@ Begin Form
                     Top =4472
                     Width =113
                     Height =170
-                    TabIndex =20
+                    TabIndex =19
                     Name ="chkExtras"
                     ControlSource ="ExtrasFlag"
                     DefaultValue ="True"
@@ -749,7 +722,7 @@ Begin Form
                     Top =4756
                     Width =113
                     Height =170
-                    TabIndex =21
+                    TabIndex =20
                     Name ="chkReferences"
                     ControlSource ="ReferencesFlag"
                     DefaultValue ="True"
@@ -772,7 +745,7 @@ Begin Form
                     Top =6782
                     Width =340
                     Height =328
-                    TabIndex =29
+                    TabIndex =28
                     Name ="cmdCompactDatabase"
                     Caption ="Compact Database"
                     OnClick ="[Event Procedure]"
@@ -829,7 +802,7 @@ Begin Form
                     Top =6782
                     Width =2324
                     Height =227
-                    TabIndex =30
+                    TabIndex =29
                     BorderColor =8421504
                     Name ="txtDBFile"
                     Begin
@@ -850,7 +823,7 @@ Begin Form
                     Top =7140
                     Width =340
                     Height =328
-                    TabIndex =31
+                    TabIndex =30
                     Name ="cmdRepairPrinter"
                     Caption ="Repair Printer Names"
                     OnClick ="[Event Procedure]"
@@ -887,10 +860,10 @@ Begin Form
                     TextAlign =3
                     Left =2546
                     Top =5565
-                    Width =551
+                    Width =926
                     Height =238
                     FontWeight =600
-                    TabIndex =26
+                    TabIndex =25
                     BorderColor =8421504
                     Name ="txtFolderVersion"
                     Begin
@@ -917,7 +890,7 @@ Begin Form
                     Width =5411
                     Height =238
                     FontWeight =500
-                    TabIndex =4
+                    TabIndex =3
                     BorderColor =8421504
                     ForeColor =12615680
                     Name ="txtSvnUrl"
@@ -928,7 +901,6 @@ Begin Form
                     Top =795
                     Width =337
                     Height =337
-                    TabIndex =1
                     Name ="btnOpenFolder"
                     Caption ="Command4"
                     OnClick ="[Event Procedure]"
@@ -970,7 +942,7 @@ Begin Form
                     Height =962
                     Name ="Image6"
                     PictureData = Begin
-                        0x0e0000001b1446c9010000006c0000000000000000000000520000003a000000 ,
+                        0x0e000000940c46e8010000006c0000000000000000000000520000003a000000 ,
                         0x0000000000000000180900009d06000020454d46000001006487000011000000 ,
                         0x01000000000000000000000000000000900600001a040000d60100002c010000 ,
                         0x000000000000000000000000f02b0700e093040046000000b8430000ac430000 ,
@@ -2066,7 +2038,7 @@ Begin Form
                     Top =7264
                     Width =170
                     Height =170
-                    TabIndex =32
+                    TabIndex =31
                     Name ="chkAllowDebug"
                     DefaultValue ="False"
                     GUID = Begin
@@ -2093,7 +2065,7 @@ Begin Form
                     Top =2622
                     Width =171
                     Height =170
-                    TabIndex =9
+                    TabIndex =8
                     Name ="chkNoImportExternalChanges"
                     DefaultValue ="=False"
                     OnClick ="[Event Procedure]"
@@ -2123,7 +2095,7 @@ Begin Form
                     Top =3852
                     Width =171
                     Height =170
-                    TabIndex =16
+                    TabIndex =15
                     Name ="chkShowUpdates"
                     ControlSource ="ShowUpdateWindow"
                     DefaultValue ="=True"
@@ -2151,7 +2123,7 @@ Begin Form
                     Top =2382
                     Width =171
                     Height =170
-                    TabIndex =7
+                    TabIndex =6
                     Name ="chkShowCommit"
                     ControlSource ="ShowCommitWindow"
                     DefaultValue ="=True"
@@ -2186,7 +2158,6 @@ Option Compare Database
 Option Explicit
 
 Private Sub btnImport_Click()
-  Call SCC_IsSupportedClient
   If Me.chkImport.Value = True Then
     SCC_Update Me.txtOutputLocation.Value, Me.chkShowUpdates.Value
   End If
@@ -2198,17 +2169,12 @@ Private Sub btnImport_Click()
   ' Select which objects to import
   DoCmd.OpenForm "asSelectObjects", acNormal, , , , acWindowNormal, "import"
   
-  Me.txtLastImported = Now()
-  Me.txtLastVersion = SCC_GetVersion(Me.txtOutputLocation.Value)
-  Me.txtLatestVersion = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
+  UpdateVersionDetails
   Application.RunCommand acCmdSaveRecord
 End Sub
 
 Private Sub btnOpenFolder_Click()
-  Dim s As String
-  
-  s = Me.txtOutputLocation.Value
-  Shell "Explorer.exe " & s, vbNormalFocus
+  Shell "Explorer.exe " & CStr(Me.txtOutputLocation.Value), vbNormalFocus
 End Sub
 
 Private Sub chkCommit_AfterUpdate()
@@ -2238,29 +2204,29 @@ Private Sub chkRepository_AfterUpdate()
 End Sub
 
 Private Sub chkSelectAllObjects_Click()
-    If Me.chkSelectAllObjects.Value = True Then
-        Me.chkQueries.Value = True
-        Me.chkForms.Value = True
-        Me.chkReports.Value = True
-        Me.chkMacros.Value = True
-        Me.chkModules.Value = True
-        Me.chkTables.Value = True
-        Me.chkCmdBars.Value = True
-        Me.chkExtras.Value = True
-        Me.chkReferences.Value = True
-        Me.chkImportExport.Value = True
-    Else
-        Me.chkQueries.Value = False
-        Me.chkForms.Value = False
-        Me.chkReports.Value = False
-        Me.chkMacros.Value = False
-        Me.chkModules.Value = False
-        Me.chkTables.Value = False
-        Me.chkCmdBars.Value = False
-        Me.chkExtras.Value = False
-        Me.chkReferences.Value = False
-        Me.chkImportExport.Value = False
-    End If
+  If Me.chkSelectAllObjects.Value = True Then
+    Me.chkQueries.Value = True
+    Me.chkForms.Value = True
+    Me.chkReports.Value = True
+    Me.chkMacros.Value = True
+    Me.chkModules.Value = True
+    Me.chkTables.Value = True
+    Me.chkCmdBars.Value = True
+    Me.chkExtras.Value = True
+    Me.chkReferences.Value = True
+    Me.chkImportExport.Value = True
+  Else
+    Me.chkQueries.Value = False
+    Me.chkForms.Value = False
+    Me.chkReports.Value = False
+    Me.chkMacros.Value = False
+    Me.chkModules.Value = False
+    Me.chkTables.Value = False
+    Me.chkCmdBars.Value = False
+    Me.chkExtras.Value = False
+    Me.chkReferences.Value = False
+    Me.chkImportExport.Value = False
+  End If
 End Sub
 
 Private Sub cmdCompactDatabase_Click()
@@ -2268,99 +2234,71 @@ Private Sub cmdCompactDatabase_Click()
 End Sub
 
 Private Sub cmdFolderDialog_Click()
-    Dim strFolderPath As String
-    
-    strFolderPath = BrowseFolderDialog(Me.hwnd, "Select SVN Checkout Folder", 0, Me.txtOutputLocation.Value)
-    If strFolderPath <> "" Then
-        Me.txtOutputLocation = strFolderPath
-    End If
-    Call txtOutputLocation_AfterUpdate
+  Dim strFolderPath As String
+
+  strFolderPath = BrowseFolderDialog(Me.hwnd, "Select SVN Checkout Folder", 0, Me.txtOutputLocation.Value)
+  If strFolderPath <> "" Then
+    Me.txtOutputLocation = strFolderPath
+  End If
+  Call txtOutputLocation_AfterUpdate
 End Sub
 
 Private Sub cmdRepairPrinter_Click()
-    Call FindFormPrinterExports(Me.txtOutputLocation)
-    Call FindReportPrinterExports(Me.txtOutputLocation)
+  Call FindFormPrinterExports(Me.txtOutputLocation)
+  Call FindReportPrinterExports(Me.txtOutputLocation)
 End Sub
 
 Private Sub cmdRun_Click()
-    Call SCC_IsSupportedClient
-    
-    ' put all the details in the tmpdatabase
-    asPurgeTmpObjectsTables
-    asPopulateTmpObjectsTables (asExport)
-    
-    ' Select which objects to export
-    DoCmd.OpenForm "asSelectObjects", acNormal, , , , acWindowNormal, "export"
-    Me.txtLastImported = Now()
-    Me.txtLastVersion = SCC_GetVersion(Me.txtOutputLocation.Value)
-    Me.txtLatestVersion = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
-    Application.RunCommand acCmdSaveRecord
-End Sub
+  ' put all the details in the tmpdatabase
+  asPurgeTmpObjectsTables
+  asPopulateTmpObjectsTables (asExport)
 
-Private Sub cmdSave_Click()
-    DoCmd.Close
+  ' Select which objects to export
+  DoCmd.OpenForm "asSelectObjects", acNormal, , , , acWindowNormal, "export"
+  UpdateVersionDetails
+  Application.RunCommand acCmdSaveRecord
 End Sub
-
 
 Private Sub Form_GotFocus()
+  UpdateVersionDetails
+  pvt_CheckVersionWarnings
   Me.txtDBFile = getCurrentDBSize()
-  
-  Me.txtLatestVersion.Value = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
-  If Me.txtLatestVersion.Value <> "" And Me.txtLastVersion.Value <> "" Then
-    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value Then
-      MsgBox "The SVN Repository HEAD is a newer version than the current checked out BASE!", vbExclamation
-      Me.txtLatestVersion.ForeColor = 255
-    Else
-      Me.txtLatestVersion.ForeColor = 0
-    End If
-  End If
-  
-  Me.txtLastVersion = SCC_GetVersion(Me.txtOutputLocation.Value)
-  Me.txtSvnUrl = SCC_GetMappedUrl(Me.txtOutputLocation.Value)
-  Me.txtFolderVersion = SCC_GetWorkingFolderVersion(Me.txtOutputLocation.Value)
+  Application.RunCommand acCmdSaveRecord
 End Sub
 
 Private Sub Form_Load()
-    Dim lngFileSize As Long
-    Dim strUnits As String
-    Dim strRecordSource As String
+  Dim lngFileSize As Long
+  Dim strUnits As String
+  Dim strRecordSource As String
 
-    DoCmd.OpenForm "frmSplash", acNormal, , , , acWindowNormal
-    DoCmd.Hourglass True
-    
-    ' We must SetFocus to any control that can
-    Me.txtOutputLocation.SetFocus
-    
-    DoCmd.Hourglass True
-    strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
+  DoCmd.OpenForm "frmSplash", acNormal, , , , acWindowNormal
+  DoCmd.Hourglass True
 
-    Me.RecordSource = strRecordSource
+  ' We must SetFocus to any control that can
+  Me.txtOutputLocation.SetFocus
 
-    SetSCCSystem sccSystemSubversion   ' set default to use SVN
+  DoCmd.Hourglass True
+  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
 
-    If Me.chkRepository = True And Me.txtLastVersion.Value <> "" And Me.txtLastVersion.Value <> -1 Then
-        Me.txtLatestVersion.Value = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
-        If Me.txtLatestVersion.Value <> "" And Me.txtLastVersion.Value <> "" Then
-            If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value <> -1 Then
-                MsgBox "Warning!" & vbCrLf & vbCrLf & _
-                      "The Subversion repository HEAD is newer than " & vbCrLf & _
-                      "the current checked out working copy!", vbExclamation, "Subversion for Access XP"
-                Me.txtLatestVersion.ForeColor = 255
-            Else
-                Me.txtLatestVersion.ForeColor = 0
-            End If
-        End If
-        Me.txtSvnUrl = SCC_GetMappedUrl(Me.txtOutputLocation.Value)
-        Me.txtFolderVersion = SCC_GetWorkingFolderVersion(Me.txtOutputLocation.Value)
-    Else
-        Me.txtLatestVersion.Value = ""
-        Me.txtSvnUrl = ""
-        Me.txtFolderVersion = ""
-    End If
-    
-    Me.chkNoImportExternalChanges.Value = False
-    Me.txtDBFile = getCurrentDBSize()
-    Forms![frmSplash].TimerInterval = 3000 ' This will close the splash screen in 3 seconds
+  Me.RecordSource = strRecordSource
+
+  SetSCCSystem sccSystemSubversion   ' set default to use SVN
+
+  Call SCC_IsSupportedClient  ' Throw any warnings before doing anything
+
+  If Me.chkRepository = True And Me.txtLastVersion.Value <> "" And Me.txtLastVersion.Value <> -1 Then
+    ' This is not first use of this DB, and startup check is enabled
+    UpdateVersionDetails
+    pvt_CheckVersionWarnings
+  Else
+    Me.txtLatestVersion.Value = ""
+    Me.txtSvnUrl = ""
+    Me.txtFolderVersion = ""
+  End If
+
+  Me.chkNoImportExternalChanges.Value = False
+  Me.txtDBFile = getCurrentDBSize()
+  Forms![frmSplash].TimerInterval = 3000  ' This will close the splash screen in 3 seconds
 End Sub
 
 Private Function getCurrentDBSize() As String
@@ -2381,72 +2319,45 @@ Private Function getCurrentDBSize() As String
   getCurrentDBSize = str$(lngFileSize) & " " & strUnits
 End Function
 
-Public Function getSVNPaths() As String
-    Dim strBasePath As String
-    Dim strSVNPaths As String
-    
-    strBasePath = Me.txtOutputLocation.Value
-
-    If Me.chkModules.Value = True Then
-        strSVNPaths = appendSlash(strBasePath) & "Modules"
-    End If
-    
-    If Me.chkForms.Value = True Then
-        If Len(strSVNPaths) <> 0 Then
-            strSVNPaths = strSVNPaths & "*" & appendSlash(strBasePath) & "Forms"
-        Else
-            strSVNPaths = appendSlash(strBasePath) & "Forms"
-        End If
-    End If
-    
-    If Me.chkMacros.Value = True Then
-        If Len(strSVNPaths) <> 0 Then
-            strSVNPaths = strSVNPaths & "*" & appendSlash(strBasePath) & "Macros"
-        Else
-            strSVNPaths = appendSlash(strBasePath) & "Macros"
-        End If
-    End If
-    
-    If Me.chkQueries.Value = True Then
-        If Len(strSVNPaths) <> 0 Then
-            strSVNPaths = strSVNPaths & "*" & appendSlash(strBasePath) & "Queries"
-        Else
-            strSVNPaths = appendSlash(strBasePath) & "Queries"
-        End If
-    End If
-    
-    If Me.chkReports.Value = True Then
-        If Len(strSVNPaths) <> 0 Then
-            strSVNPaths = strSVNPaths & "*" & appendSlash(strBasePath) & "Reports"
-        Else
-            strSVNPaths = appendSlash(strBasePath) & "Reports"
-        End If
-    End If
-    
-    If Me.chkImportExport.Value = True Then
-        If Len(strSVNPaths) <> 0 Then
-            strSVNPaths = strSVNPaths & "*" & appendSlash(strBasePath) & "IMEXSpecs"
-        Else
-            strSVNPaths = appendSlash(strBasePath) & "IMEXSpecs"
-        End If
-    End If
-    
-    getSVNPaths = strSVNPaths
-    
-End Function
-
 Private Sub txtOutputLocation_AfterUpdate()
-  Me.txtLatestVersion.Value = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
-  If Me.txtLatestVersion.Value <> "" And Me.txtLastVersion.Value <> "" Then
-    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value <> -1 Then
-      MsgBox "The SVN Repository HEAD is a newer version than the current checked out BASE!", vbExclamation
-      Me.txtLatestVersion.ForeColor = 255
-    Else
-      Me.txtLatestVersion.ForeColor = 0
-    End If
-  End If
-  Me.txtSvnUrl = SCC_GetMappedUrl(Me.txtOutputLocation.Value)
-  Me.txtFolderVersion = SCC_GetWorkingFolderVersion(Me.txtOutputLocation.Value)
-    
+  UpdateVersionDetails
+  pvt_CheckVersionWarnings
   Application.RunCommand acCmdSaveRecord
+End Sub
+
+Public Sub UpdateVersionDetails()
+  Me.txtLastImported = asGetLatestImportDate()
+  Me.txtSvnUrl = SCC_GetMappedUrl(Me.txtOutputLocation.Value)
+  Me.txtLastVersion = asGetLatestImportVersion()
+  Me.txtLatestVersion = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
+  Me.txtFolderVersion = SCC_GetWorkingFolderVersion(Me.txtOutputLocation.Value)
+End Sub
+
+Private Sub pvt_CheckVersionWarnings()
+  If Me.txtLatestVersion.Value <> "" And Me.txtLastVersion.Value <> "" Then
+    ' This is not first use, and there is some version details populated
+    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtFolderVersion.Value) Then
+      MsgBox "The SCC Repository contains changes which are not reflected in the working copy folder." & vbCrLf & vbCrLf & _
+             "When you commit to the repository, the repository version is updated," & vbCrLf & _
+             "however, your working copy remains at the old version, until you perform an update.", vbExclamation
+    ElseIf CLng(Me.txtFolderVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value <> -1 Then
+      MsgBox "The working copy contains changes which are not reflected in the Access build." & vbCrLf & vbCrLf & _
+             "You should perform an update/import to pull these changes into Access.", vbExclamation
+      Me.txtLatestVersion.ForeColor = 255
+    End If
+    
+    ' Now set the colours
+    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtFolderVersion.Value) Then
+      Me.txtFolderVersion.ForeColor = 255
+    Else
+      Me.txtFolderVersion.ForeColor = 0
+    End If
+    
+    If CLng(Me.txtFolderVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value <> -1 Then
+      Me.txtLastVersion.ForeColor = 255
+    Else
+      Me.txtLastVersion.ForeColor = 0
+    End If
+    Me.txtLatestVersion.ForeColor = 0 ' Repository
+  End If
 End Sub
