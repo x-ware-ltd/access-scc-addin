@@ -254,8 +254,9 @@ End Function
 '
 ' Version history:
 '   - 1.00 initial version
+'   - 1.01 updated to handle internationalised number formats such as in Germany [SF] 29/11/2012
 '
-' @version    1.00
+' @version    1.01
 ' @return     Boolean True if supported, False if not
 '************************************************
 Public Function SCC_IsSupportedClient() As Boolean
@@ -263,7 +264,7 @@ Public Function SCC_IsSupportedClient() As Boolean
   
   Select Case GetSCCSystem
     Case sccSystemSubversion
-      sngVersion = CSng(SVN_ClientVersion(True))
+      sngVersion = Val(SVN_ClientVersion(True)) ' Use Val rather than CSng as SVN does not return an internationally formatted version number, it always uses . as the decimal separator
       Select Case sngVersion
         Case Is <= 1.7
           SCC_IsSupportedClient = True
