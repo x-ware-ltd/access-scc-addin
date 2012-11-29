@@ -264,7 +264,7 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
             'dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
             dblObjModifiedDate = CDbl(Now()) ' The SVNObjectProps table has not been updated yet
             strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportDate) " & _
-                       "VALUES (" & objType & ", '" & strName & "', '" & oSVNImport.svRevision & "', '" & oSVNImport.svCheckSum & "', " & dblObjModifiedDate & ")"
+                       "VALUES (" & objType & ", '" & strName & "', '" & oSVNImport.svRevision & "', '" & oSVNImport.svCheckSum & "', " & str$(dblObjModifiedDate) & ")"
           End If
         
         Case asCommit
@@ -278,7 +278,7 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
           Else
             'dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
             dblObjModifiedDate = CDbl(Now()) ' The SVNObjectProps table has not been updated yet
-            strQuery = "UPDATE MSysSCCStatus SET objImportDate = " & dblObjModifiedDate & ", objImportVersion = '" & oSVNImport.svRevision & "', objSCCChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
+            strQuery = "UPDATE MSysSCCStatus SET objImportDate = " & str$(dblObjModifiedDate) & ", objImportVersion = '" & oSVNImport.svRevision & "', objSCCChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
           End If
       
         Case asModified
@@ -291,7 +291,7 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
           Else
             'dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
             dblObjModifiedDate = 0 ' Force this to always detect that change is required
-            strQuery = "UPDATE MSysSCCStatus SET objImportDate = " & dblObjModifiedDate & ", objImportVersion = '" & oSVNImport.svRevision & "', objSCCChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
+            strQuery = "UPDATE MSysSCCStatus SET objImportDate = " & str$(dblObjModifiedDate) & ", objImportVersion = '" & oSVNImport.svRevision & "', objSCCChecksum = '" & oSVNImport.svCheckSum & "', objStatusUnknown = False WHERE objType = " & objType & " AND objName = '" & strName & "'"
           End If
       
       End Select
@@ -313,7 +313,7 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
           Else
             dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
             strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportDate, objStatusUnknown) " & _
-                       "VALUES (" & objType & ", '" & strName & "', '0', '0', " & dblObjModifiedDate & ", True)"
+                       "VALUES (" & objType & ", '" & strName & "', '0', '0', " & str$(dblObjModifiedDate) & ", True)"
           End If
         
         Case asCommit
@@ -331,7 +331,7 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
                        "WHERE objType = " & objType & " AND objName = '" & strName & "'"
           Else
             dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
-            strQuery = "UPDATE MSysSCCStatus SET objImportDate = " & dblObjModifiedDate & ", " & _
+            strQuery = "UPDATE MSysSCCStatus SET objImportDate = " & str$(dblObjModifiedDate) & ", " & _
                                                 "objSCCChecksum = '" & strHash & "', " & _
                                                 "objStatusUnknown = True " & _
                        "WHERE objType = " & objType & " AND objName = '" & strName & "'"
@@ -801,7 +801,7 @@ Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As St
     Set rstObjProps = db.OpenRecordset("SELECT * FROM MSysSCCObjectProperties WHERE objType = " & accessObjType & " AND objName = '" & rst!objName & "'", dbOpenDynaset)
     ' If object was imported correctly, update the import date or checksum, otherwise delete from SVN status table
     If rstObjProps.RecordCount <> 0 Then
-      db.Execute ("UPDATE MSysSCCStatus SET objImportDate = " & rstObjProps!objUpdateDate & ", objImportCheckSum = '" & rstObjProps!objUpdateChecksum & "' WHERE objType = " & objImportType & " AND objName = '" & rst!objName & "'")
+      db.Execute ("UPDATE MSysSCCStatus SET objImportDate = " & str$(rstObjProps!objUpdateDate) & ", objImportCheckSum = '" & rstObjProps!objUpdateChecksum & "' WHERE objType = " & objImportType & " AND objName = '" & rst!objName & "'")
     Else
       db.Execute ("DELETE FROM MSysSCCStatus WHERE objType = " & objImportType & " AND objName = '" & rst!objName & "'")
     End If
