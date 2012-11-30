@@ -1,0 +1,2363 @@
+Version =20
+VersionRequired =20
+Checksum =-1959006273
+Begin Form
+    PopUp = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    AllowDeletions = NotDefault
+    DividingLines = NotDefault
+    AllowAdditions = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    BorderStyle =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =6236
+    DatasheetFontHeight =10
+    ItemSuffix =92
+    Left =7140
+    Top =3105
+    Right =13470
+    Bottom =11040
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xb319a669b144e340
+    End
+    Caption ="Subversion for Access XP"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x8905000089050000890500008905000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x42726f7468657220484c2d323033302073657269657300000000000000000000 ,
+        0x010419039c003c0903ff8001010009009a0b3408640001000700580202000100 ,
+        0x5802030001004134000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000010060b00 ,
+        0x5052495600200000249803000000110101100000180000000000102710271027 ,
+        0x000010270000000000000000ff00000000000100000002000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000e5ed050001000500010000000000000000000001 ,
+        0x0200000000000000000064000000000000000000010001000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0xbb028804000000000000000000000000000000000000010000001a0701000000 ,
+        0x09000900000000000000ffff0800070007000700000000000000000081000000 ,
+        0x000000000000000002000000070000000000000000190000e40c000000000000 ,
+        0xb80b00007017000000000000dc05000058020000000000000000000000000000 ,
+        0xfeff0000000000000000000000000000000000000000000000000000370c0000 ,
+        0xda0c000010270000102700001027000010270000a00a0000c2060000b8060000 ,
+        0x2c04000040010000d20000000000000000000000000000000000000000000000 ,
+        0x000000000001ffff000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000530054004500560045002d00500043000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000fffffffffefffffffefffffffeffffff ,
+        0xfefffffffefffffffefffffffefffffffefffffffefffffffefffffffeffffff ,
+        0xfefffffffefffffffefffffffefffffffefffffffefffffffefffffffeffffff ,
+        0xfefffffffefffffffffffffffeffffff454e474c495348000000000000000000 ,
+        0x420052005300500031003000340042002e004500580045000000000000000000 ,
+        0x420052004c0048004c003000340042002e0044004c004c000000000000000000 ,
+        0x42005200420055004c003000340042002e0044004c004c000000000000000000 ,
+        0x42004f0032003000330030002e0049004e004900000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000007000804000000000000000000000000 ,
+        0x0100ffff000000000e0100000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000c6008800000064000000000001010000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000006000000f5ffffff00000000 ,
+        0x000000000000000000000000000000010000000041007200690061006c000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000000000000ffffff0001000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000000000000ffffffff64000000 ,
+        0x0000000000000080530074006500760065000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000010000000000000000000000000000000100000042524c48 ,
+        0x4c3034422e444c4c000000000000000001000000454f5343
+    End
+    PrtDevNames = Begin
+        0x08001f003600010042726f7468657220484c2d32303330207365726965730042 ,
+        0x726f7468657220484c2d32303330207365726965730055534230303100
+    End
+    OnGotFocus ="[Event Procedure]"
+    OnLoad ="[Event Procedure]"
+    Begin
+        Begin Label
+            BackStyle =0
+        End
+        Begin Rectangle
+            SpecialEffect =3
+            BackStyle =0
+            Width =850
+            Height =850
+        End
+        Begin Image
+            BackStyle =0
+            OldBorderStyle =0
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+        End
+        Begin CommandButton
+            Width =1701
+            Height =283
+            FontSize =8
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="MS Sans Serif"
+        End
+        Begin CheckBox
+            SpecialEffect =2
+            LabelX =230
+            LabelY =-30
+        End
+        Begin TextBox
+            SpecialEffect =2
+            OldBorderStyle =0
+            Width =1701
+            LabelX =-1701
+        End
+        Begin Section
+            Height =7653
+            Name ="Detail"
+            Begin
+                Begin Rectangle
+                    OverlapFlags =93
+                    Left =238
+                    Top =1981
+                    Width =3335
+                    Height =1245
+                    Name ="Box24"
+                End
+                Begin TextBox
+                    OverlapFlags =85
+                    Left =225
+                    Top =1212
+                    Width =5403
+                    Height =280
+                    TabIndex =2
+                    Name ="txtOutputLocation"
+                    ControlSource ="ExportPath"
+                    AfterUpdate ="[Event Procedure]"
+                    DefaultValue ="\"C:\\SVNRoot\\\""
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextAlign =1
+                            Left =1599
+                            Top =855
+                            Width =1740
+                            Height =240
+                            Name ="lblOutputLocation"
+                            Caption ="SVN Checkout Folder:"
+                        End
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    Left =1590
+                    Top =120
+                    Width =4140
+                    Height =450
+                    FontSize =16
+                    FontWeight =600
+                    Name ="lblTitle"
+                    Caption ="Subversion for Access XP"
+                    FontName ="Arial"
+                End
+                Begin CommandButton
+                    OverlapFlags =215
+                    Left =1995
+                    Top =2850
+                    Width =1520
+                    Height =340
+                    TabIndex =10
+                    Name ="cmdRun"
+                    Caption ="Export Objects"
+                    OnClick ="[Event Procedure]"
+                End
+                Begin CheckBox
+                    OverlapFlags =93
+                    Left =5707
+                    Top =2764
+                    Width =113
+                    Height =170
+                    TabIndex =9
+                    Name ="chkQueries"
+                    ControlSource ="QueriesFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            Left =3960
+                            Top =2707
+                            Width =1560
+                            Height =240
+                            Name ="lblQueries"
+                            Caption ="Queries.........................................."
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =93
+                    Left =5707
+                    Top =3047
+                    Width =113
+                    Height =170
+                    TabIndex =11
+                    Name ="chkForms"
+                    ControlSource ="FormsFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            Left =3960
+                            Top =2991
+                            Width =1560
+                            Height =240
+                            Name ="lblForms"
+                            Caption ="Forms.............................................."
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =93
+                    Left =5707
+                    Top =3331
+                    Width =113
+                    Height =170
+                    TabIndex =12
+                    Name ="chkReports"
+                    ControlSource ="ReportsFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            Left =3960
+                            Top =3274
+                            Width =1560
+                            Height =240
+                            Name ="lblReports"
+                            Caption ="Reports............................................"
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =93
+                    Left =5707
+                    Top =3614
+                    Width =113
+                    Height =170
+                    TabIndex =14
+                    Name ="chkMacros"
+                    ControlSource ="MacrosFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            Left =3960
+                            Top =3558
+                            Width =1560
+                            Height =240
+                            Name ="lblMacros"
+                            Caption ="Macros.........................................."
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =93
+                    Left =5707
+                    Top =3898
+                    Width =113
+                    Height =170
+                    TabIndex =16
+                    Name ="chkModules"
+                    ControlSource ="ModulesFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            Left =3960
+                            Top =3841
+                            Width =1560
+                            Height =240
+                            Name ="lblModules"
+                            Caption ="Modules....................................."
+                        End
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =93
+                    Left =1995
+                    Top =4125
+                    Width =1520
+                    Height =340
+                    TabIndex =17
+                    Name ="btnImport"
+                    Caption ="Import Objects"
+                    OnClick ="[Event Procedure]"
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    Left =5670
+                    Top =1200
+                    Width =394
+                    Height =325
+                    TabIndex =1
+                    Name ="cmdFolderDialog"
+                    Caption ="Select SVN Folder"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadad00000000000adada ,
+                        0x003333333330adad0b03333333330ada0fb03333333330ad0bfb03333333330a ,
+                        0x0fbfb000000000000bfbfbfbfb0adada0fbfbfbfbf0dadad0bfb0000000adada ,
+                        0xa000adadadad000ddadadadadadad00aadadadad0dad0d0ddadadadad000dada ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
+                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
+                        0xffffff0000000000
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =3156
+                    Top =2136
+                    Width =171
+                    Height =170
+                    TabIndex =4
+                    Name ="chkCommit"
+                    ControlSource ="CommitAfterExport"
+                    AfterUpdate ="[Event Procedure]"
+                    DefaultValue ="=True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =223
+                            Left =345
+                            Top =2079
+                            Width =2220
+                            Height =240
+                            Name ="Label26"
+                            Caption ="Commit to SVN after export?"
+                        End
+                    End
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =215
+                    Left =408
+                    Top =1867
+                    Width =690
+                    Height =210
+                    FontWeight =700
+                    Name ="Label27"
+                    Caption ="Export"
+                End
+                Begin Rectangle
+                    OverlapFlags =223
+                    Left =240
+                    Top =3408
+                    Width =3335
+                    Height =1155
+                    Name ="Box29"
+                End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =3141
+                    Top =3612
+                    Width =171
+                    Height =170
+                    TabIndex =13
+                    Name ="chkImport"
+                    ControlSource ="UpdateBeforeImport"
+                    AfterUpdate ="[Event Procedure]"
+                    DefaultValue ="=True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =223
+                            Left =345
+                            Top =3555
+                            Width =2385
+                            Height =240
+                            Name ="lblUpdate"
+                            Caption ="Update from SVN before import?"
+                        End
+                    End
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =215
+                    Left =405
+                    Top =3285
+                    Width =690
+                    Height =210
+                    FontWeight =700
+                    Name ="lblImport"
+                    Caption ="Import"
+                End
+                Begin Rectangle
+                    OverlapFlags =255
+                    Left =3701
+                    Top =1981
+                    Width =2375
+                    Height =4500
+                    Name ="Box33"
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =247
+                    Left =3900
+                    Top =1869
+                    Width =795
+                    Height =210
+                    FontWeight =700
+                    Name ="lblObjects"
+                    Caption ="Objects"
+                End
+                Begin CheckBox
+                    OverlapFlags =247
+                    Left =5707
+                    Top =2193
+                    Width =113
+                    Height =170
+                    TabIndex =5
+                    Name ="chkSelectAllObjects"
+                    DefaultValue ="True"
+                    OnClick ="[Event Procedure]"
+                    Begin
+                        Begin Label
+                            OverlapFlags =247
+                            Left =3960
+                            Top =2137
+                            Width =1560
+                            Height =240
+                            Name ="lblCheckAll"
+                            Caption ="Select/Unselect All?"
+                        End
+                    End
+                End
+                Begin Rectangle
+                    OverlapFlags =93
+                    Left =210
+                    Top =4762
+                    Width =3335
+                    Height =1740
+                    Name ="Box37"
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =215
+                    Left =375
+                    Top =4650
+                    Width =690
+                    Height =210
+                    FontWeight =700
+                    Name ="Label38"
+                    Caption ="Status"
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    SpecialEffect =0
+                    OverlapFlags =215
+                    Left =1466
+                    Top =4935
+                    Width =2021
+                    Height =238
+                    FontWeight =600
+                    TabIndex =21
+                    BorderColor =8421504
+                    Name ="txtLastImported"
+                    ControlSource ="LastImportDate"
+                    Format ="Short Date"
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =270
+                            Top =4935
+                            Width =1095
+                            Height =240
+                            Name ="lblStatus1"
+                            Caption ="Last Imported:"
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    SpecialEffect =0
+                    OverlapFlags =215
+                    TextAlign =3
+                    Left =2546
+                    Top =5250
+                    Width =926
+                    Height =238
+                    FontWeight =600
+                    TabIndex =23
+                    BorderColor =8421504
+                    Name ="txtLastVersion"
+                    ControlSource ="LastCheckoutVersion"
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =270
+                            Top =5250
+                            Width =2205
+                            Height =240
+                            Name ="Label42"
+                            Caption ="BASE Version in Access:"
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    SpecialEffect =0
+                    OverlapFlags =215
+                    TextAlign =3
+                    Left =2546
+                    Top =5880
+                    Width =926
+                    Height =238
+                    FontWeight =600
+                    TabIndex =26
+                    BorderColor =8421504
+                    Name ="txtLatestVersion"
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =270
+                            Top =5880
+                            Width =2205
+                            Height =240
+                            Name ="lblLatestVersio"
+                            Caption ="HEAD Version in Respository:"
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =247
+                    Left =5700
+                    Top =2483
+                    Width =113
+                    Height =170
+                    TabIndex =7
+                    Name ="chkTables"
+                    ControlSource ="TablesFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =247
+                            Left =3953
+                            Top =2426
+                            Width =1560
+                            Height =240
+                            Name ="lblTables"
+                            Caption ="Tables.................................."
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =247
+                    Left =5707
+                    Top =4189
+                    Width =113
+                    Height =170
+                    TabIndex =18
+                    Name ="chkCmdBars"
+                    ControlSource ="ToolbarsFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =247
+                            Left =3960
+                            Top =4132
+                            Width =1560
+                            Height =240
+                            Name ="lblCmdBars"
+                            Caption ="Toolbars.............................."
+                        End
+                    End
+                End
+                Begin CheckBox
+                    TabStop = NotDefault
+                    OverlapFlags =247
+                    Left =5707
+                    Top =5039
+                    Width =113
+                    Height =170
+                    TabIndex =22
+                    Name ="chkImportExport"
+                    ControlSource ="ImExSpecsFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =247
+                            Left =3960
+                            Top =4982
+                            Width =1560
+                            Height =240
+                            Name ="lblImportExport"
+                            Caption ="Import/Export Specs.................."
+                        End
+                    End
+                End
+                Begin CheckBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =247
+                    Left =5707
+                    Top =5323
+                    Width =113
+                    Height =170
+                    TabIndex =24
+                    Name ="chkRelationships"
+                    ControlSource ="RelationshipsFlag"
+                    Begin
+                        Begin Label
+                            OverlapFlags =247
+                            Left =3960
+                            Top =5266
+                            Width =1560
+                            Height =240
+                            ForeColor =8421504
+                            Name ="lblRelationships"
+                            Caption ="Relationships....................................."
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =2938
+                    Top =6228
+                    Width =170
+                    Height =170
+                    TabIndex =27
+                    Name ="chkRepository"
+                    ControlSource ="CheckRepoOnSartup"
+                    AfterUpdate ="[Event Procedure]"
+                    DefaultValue ="=True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =272
+                            Top =6198
+                            Width =2535
+                            Height =240
+                            Name ="lblCheckRepository"
+                            Caption ="Check repository version on startup"
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =247
+                    Left =5707
+                    Top =4472
+                    Width =113
+                    Height =170
+                    TabIndex =19
+                    Name ="chkExtras"
+                    ControlSource ="ExtrasFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =247
+                            Left =3960
+                            Top =4415
+                            Width =1560
+                            Height =240
+                            Name ="lblExtras"
+                            Caption ="Extras.............................."
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =247
+                    Left =5707
+                    Top =4756
+                    Width =113
+                    Height =170
+                    TabIndex =20
+                    Name ="chkReferences"
+                    ControlSource ="ReferencesFlag"
+                    DefaultValue ="True"
+                    Begin
+                        Begin Label
+                            OverlapFlags =247
+                            Left =3960
+                            Top =4699
+                            Width =1560
+                            Height =240
+                            Name ="lblReferences"
+                            Caption ="References.............................."
+                        End
+                    End
+                End
+                Begin CommandButton
+                    Enabled = NotDefault
+                    OverlapFlags =93
+                    Left =2095
+                    Top =6782
+                    Width =340
+                    Height =328
+                    TabIndex =28
+                    Name ="cmdCompactDatabase"
+                    Caption ="Compact Database"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadaddadadadadadadadaadadadadada4adaddadadadadad44ada ,
+                        0xadadadadada444adda4444444444444aadadadadada444addadadadadad44ada ,
+                        0xadadadadada4adaddadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
+                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
+                        0xffffff0000000000
+                    End
+                End
+                Begin Label
+                    OverlapFlags =93
+                    Left =395
+                    Top =6839
+                    Width =1635
+                    Height =210
+                    Name ="lblCompact"
+                    Caption ="Compact Database?"
+                End
+                Begin Rectangle
+                    OverlapFlags =223
+                    Left =225
+                    Top =6682
+                    Width =5840
+                    Height =870
+                    Name ="Box62"
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =215
+                    Left =395
+                    Top =6555
+                    Width =1140
+                    Height =210
+                    FontWeight =700
+                    Name ="lblTool"
+                    Caption ="Other Tools"
+                End
+                Begin TextBox
+                    SpecialEffect =0
+                    OldBorderStyle =1
+                    OverlapFlags =215
+                    BackStyle =0
+                    Left =3627
+                    Top =6782
+                    Width =2324
+                    Height =227
+                    TabIndex =29
+                    BorderColor =8421504
+                    Name ="txtDBFile"
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =2890
+                            Top =6782
+                            Width =615
+                            Height =240
+                            Name ="Label65"
+                            Caption ="DB Size:"
+                        End
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =215
+                    Left =2090
+                    Top =7140
+                    Width =340
+                    Height =328
+                    TabIndex =30
+                    Name ="cmdRepairPrinter"
+                    Caption ="Repair Printer Names"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaad00000000000dadd0888888888080da ,
+                        0x000000000000080d0888888bbb88000a088888877788080d0000000000000880 ,
+                        0x0888888888808080d000000000080800ad0ffffffff08080dad0f00000f0000a ,
+                        0xada0ffffffff0daddada0f00000f0adaadad0ffffffff0addadad000000000da ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
+                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
+                        0xffffff0000000000
+                    End
+                End
+                Begin Label
+                    OverlapFlags =215
+                    Left =390
+                    Top =7197
+                    Width =1635
+                    Height =210
+                    Name ="Label69"
+                    Caption ="Repair Printer Names"
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    SpecialEffect =0
+                    OverlapFlags =215
+                    TextAlign =3
+                    Left =2546
+                    Top =5565
+                    Width =926
+                    Height =238
+                    FontWeight =600
+                    TabIndex =25
+                    BorderColor =8421504
+                    Name ="txtFolderVersion"
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =270
+                            Top =5565
+                            Width =2205
+                            Height =240
+                            Name ="Label71"
+                            Caption ="BASE Version in SVN Folder:"
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    AllowAutoCorrect = NotDefault
+                    SpecialEffect =0
+                    OverlapFlags =85
+                    Left =225
+                    Top =1530
+                    Width =5411
+                    Height =238
+                    FontWeight =500
+                    TabIndex =3
+                    BorderColor =8421504
+                    ForeColor =12615680
+                    Name ="txtSvnUrl"
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    Left =3915
+                    Top =795
+                    Width =337
+                    Height =337
+                    Name ="btnOpenFolder"
+                    Caption ="Command4"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadad00000000000adada ,
+                        0x003333333330adad0b03333333330ada0fb03333333330ad0bfb03333333330a ,
+                        0x0fbfb000000000000bfbfbfbfb0adada0fbfbfbfbf0dadad0bfb0000000adada ,
+                        0xa000adadadad000ddadadadadadad00aadadadad0dad0d0ddadadadad000dada ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
+                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
+                        0xffffff0000000000
+                    End
+                    GUID = Begin
+                        0xa47e8cf1809dd24e92b78d63a4f4eb9f
+                    End
+                End
+                Begin Label
+                    OverlapFlags =85
+                    Left =4260
+                    Top =855
+                    Width =1845
+                    Height =240
+                    Name ="Label5"
+                    Caption ="Open SVN Output Folder"
+                    GUID = Begin
+                        0xaf28a047822843489dbfdbc3e51f67fb
+                    End
+                End
+                Begin Image
+                    Left =165
+                    Top =120
+                    Width =1376
+                    Height =962
+                    Name ="Image6"
+                    PictureData = Begin
+                        0x0e000000940c46e8010000006c0000000000000000000000520000003a000000 ,
+                        0x0000000000000000180900009d06000020454d46000001006487000011000000 ,
+                        0x01000000000000000000000000000000900600001a040000d60100002c010000 ,
+                        0x000000000000000000000000f02b0700e093040046000000b8430000ac430000 ,
+                        0x4744494301000080000300005728d5930000000094430000010009000003ca21 ,
+                        0x00000000222100000000050000000c0240005800040000000301080005000000 ,
+                        0x0b0200000000050000000c02400058000b00000026060f000c005f464d524347 ,
+                        0x2020202020206f00000026060f00d4005f464d5246532c215030204823203c21 ,
+                        0x2031205c26204321303d205426204521403b2030272053212028202426204e21 ,
+                        0x20392020222033213039203027205421303a205826204721503c205025202d21 ,
+                        0x303a204c2620452120372054242059212028203024204f215038203427204d21 ,
+                        0x3039205826205421503c205025202d21303e202022203021303a202c26205421 ,
+                        0x303d202827204521503c205025205321303d2028262056213039202827205321 ,
+                        0x303a205c26204e21302b205026204f215039205c26204e202034205824202721 ,
+                        0x202020200500000007010300000005000000090200000000050000000102ffff ,
+                        0xff0022210000430f2000cc000000400058000000000040005800000000002800 ,
+                        0x0000580000004000000001001800000000000042000000000000000000000000 ,
+                        0x000000000000f1e6e0e8d7cbe0c7b7d7b7a3cea68dc89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80fffffffffffffffffffffffffffffffbf8f6 ,
+                        0xf2e7e1e8d6cbdfc5b5d5b39ecaa186c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80ffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffefefef7f1edecded5e2cbbd ,
+                        0xd7b8a4cca48ac89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80ffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffefefef8f2efedded5e1cabbd6b6a1cba187c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80ffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffefefef6efeaeadacfdec4b4d3af99c99d82c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80efe3dbf8f2eefefefdffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffcfbfaf1e6dfe5 ,
+                        0xd0c3d8baa6cca38ac89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c99f84d1 ,
+                        0xad95dabcaae2ccbeebdcd2f4ebe6fcfaf9ffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffefefef6f0ecead9cedcc1b0cfaa92c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80cfa991d8baa6e2 ,
+                        0xcbbcebdcd2f5ede8fdfcfcffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffff9f5f2ecddd4dfc6b6d2ae97c89c81c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c99e83d2ae98dcc1afe6d3c7f1e6dffb ,
+                        0xf9f7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffbf8f6eee0d8e0c8 ,
+                        0xb8d3b099c89d81c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80cfaa92dabdaae5d0c3f0e4ddfbf8f7ffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffbf9f8eee2dae0c8b8d2ae97c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80d0ab94dcc0aee8d5c9f3eae4fefdfcffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfaf6f4ecded4dec4b3d0aa92c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80cca389d4b29ccca389cca389d4b29ccca389c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80ca9f84d5b49ee1cabbeee0 ,
+                        0xd8fbf8f6ffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffff8f3f0e9d8cddabdabcca389 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80d4b29cfcfaf9d4b29cd4b29cfcfbfad4b29cc89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80d2ae97dfc6b7eddfd6faf6f4ffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffefefdf3eae4e4cfc2d5b49ec99e82c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80cca389d4b29ccca389cca389 ,
+                        0xd4b29ccca389c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c81 ,
+                        0xd2ae98e0c8b8eee2dafcfaf8ffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffcfaf8ede0d7de ,
+                        0xc3b2cea68ec89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c99e82d5b39ee4cec0f2e8e2fdfdfd ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffefefef5ede8e5d1c4d5b49ec99e82c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80cca389dbbeabeadad0faf6f4ffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbf8 ,
+                        0xf7ebdcd2dabdaacaa186c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c81d4b29ce5d1c4f6 ,
+                        0xefebffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffdfcfbefe2dadec4b3cda58cc89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80cca389d4b29ccca389cca389 ,
+                        0xd4b29ccca389c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80d1ad96e3cdbff6eeeaffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfefefef2e8e1e0c7b7cea68ec89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d4b29cfc ,
+                        0xfaf9d4b29cd4b29cfcfbfad4b29cc89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d2ae97e5d0 ,
+                        0xc3f8f3f0ffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffefefef3eae4e0c8b8cfa890c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80cca389d4b29ccca389cca389d4b29ccca389c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c81d7b7a3edded5fdfdfcffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffefefef2e8e2dfc6b6cda58bc89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80cda58ce2ccbd ,
+                        0xf8f4f0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffdfdfdf0e4ddddc1b0cba287c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c99e82dcc0aff6eeeaffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffdfbfaebdcd2d7b7a2c89d81c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89d81dbbeacf8f2efff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffff8f3f0e4cfc2d0aa92c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80ca9f84e5d0c3fdfdfdffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffefefee7d4c8e4cec0e0c8b8ddc2b0d9baa7d4b29cd0aa92cba288c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80d5b49efaf6f4ffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffefdfcf9f5f2f5ede8f0e4ddebdcd2e7d4c8e2cbbdddc2b0d8b8 ,
+                        0xa4d2af99cda68dc89d82c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d3b09a ,
+                        0xfdfcfcffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffefefdfaf6f3f4ece6eee1d9e8d7cce3cd ,
+                        0xbfddc2b0d7b8a4d2ae97cca48ac89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80ecded5ffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffdfcfbf8f2eef2e8e1ecde ,
+                        0xd4e6d3c7e1c9badbbeacd6b6a1d1ac95cba288c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80f0e4ddffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffdfcfbf8f2 ,
+                        0xeff2e8e2eddfd6e8d5cae2ccbedec4b3d9bba8d4b29ccfaa92cba187c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80cfa890e9d9ceffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffdfcfbf8f4f0f5ede8f2e7e1eee1d9ebdbd2e8d5c9e4cfc2e1cabbdf ,
+                        0xc5b5dcc1b0dbbeacdbbeacdcc1afdfc6b6e4cec0ebdbd2f5eee9fefefeffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffcfaf8f0e4dde8d6cae3cec0e1c9bae0c8b8 ,
+                        0xe1c9bae2ccbee4cfc2e7d4c8eadad0eee0d8f2e7e1f5eeeaf9f5f3fdfcfcffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffdfcfcdfc5b5c99f84c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80cba288d0ab94d5b39ed9bca9dec5b5e4cec0e8d7cceee1d8f3ea ,
+                        0xe4f8f3f0fdfcfbffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffebdcd2c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80cca389d1ac95d6b6a1dcc0aee1cabbe8d5 ,
+                        0xc9eddfd6f3eae4f8f3f0fefdfcffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xf3eae4c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c81cda58cd3af99d8baa6dec4 ,
+                        0xb3e4cec0e9d8cdefe2daf4ece6faf6f4fefefeffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffdfcfcffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffe7d4c8c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c99e82cea68ed3b0 ,
+                        0x9ad8b9a6ddc2b0e2cbbde8d5c9ecddd4f1e6def5eee9faf6f3fdfdfdffffffff ,
+                        0xffffffffffffffffffffffffffffcda58be2cbbcf7f2eeffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffefe3dbcea68dc89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80cca389d0aa92d4b19cd8b9a6dcc0aedfc6b6c89c80c89c80c89c80d7 ,
+                        0xb7a2ecdcd3fdfbfbffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffbf9f7e1c9bac99f84c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80cba288dec4b4f3eae4fefefeffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffff8f4f0dfc6b7ca9f84c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d1ac ,
+                        0x95e4d0c2f7f2eeffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaf6f4 ,
+                        0xe4cfc2cda68dc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80d4b19be7d3c7f9f5f2ffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffefdfcedded5d6b6a1c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c81 ,
+                        0xd6b5a0e8d5c9f9f5f2ffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f1ede2 ,
+                        0xcbbdcea68ec89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80d4b29ce6d3c7f8f3f0ffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffefefdf0e5deddc3b2cba288c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80d3b09ae4cec0f5ede8fefefeffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffdfcfcefe3 ,
+                        0xdbddc2b0cca38ac89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80cfa890dfc6b7f0e4ddfdfdfcff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffdfdfdf1e6dfdfc7b7cea88fc89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80cba287dabdaaead9cef9f5f2ffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffefefe ,
+                        0xf5ede8e5d0c3d5b39ec89d82c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d2af99e2ccbdf2e8 ,
+                        0xe2fdfdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffbf8f7eddfd6dec5b5d0aa92c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80cba288d9bca9e8d7ccf7f2eeffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffff8f3f0ead9cfdcc0aecda68dc89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80cfaa92 ,
+                        0xdec5b4eddfd6fbf9f7ffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffefefef6f0ece9d8cddc ,
+                        0xc0aecea88fc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89d81d4b19be2cbbcf0e4ddfdfbfaffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffff8f4f0ecddd4dfc7b7d3b09ac99e83c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c99f83d6b5a0e4cfc2f2e8e2fefdfcffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffdfcfbf3eae4e8d5c9dcc0afd1ac95c89d81c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80caa086d7b7a3e5d0c3f2 ,
+                        0xe8e2fdfcfcffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffcfaf9f2e7e1e7d3 ,
+                        0xc7dcc1afd2af98c99e83c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80caa085d6b6a1e3cdc0f0e5defcfaf9ffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffdfdfcf5ede8ebdcd2e2cbbdd9bba8d0aa ,
+                        0x92c89d81c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c99d ,
+                        0x82d4b19be0c8b8eddfd6faf6f3ffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffdfbfbf5ede8ecdcd3e3ccbedabcaad1ad96ca9f84c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80cfa991dcc0afe8d7ccf5ed ,
+                        0xe8fefefdffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffefefec89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80cba187d6b6a2e3ccbeefe2dafaf6f4ffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffc89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xcfa991dbbeace6d3c6f2e7e1fcfbf9ffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffc89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89d81d1ad96dcc1afe8d5c9 ,
+                        0xf3eae4fcfbfaffffffffffffffffffffffffffffffffffffffffffffffffc89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89d81d1ac95dbbeace6d2c5f0e4ddfaf6f4ffffff ,
+                        0xffffffffffff030000000000110000000c000000080000000b00000010000000 ,
+                        0x530000003b0000000900000010000000530000003b0000000900000010000000 ,
+                        0x58000000400000000a0000001000000000000000000000000900000010000000 ,
+                        0x5800000040000000150000000c00000003000000180000000c00000000000000 ,
+                        0x190000000c000000ffffff005100000078420000000000000000000052000000 ,
+                        0x3a00000000000000000000000000000000000000580000004000000050000000 ,
+                        0x280000007800000000420000000000002000cc00580000004000000028000000 ,
+                        0x5800000040000000010018000000000000420000000000000000000000000000 ,
+                        0x00000000f1e6e0e8d7cbe0c7b7d7b7a3cea68dc89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80fffffffffffffffffffffffffffffffbf8f6f2e7 ,
+                        0xe1e8d6cbdfc5b5d5b39ecaa186c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80ffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffefefef7f1edecded5e2cbbdd7b8 ,
+                        0xa4cca48ac89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80ffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffefefef8f2efedded5e1cabbd6b6a1cba187c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80ffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfefefef6efeaeadacfdec4b4d3af99c99d82c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80efe3dbf8f2eefefefdffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffcfbfaf1e6dfe5d0c3 ,
+                        0xd8baa6cca38ac89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c99f84d1ad95 ,
+                        0xdabcaae2ccbeebdcd2f4ebe6fcfaf9ffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffefefef6f0ecead9cedcc1b0cfaa92c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80cfa991d8baa6e2cbbc ,
+                        0xebdcd2f5ede8fdfcfcffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffff9f5f2ecddd4dfc6b6d2ae97c89c81c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c99e83d2ae98dcc1afe6d3c7f1e6dffbf9f7 ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffbf8f6eee0d8e0c8b8d3 ,
+                        0xb099c89d81c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80cfaa92dabdaae5d0c3f0e4ddfbf8f7ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffbf9f8eee2dae0c8b8d2ae97c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d0 ,
+                        0xab94dcc0aee8d5c9f3eae4fefdfcffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaf6 ,
+                        0xf4ecded4dec4b3d0aa92c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80cca389d4b29ccca389cca389d4b29ccca389c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80ca9f84d5b49ee1cabbeee0d8fb ,
+                        0xf8f6ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffff8f3f0e9d8cddabdabcca389c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80d4b29cfcfaf9d4b29cd4b29cfcfbfad4b29cc89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80d2ae97dfc6b7eddfd6faf6f4ffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffefefdf3eae4e4cfc2d5b49ec99e82c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80cca389d4b29ccca389cca389d4b2 ,
+                        0x9ccca389c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c81d2ae ,
+                        0x98e0c8b8eee2dafcfaf8ffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffcfaf8ede0d7dec3b2 ,
+                        0xcea68ec89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c99e82d5b39ee4cec0f2e8e2fdfdfdffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffefefef5ede8e5d1c4d5b49ec99e82c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80cca389dbbeabeadad0faf6f4ffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffbf8f7eb ,
+                        0xdcd2dabdaacaa186c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c81d4b29ce5d1c4f6efeb ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffdfcfbefe2dadec4b3cda58cc89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80cca389d4b29ccca389cca389d4b2 ,
+                        0x9ccca389c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80d1ad96e3cdbff6eeeaffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffefe ,
+                        0xfef2e8e1e0c7b7cea68ec89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d4b29cfcfaf9 ,
+                        0xd4b29cd4b29cfcfbfad4b29cc89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d2ae97e5d0c3f8 ,
+                        0xf3f0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffefefef3eae4e0c8b8cfa890c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80cca389d4b29ccca389cca389d4b29ccca389c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c81d7b7a3edded5fdfdfcffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfefefef2e8e2dfc6b6cda58bc89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80cda58ce2ccbdf8f4 ,
+                        0xf0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffdfdfdf0e4ddddc1b0cba287c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c99e82dcc0aff6eeeaffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffdfbfaebdcd2d7b7a2c89d81c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89d81dbbeacf8f2efffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffff8f3f0e4cfc2d0aa92c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80ca9f84e5d0c3fdfdfdffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffefefee7d4c8e4cec0e0c8b8ddc2b0d9baa7d4b29cd0aa92cba288c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80d5b49efaf6f4ffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffefdfcf9f5f2f5ede8f0e4ddebdcd2e7d4c8e2cbbdddc2b0d8b8a4d2 ,
+                        0xaf99cda68dc89d82c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d3b09afdfc ,
+                        0xfcffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffefefdfaf6f3f4ece6eee1d9e8d7cce3cdbfdd ,
+                        0xc2b0d7b8a4d2ae97cca48ac89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80ecded5ffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffdfcfbf8f2eef2e8e1ecded4e6 ,
+                        0xd3c7e1c9badbbeacd6b6a1d1ac95cba288c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80f0e4ddffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffdfcfbf8f2eff2 ,
+                        0xe8e2eddfd6e8d5cae2ccbedec4b3d9bba8d4b29ccfaa92cba187c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80cfa890e9d9ceffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffdfcfbf8f4f0f5ede8f2e7e1eee1d9ebdbd2e8d5c9e4cfc2e1cabbdfc5b5 ,
+                        0xdcc1b0dbbeacdbbeacdcc1afdfc6b6e4cec0ebdbd2f5eee9fefefeffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffcfaf8f0e4dde8d6cae3cec0e1c9bae0c8b8e1c9 ,
+                        0xbae2ccbee4cfc2e7d4c8eadad0eee0d8f2e7e1f5eeeaf9f5f3fdfcfcffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffdfcfcdfc5b5c99f84c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80cba288d0ab94d5b39ed9bca9dec5b5e4cec0e8d7cceee1d8f3eae4f8 ,
+                        0xf3f0fdfcfbffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffebdcd2c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80cca389d1ac95d6b6a1dcc0aee1cabbe8d5c9ed ,
+                        0xdfd6f3eae4f8f3f0fefdfcffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3ea ,
+                        0xe4c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c81cda58cd3af99d8baa6dec4b3e4 ,
+                        0xcec0e9d8cdefe2daf4ece6faf6f4fefefeffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffdfcfcffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffe7d4c8c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c99e82cea68ed3b09ad8 ,
+                        0xb9a6ddc2b0e2cbbde8d5c9ecddd4f1e6def5eee9faf6f3fdfdfdffffffffffff ,
+                        0xffffffffffffffffffffffffcda58be2cbbcf7f2eeffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffefe3dbcea68dc89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80cca389d0aa92d4b19cd8b9a6dcc0aedfc6b6c89c80c89c80c89c80d7b7a2 ,
+                        0xecdcd3fdfbfbffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb ,
+                        0xf9f7e1c9bac99f84c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80cba288dec4b4f3eae4fefefeffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffff8f4f0dfc6b7ca9f84c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d1ac95e4 ,
+                        0xd0c2f7f2eeffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffaf6f4e4cf ,
+                        0xc2cda68dc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80d4b19be7d3c7f9f5f2ffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffefdfcedded5d6b6a1c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c81d6b5 ,
+                        0xa0e8d5c9f9f5f2ffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffff7f1ede2cbbd ,
+                        0xcea68ec89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80d4b29ce6d3c7f8f3f0ffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffefefdf0e5deddc3b2cba288c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xd3b09ae4cec0f5ede8fefefeffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffdfcfcefe3dbdd ,
+                        0xc2b0cca38ac89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80cfa890dfc6b7f0e4ddfdfdfcffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffdfdfdf1e6dfdfc7b7cea88fc89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80cba287dabdaaead9cef9f5f2ffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefefef5ed ,
+                        0xe8e5d0c3d5b39ec89d82c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80d2af99e2ccbdf2e8e2fd ,
+                        0xfdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffbf8f7eddfd6dec5b5d0aa92c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80cba288d9bca9e8d7ccf7f2eeffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffff8f3f0ead9cfdcc0aecda68dc89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80cfaa92dec5 ,
+                        0xb4eddfd6fbf9f7ffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffefefef6f0ece9d8cddcc0ae ,
+                        0xcea88fc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89d81d4b19be2cbbcf0e4ddfdfbfaffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffff8f4f0ecddd4dfc7b7d3b09ac99e83c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc99f83d6b5a0e4cfc2f2e8e2fefdfcffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd ,
+                        0xfcfbf3eae4e8d5c9dcc0afd1ac95c89d81c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80caa086d7b7a3e5d0c3f2e8e2 ,
+                        0xfdfcfcffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffffffffffffffffffffcfaf9f2e7e1e7d3c7dc ,
+                        0xc1afd2af98c99e83c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80caa085d6b6a1e3cdc0f0e5defcfaf9ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffffffffffffffdfdfcf5ede8ebdcd2e2cbbdd9bba8d0aa92c8 ,
+                        0x9d81c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c99d82d4 ,
+                        0xb19be0c8b8eddfd6faf6f3ffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffffffffffffffdfbfbf5ede8ecdcd3e3ccbedabcaad1ad96ca9f84c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80cfa991dcc0afe8d7ccf5ede8fe ,
+                        0xfefdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xfffefefec89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80cba187d6b6a2e3ccbeefe2dafaf6f4ffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffc89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80cfa9 ,
+                        0x91dbbeace6d3c6f2e7e1fcfbf9ffffffffffffffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffc89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89d81d1ad96dcc1afe8d5c9f3ea ,
+                        0xe4fcfbfaffffffffffffffffffffffffffffffffffffffffffffffffc89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c ,
+                        0x80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c8 ,
+                        0x9c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80c89c80 ,
+                        0xc89c80c89c80c89c80c89d81d1ac95dbbeace6d2c5f0e4ddfaf6f4ffffffffff ,
+                        0xffffffff250000000c00000007000080250000000c0000000000008030000000 ,
+                        0x0c0000000f0000804b0000001000000000000000050000000e00000014000000 ,
+                        0x000000001000000014000000
+                    End
+                    Picture ="C:\\Documents and Settings\\Mike\\My Documents\\My Pictures\\subversion-logo.PNG"
+                    GUID = Begin
+                        0xa961e7550492d74686ac48ae557e5070
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =5751
+                    Top =7264
+                    Width =170
+                    Height =170
+                    TabIndex =31
+                    Name ="chkAllowDebug"
+                    DefaultValue ="False"
+                    GUID = Begin
+                        0x4fe0e5285bd96f46a9a1784c00b69596
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =4050
+                            Top =7208
+                            Width =1590
+                            Height =240
+                            Name ="Label81"
+                            Caption ="Pause for Debugging"
+                            GUID = Begin
+                                0xe43a4967611bae4ca68f44ed904d1fc2
+                            End
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =3156
+                    Top =2622
+                    Width =171
+                    Height =170
+                    TabIndex =8
+                    Name ="chkNoImportExternalChanges"
+                    DefaultValue ="=False"
+                    OnClick ="[Event Procedure]"
+                    ControlTipText ="Stops the Addin from pulling in changes to objects made externally after they ha"
+                        "ve been exported"
+                    GUID = Begin
+                        0x6cd96ee08ab3a64c884ce79be152aaac
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =223
+                            Left =465
+                            Top =2565
+                            Width =2445
+                            Height =240
+                            Name ="Label87"
+                            Caption ="Do not pull in external changes...."
+                            GUID = Begin
+                                0xfcbf679df4ba174db15c14fd863453ad
+                            End
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =3141
+                    Top =3852
+                    Width =171
+                    Height =170
+                    TabIndex =15
+                    Name ="chkShowUpdates"
+                    ControlSource ="ShowUpdateWindow"
+                    DefaultValue ="=True"
+                    GUID = Begin
+                        0x668b492f627992469a6ae5bd79faf129
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =480
+                            Top =3795
+                            Width =2535
+                            Height =240
+                            Name ="Label89"
+                            Caption ="Show results after update..."
+                            GUID = Begin
+                                0xe6ca32001f59144c86a38cc027be55d4
+                            End
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =3156
+                    Top =2382
+                    Width =171
+                    Height =170
+                    TabIndex =6
+                    Name ="chkShowCommit"
+                    ControlSource ="ShowCommitWindow"
+                    DefaultValue ="=True"
+                    GUID = Begin
+                        0xdf6986384e06fd438543b5cca0ef086c
+                    End
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =465
+                            Top =2325
+                            Width =2535
+                            Height =240
+                            Name ="Label91"
+                            Caption ="Show results after commit..."
+                            GUID = Begin
+                                0x2ed165d4dd619248b871843ccb7a1163
+                            End
+                        End
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub btnImport_Click()
+  If Me.chkImport.Value = True Then
+    SCC_Update Me.txtOutputLocation.Value, Me.chkShowUpdates.Value
+  End If
+  
+  ' put all the details in the tmpdatabase
+  asPurgeTmpObjectsTables
+  asPopulateTmpObjectsTables (asImport)
+  
+  ' Select which objects to import
+  DoCmd.OpenForm "asSelectObjects", acNormal, , , , acWindowNormal, "import"
+  
+  UpdateVersionDetails
+  Application.RunCommand acCmdSaveRecord
+End Sub
+
+Private Sub btnOpenFolder_Click()
+  Shell "Explorer.exe " & CStr(Me.txtOutputLocation.Value), vbNormalFocus
+End Sub
+
+Private Sub chkCommit_AfterUpdate()
+  Me.chkShowCommit.Enabled = Me.chkCommit.Value
+  If Me.chkShowCommit.Value = False Then Me.chkShowCommit.Value = False
+  Me.chkNoImportExternalChanges.Enabled = Me.chkCommit.Value
+  Me.chkNoImportExternalChanges.Value = False
+  Application.RunCommand acCmdSaveRecord
+End Sub
+
+Private Sub chkImport_AfterUpdate()
+  Me.chkShowUpdates.Enabled = Me.chkImport.Value
+  If Me.chkImport.Value = False Then Me.chkShowUpdates.Value = False
+  Application.RunCommand acCmdSaveRecord
+End Sub
+
+Private Sub chkNoImportExternalChanges_Click()
+  If Me.chkNoImportExternalChanges = True Then
+    MsgBox "Checking this option will stop any changes made to objects/files after they have been exported from Access, from being imported back into Access again." & vbCrLf & vbCrLf & _
+           "An example usage of this option, is when you wish to perform a partial commit of a module." & vbCrLf & vbCrLf & _
+           "You should take care that your database is kept in sync with the repository.", vbExclamation
+  End If
+End Sub
+
+Private Sub chkRepository_AfterUpdate()
+  Application.RunCommand acCmdSaveRecord
+End Sub
+
+Private Sub chkSelectAllObjects_Click()
+  If Me.chkSelectAllObjects.Value = True Then
+    Me.chkQueries.Value = True
+    Me.chkForms.Value = True
+    Me.chkReports.Value = True
+    Me.chkMacros.Value = True
+    Me.chkModules.Value = True
+    Me.chkTables.Value = True
+    Me.chkCmdBars.Value = True
+    Me.chkExtras.Value = True
+    Me.chkReferences.Value = True
+    Me.chkImportExport.Value = True
+  Else
+    Me.chkQueries.Value = False
+    Me.chkForms.Value = False
+    Me.chkReports.Value = False
+    Me.chkMacros.Value = False
+    Me.chkModules.Value = False
+    Me.chkTables.Value = False
+    Me.chkCmdBars.Value = False
+    Me.chkExtras.Value = False
+    Me.chkReferences.Value = False
+    Me.chkImportExport.Value = False
+  End If
+End Sub
+
+Private Sub cmdCompactDatabase_Click()
+  CommandBars("Menu Bar").Controls("Tools").Controls("Database utilities").Controls("Compact and repair database...").accDoDefaultAction
+End Sub
+
+Private Sub cmdFolderDialog_Click()
+  Dim strFolderPath As String
+
+  strFolderPath = BrowseFolderDialog(Me.hwnd, "Select SVN Checkout Folder", 0, Me.txtOutputLocation.Value)
+  If strFolderPath <> "" Then
+    Me.txtOutputLocation = strFolderPath
+  End If
+  Call txtOutputLocation_AfterUpdate
+End Sub
+
+Private Sub cmdRepairPrinter_Click()
+  Call FindFormPrinterExports(Me.txtOutputLocation)
+  Call FindReportPrinterExports(Me.txtOutputLocation)
+End Sub
+
+Private Sub cmdRun_Click()
+  ' put all the details in the tmpdatabase
+  asPurgeTmpObjectsTables
+  asPopulateTmpObjectsTables (asExport)
+
+  ' Select which objects to export
+  DoCmd.OpenForm "asSelectObjects", acNormal, , , , acWindowNormal, "export"
+  UpdateVersionDetails
+  Application.RunCommand acCmdSaveRecord
+End Sub
+
+Private Sub Form_GotFocus()
+  UpdateVersionDetails
+  pvt_CheckVersionWarnings
+  Me.txtDBFile = getCurrentDBSize()
+  Application.RunCommand acCmdSaveRecord
+End Sub
+
+Private Sub Form_Load()
+  Dim lngFileSize As Long
+  Dim strUnits As String
+  Dim strRecordSource As String
+
+  DoCmd.OpenForm "frmSplash", acNormal, , , , acWindowNormal
+  DoCmd.Hourglass True
+
+  ' We must SetFocus to any control that can
+  Me.txtOutputLocation.SetFocus
+
+  DoCmd.Hourglass True
+  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
+
+  Me.RecordSource = strRecordSource
+
+  SetSCCSystem sccSystemSubversion   ' set default to use SVN
+
+  Call SCC_IsSupportedClient  ' Throw any warnings before doing anything
+
+  If Me.chkRepository = True And Me.txtLastVersion.Value <> "" And Me.txtLastVersion.Value <> -1 Then
+    ' This is not first use of this DB, and startup check is enabled
+    UpdateVersionDetails
+    pvt_CheckVersionWarnings
+  Else
+    Me.txtLatestVersion.Value = ""
+    Me.txtSvnUrl = ""
+    Me.txtFolderVersion = ""
+  End If
+
+  Me.chkNoImportExternalChanges.Value = False
+  Me.txtDBFile = getCurrentDBSize()
+  Forms![frmSplash].TimerInterval = 3000  ' This will close the splash screen in 3 seconds
+End Sub
+
+Private Function getCurrentDBSize() As String
+  Dim lngFileSize As Long
+  Dim strUnits As String
+  
+  lngFileSize = FileLen(CurrentDb.Name)
+  lngFileSize = lngFileSize / 1024 ' KB
+  strUnits = "Kb"
+  If lngFileSize > 9999 Then
+    lngFileSize = lngFileSize / 1024  ' MB
+    strUnits = "Mb"
+  End If
+  If lngFileSize > 9999 Then
+    lngFileSize = lngFileSize / 1024  ' GB
+    strUnits = "Gb"
+  End If
+  getCurrentDBSize = str$(lngFileSize) & " " & strUnits
+End Function
+
+Private Sub txtOutputLocation_AfterUpdate()
+  UpdateVersionDetails
+  pvt_CheckVersionWarnings
+  Application.RunCommand acCmdSaveRecord
+End Sub
+
+Public Sub UpdateVersionDetails()
+  Me.txtLastImported = asGetLatestImportDate()
+  Me.txtSvnUrl = SCC_GetMappedUrl(Me.txtOutputLocation.Value)
+  Me.txtLastVersion = asGetLatestImportVersion()
+  Me.txtLatestVersion = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
+  Me.txtFolderVersion = SCC_GetWorkingFolderVersion(Me.txtOutputLocation.Value)
+End Sub
+
+Private Sub pvt_CheckVersionWarnings()
+  If Me.txtLatestVersion.Value <> "" And Me.txtLastVersion.Value <> "" Then
+    ' This is not first use, and there is some version details populated
+    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtFolderVersion.Value) Then
+      MsgBox "The SCC Repository contains changes which are not reflected in the working copy folder." & vbCrLf & vbCrLf & _
+             "When you commit to the repository, the repository version is updated," & vbCrLf & _
+             "however, your working copy remains at the old version, until you perform an update.", vbExclamation
+    ElseIf CLng(Me.txtFolderVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value <> -1 Then
+      MsgBox "The working copy contains changes which are not reflected in the Access build." & vbCrLf & vbCrLf & _
+             "You should perform an update/import to pull these changes into Access.", vbExclamation
+      Me.txtLatestVersion.ForeColor = 255
+    End If
+    
+    ' Now set the colours
+    If CLng(Me.txtLatestVersion.Value) > CLng(Me.txtFolderVersion.Value) Then
+      Me.txtFolderVersion.ForeColor = 255
+    Else
+      Me.txtFolderVersion.ForeColor = 0
+    End If
+    
+    If CLng(Me.txtFolderVersion.Value) > CLng(Me.txtLastVersion.Value) And Me.txtLastVersion.Value <> -1 Then
+      Me.txtLastVersion.ForeColor = 255
+    Else
+      Me.txtLastVersion.ForeColor = 0
+    End If
+    Me.txtLatestVersion.ForeColor = 0 ' Repository
+  End If
+End Sub

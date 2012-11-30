@@ -1,0 +1,252 @@
+Begin TableDef
+    Updatable = True
+    Attributes = 0
+    Begin Property
+        Name = Orientation
+        Type = 2
+        Value = 0
+    End
+    Begin Property
+        Name = OrderByOn
+        Type = 1
+        Value = False
+    End
+    Begin Property
+        Name = DefaultView
+        Type = 2
+        Value = 2
+    End
+    Begin Field
+        Attributes = 1
+        Type = 4
+        Name = "Version_ID"
+        OrdinalPosition = 0
+        Size = 4
+        DataUpdatable = False
+        DefaultValue = "0"
+        Required = False
+        AllowZeroLength = False
+        Begin Property
+            Name = ColumnWidth
+            Type = 3
+            Value = -1
+        End
+        Begin Property
+            Name = ColumnOrder
+            Type = 3
+            Value = 0
+        End
+        Begin Property
+            Name = ColumnHidden
+            Type = 1
+            Value = False
+        End
+        Begin Property
+            Name = Description
+            Type = 10
+            Value = "Primary key"
+        End
+        Begin Property
+            Name = DecimalPlaces
+            Type = 2
+            Value = 255
+        End
+        Begin Property
+            Name = DisplayControl
+            Type = 3
+            Value = 109
+        End
+    End
+    Begin Field
+        Attributes = 1
+        Type = 6
+        Name = "Version_Number"
+        OrdinalPosition = 1
+        Size = 4
+        DataUpdatable = False
+        DefaultValue = "0"
+        Required = False
+        AllowZeroLength = False
+        Begin Property
+            Name = ColumnWidth
+            Type = 3
+            Value = -1
+        End
+        Begin Property
+            Name = ColumnOrder
+            Type = 3
+            Value = 0
+        End
+        Begin Property
+            Name = ColumnHidden
+            Type = 1
+            Value = False
+        End
+        Begin Property
+            Name = Description
+            Type = 10
+            Value = "The version number of the release (0.41)"
+        End
+        Begin Property
+            Name = Format
+            Type = 10
+            Value = "Standard"
+        End
+        Begin Property
+            Name = DecimalPlaces
+            Type = 2
+            Value = 2
+        End
+        Begin Property
+            Name = DisplayControl
+            Type = 3
+            Value = 109
+        End
+    End
+    Begin Field
+        Attributes = 1
+        Type = 8
+        Name = "Version_Date"
+        OrdinalPosition = 2
+        Size = 8
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+        Begin Property
+            Name = ColumnWidth
+            Type = 3
+            Value = -1
+        End
+        Begin Property
+            Name = ColumnOrder
+            Type = 3
+            Value = 0
+        End
+        Begin Property
+            Name = ColumnHidden
+            Type = 1
+            Value = False
+        End
+        Begin Property
+            Name = Description
+            Type = 10
+            Value = "The date of the release"
+        End
+        Begin Property
+            Name = IMEMode
+            Type = 2
+            Value = 0
+        End
+        Begin Property
+            Name = IMESentenceMode
+            Type = 2
+            Value = 3
+        End
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "Version_History"
+        OrdinalPosition = 3
+        Size = 50
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = True
+        Begin Property
+            Name = ColumnWidth
+            Type = 3
+            Value = 4395
+        End
+        Begin Property
+            Name = ColumnOrder
+            Type = 3
+            Value = 0
+        End
+        Begin Property
+            Name = ColumnHidden
+            Type = 1
+            Value = False
+        End
+        Begin Property
+            Name = Description
+            Type = 10
+            Value = "Any notes with the release"
+        End
+        Begin Property
+            Name = DisplayControl
+            Type = 3
+            Value = 109
+        End
+        Begin Property
+            Name = IMEMode
+            Type = 2
+            Value = 0
+        End
+        Begin Property
+            Name = IMESentenceMode
+            Type = 2
+            Value = 3
+        End
+        Begin Property
+            Name = UnicodeCompression
+            Type = 1
+            Value = True
+        End
+    End
+    Begin Index
+        Name = "Id"
+        Unique = False
+        Clustered = False
+        Primary = False
+        Foreign = False
+        Required = False
+        IgnoreNulls = False
+        Begin Field
+            Attributes = 0
+            Name = "Version_ID"
+        End
+    End
+    Begin Index
+        Name = "PrimaryKey"
+        Unique = True
+        Clustered = False
+        Primary = True
+        Foreign = False
+        Required = True
+        IgnoreNulls = False
+        Begin Field
+            Attributes = 0
+            Name = "Version_ID"
+        End
+    End
+    Begin Data
+        ‡Version_ID‡•‡Version_Number‡•‡Version_Date‡•‡Version_History‡
+        20• .2•#03.11.2008 00:00:00#•#NULL#
+        21• .21•#03.11.2008 00:00:00#•#NULL#
+        22• .22•#03.11.2008 00:00:00#•#NULL#
+        23• .23•#03.12.2008 00:00:00#•#NULL#
+        24• .24•#03.12.2008 00:00:00#•#NULL#
+        25• .25•#03.16.2008 00:00:00#•#NULL#
+        26• .26•#03.25.2008 00:00:00#•#NULL#
+        27• .27•#04.01.2008 00:00:00#•#NULL#
+        30• .3•#10.16.2008 00:00:00#•‡Tested against the subversion 1.5 libraries‡
+        31• .31•#01.28.2009 00:00:00#•‡Now handles import/export specs in subversion‡
+        32• .32•#04.06.2009 00:00:00#•‡Keeps SQL view for Queries imported from SVN‡
+        33• .33•#10.27.2009 00:00:00#•‡Now Saves and Loads Unicode table Data‡
+        34• .34•#11.10.2009 00:00:00#•‡Fixed issue exporting blank fields in tables‡
+        35• .35•#03.23.2010 00:00:00#•‡Now handles ODBC Linked Tables‡
+        36• .36•#03.23.2010 00:00:00#•‡Now deals with Toolbars from Macros‡
+        37• .37•#03.23.2010 00:00:00#•‡Handles import of popup commandbars‡
+        38• .38•#03.23.2010 00:00:00#•‡Fixed bug with commandbars import‡
+        39• .39•#03.23.2010 00:00:00#•‡Fixed bug with popup commandbars‡
+        40• .4•#04.07.2010 00:00:00#•‡Fixed bug with builtin controls in commandbars‡
+        41• .41•#05.24.2011 00:00:00#•‡Now works with 64 bit Tortoise SVN‡
+        42• .42•#06.15.2011 00:00:00#•‡Fixed bug exporting Table without Data‡
+        43• .43•#11.15.2011 00:00:00#•‡Various enhancements to committing data‡
+        44• .44•#04.23.2012 00:00:00#•‡Removed copyrights, improved performance‡
+        45• .45•#04.23.2012 00:00:00#•‡Fixed bug during identification of SVN folder‡
+        46• .46•#09.03.2012 00:00:00#•‡Option to stop re-import of external changes‡
+        47• .47•#09.04.2012 00:00:00#•‡Option to keep update and commit windows open‡
+        48• .48•#11.30.2012 00:00:00#•‡Added support for regional formatting‡
+    End
+End

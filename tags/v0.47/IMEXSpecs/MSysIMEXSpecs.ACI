@@ -1,0 +1,151 @@
+Begin TableDef
+    Updatable = True
+    Attributes = 2
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "DateDelim"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 1
+        Name = "DateFourDigitYear"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 1
+        Name = "DateLeadingZeros"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 3
+        Name = "DateOrder"
+        OrdinalPosition = 0
+        Size = 2
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "DecimalPoint"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "FieldSeparator"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 3
+        Name = "FileType"
+        OrdinalPosition = 0
+        Size = 2
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 18
+        Type = 4
+        Name = "SpecID"
+        OrdinalPosition = 0
+        Size = 4
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "SpecName"
+        OrdinalPosition = 0
+        Size = 64
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 2
+        Name = "SpecType"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 2
+        Type = 4
+        Name = "StartRow"
+        OrdinalPosition = 0
+        Size = 4
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "TextDelim"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "TimeDelim"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Index
+        Name = "PrimaryKey"
+        Unique = True
+        Clustered = False
+        Primary = True
+        Foreign = False
+        Required = True
+        IgnoreNulls = False
+        DistinctCount = 0
+        Begin Field
+            Attributes = 0
+            Name = "SpecName"
+        End
+    End
+    Begin Data
+        ‡DateDelim‡•‡DateFourDigitYear‡•‡DateLeadingZeros‡•‡DateOrder‡•‡DecimalPoint‡•‡FieldSeparator‡•‡FileType‡•‡SpecID‡•‡SpecName‡•‡SpecType‡•‡StartRow‡•‡TextDelim‡•‡TimeDelim‡
+    End
+End

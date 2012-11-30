@@ -1,0 +1,99 @@
+Begin Extra
+    Begin Property
+        Name = AccessVersion
+        Type = 10
+        Value = "09.50"
+    End
+    Begin Property
+        Name = AllowBreakIntoCode
+        Type = 1
+        Value = True
+    End
+    Begin Property
+        Name = AllowBuiltInToolbars
+        Type = 1
+        Value = True
+    End
+    Begin Property
+        Name = AllowFullMenus
+        Type = 1
+        Value = True
+    End
+    Begin Property
+        Name = AllowShortcutMenus
+        Type = 1
+        Value = True
+    End
+    Begin Property
+        Name = AllowSpecialKeys
+        Type = 1
+        Value = True
+    End
+    Begin Property
+        Name = AllowToolbarChanges
+        Type = 1
+        Value = True
+    End
+    Begin Property
+        Name = AppTitle
+        Type = 10
+        Value = "Subversion for Access XP"
+    End
+    CollatingOrder = 1033
+    Begin Property
+        Name = CpgConversion
+        Type = 4
+        Value = 1252
+    End
+    Begin Property
+        Name = Perform Name AutoCorrect
+        Type = 4
+        Value = 0
+    End
+    Begin Property
+        Name = ProjVer
+        Type = 3
+        Value = 24
+    End
+    QueryTimeout = 60
+    Begin Property
+        Name = Show Values in Indexed
+        Type = 4
+        Value = 1
+    End
+    Begin Property
+        Name = Show Values in Non-Indexed
+        Type = 4
+        Value = 1
+    End
+    Begin Property
+        Name = Show Values in Remote
+        Type = 4
+        Value = 0
+    End
+    Begin Property
+        Name = Show Values Limit
+        Type = 4
+        Value = 1000
+    End
+    Begin Property
+        Name = StartUpShowDBWindow
+        Type = 1
+        Value = True
+    End
+    Begin Property
+        Name = StartUpShowStatusBar
+        Type = 1
+        Value = True
+    End
+    Begin Property
+        Name = Track Name AutoCorrect Info
+        Type = 4
+        Value = 0
+    End
+    Begin Property
+        Name = UseAppIconForFrmRpt
+        Type = 1
+        Value = False
+    End
+End
