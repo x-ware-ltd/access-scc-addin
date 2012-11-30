@@ -422,7 +422,7 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
   Dim fld As DAO.Field
   Dim Idx As DAO.Index
   Dim rs As DAO.Recordset
-  Dim str As String
+  Dim strOut As String
   Dim booContainsIndex As Boolean
   Dim strPrimaryIndex As String
   Dim strSortString As String
@@ -531,18 +531,18 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
         Set rs = dbSource.OpenRecordset(strDumpSQLQuery, dbOpenDynaset, dbReadOnly)
         Print #f, "    Begin Data"
         'Write the field names
-        str = ""
+        strOut = ""
         For Each fld In rs.Fields
-          str = str & sDelimiter & fld.Name & sDelimiter & sSEPERATOR
+          strOut = strOut & sDelimiter & fld.Name & sDelimiter & sSEPERATOR
         Next
-        str = Left(str, Len(str) - Len(sSEPERATOR))
-        Print #f, "        " & str
+        strOut = Left(strOut, Len(strOut) - Len(sSEPERATOR))
+        Print #f, "        " & strOut
       
         'Now write the data
         Close #f 'We have to close the file becasue we now want to write in Binary Mode
         Open FileName For Binary As #f
         Do While Not rs.EOF
-          'str = ""
+          'strOut = ""
           b() = StrConv("        ", vbFromUnicode)
           For Each fld In rs.Fields
             Select Case fld.Type
@@ -558,6 +558,8 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
                 b = ConcatByteArr(b, StrConv("#" & Format(fld.Value, "mm/dd/yyyy hh:mm:ss") & "#" & sSEPERATOR, vbFromUnicode))
               Case dbLongBinary
                 b = ConcatByteArr(b, StrConv(VarByteArrToHexString(fld.Value) & sSEPERATOR, vbFromUnicode))
+              Case dbDouble, dbSingle ' store decimal places using dot notation rather than regional formatting
+                b = ConcatByteArr(b, StrConv(str$(fld.Value) & sSEPERATOR, vbFromUnicode))
               Case Else
                 b = ConcatByteArr(b, StrConv(fld.Value & sSEPERATOR, vbFromUnicode))
             End Select
@@ -826,6 +828,12 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
                     End If
                   Else
                     Stop 'Error - the field type is Time or Date but the data does not start with #
+                  End If
+                Case dbDouble, dbSingle
+                  If varData(i) = "" Then
+                    .Value = Null
+                  Else
+                    .Value = Val(varData(i)) ' read in decimal places from dot notation rather than regional formatting
                   End If
                 Case Else
                   'Numeric or boolean type of some kind
