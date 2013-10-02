@@ -2328,6 +2328,11 @@ End Sub
 Public Sub UpdateVersionDetails()
   Me.txtLastImported = asGetLatestImportDate()
   Me.txtSvnUrl = SCC_GetMappedUrl(Me.txtOutputLocation.Value)
+  If LenB(Nz(Me.txtSvnUrl.Value, vbNullString)) = 0 Then ' No mapped url, cannot import, but allow export for original export
+    Me.btnImport.Enabled = False ' should probably trap for when the button has focus but cannot see how user could get to that point
+  Else
+    Me.btnImport.Enabled = True
+  End If
   Me.txtLastVersion = asGetLatestImportVersion()
   Me.txtLatestVersion = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
   Me.txtFolderVersion = SCC_GetWorkingFolderVersion(Me.txtOutputLocation.Value)
