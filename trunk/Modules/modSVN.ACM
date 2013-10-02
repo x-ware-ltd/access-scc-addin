@@ -7,7 +7,7 @@ Option Explicit
 ' This is a collection of procedures to allow VBA
 ' to talk to and initiate SVN functionality. It relies
 ' on having Tortoise SVN and the SVN command line tool.
-' This has been tested with version 1.7 of the SVN tools
+' This has been tested with version 1.8 of the SVN tools
 '
 ' @author       Steve Falla <steve.falla@talkjcs.com>
 ' @Version      1.01
