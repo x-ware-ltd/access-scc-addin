@@ -1,0 +1,30 @@
+Begin References
+    Begin Reference
+        Name = DAO
+        GUID = {00025E01-0000-0000-C000-000000000046}
+        Major = 5
+        Minor = 0
+        FullPath = C:\Program Files (x86)\Common Files\Microsoft Shared\DAO\dao360.dll
+    End
+    Begin Reference
+        Name = MSXML2
+        GUID = {F5078F18-C551-11D3-89B9-0000F81FE221}
+        Major = 6
+        Minor = 0
+        FullPath = C:\Windows\System32\msxml6.dll
+    End
+    Begin Reference
+        Name = Office
+        GUID = {2DF8D04C-5BFA-101B-BDE5-00AA0044DE52}
+        Major = 2
+        Minor = 2
+        FullPath = C:\Program Files (x86)\Common Files\Microsoft Shared\Office10\MSO.DLL
+    End
+    Begin Reference
+        Name = stdole
+        GUID = {00020430-0000-0000-C000-000000000046}
+        Major = 2
+        Minor = 0
+        FullPath = C:\Windows\SysWOW64\stdole2.tlb
+    End
+End

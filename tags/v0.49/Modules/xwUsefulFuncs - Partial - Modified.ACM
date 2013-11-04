@@ -1,0 +1,190 @@
+Option Compare Database
+Option Explicit
+
+'NB xwSplit has been Modified!!!!!!
+Function xwSplit(ByVal str As String, Optional sSeparator As String = " ", Optional iUpperBound As Integer, Optional iLowerBound As Integer = 1, Optional sDelimiter As String = "", Optional bReturnDelimiters As Boolean = True) As Variant
+    'This function reproduces the functionality provided in the vba split function which is standard as part of Access 2000 and later
+    'Function uses a space as the default separator but the user can supply something else
+    'The result is an array
+    'If the separator is zero length there will be no separation but the result returned will be an array(variant)
+    'In use:
+    'xwSplit("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec")(3)              =>  Gives Mar
+    'xwSplit("'jan';'feb ''the month''';'ma,ch';apr", ";" , , , "'", False)(2)  =>  Gives feb 'the month'
+    'xwSplit("'jan';'feb ''the month''';'ma,ch';apr", ";" , , , "'")(3)         =>  Gives 'ma,ch'
+    
+    Dim arr() As String, x As Long, y As Long, z As Long, c As Long, ls As Integer
+    Dim ld As Integer 'The length of the Delimiter String
+    Dim blnInDelimited As Boolean 'Flag used to determine whether we are in delimited ext or not
+    ls = Len(sSeparator)
+    ld = Len(sDelimiter)
+    If ls = 0 Then
+        'The separator is zero length so there can only be one item - set c (counter of separators) to 0
+        c = 0
+    Else
+        'Iterate through string to determine how many items there are
+        blnInDelimited = False
+        For x = 1 To Len(str)
+            If ld <> 0 Then
+              'Only if there is a delimiter both to track whether in delimited text or not
+              If Mid(str, x, ld) = sDelimiter Then blnInDelimited = Not blnInDelimited
+            End If
+            If Not blnInDelimited Then
+              If Mid(str, x, ls) = sSeparator Then c = c + 1: x = x + ls - 1 'Jumps over length of separator
+            End If
+        Next
+    End If
+    ReDim arr(iLowerBound To xwMax(c + iLowerBound, iUpperBound))
+      c = iLowerBound
+      blnInDelimited = False
+      'We go through the string from left to right looking for separators and delimiters
+      Do While Len(str) > 0
+          If ld = 0 Then
+            x = InStr(str, sSeparator)
+          Else
+            If Left(str, ld) = sDelimiter Then
+              'The first character(s) are a delimiter so need to find next delimiter and separator combination
+              y = InStr(ld + 1, str, sDelimiter & sSeparator)
+              If y = 0 Then
+                'No end delimter found so we must treat the rest of the string as the final element
+                x = Len(str) + 1
+              Else
+                x = y + ld
+              End If
+            Else
+              x = InStr(str, sSeparator)
+            End If
+          End If
+          If x = 0 Then x = Len(str) + 1
+          arr(c) = Left(str, x - 1)
+          If ld <> 0 And Not bReturnDelimiters Then
+            'Need to strip of beginning and end delimiter characters
+            If Left(arr(c), ld) = sDelimiter Then arr(c) = Mid(arr(c), ld + 1)
+            If Right(arr(c), ld) = sDelimiter Then arr(c) = Left(arr(c), Len(arr(c)) - ld)
+          End If
+          If ld <> 0 Then
+            'Need to check and see if we have any double delimiters within our string which need to be treated as one
+            'NB the delimiter could be longer than 1 character
+            y = InStr(arr(c), sDelimiter & sDelimiter)
+            Do While y <> 0
+              arr(c) = Left(arr(c), y - 1 + ld) & Mid(arr(c), y + ld * 2)
+              z = y + ld
+              y = InStr(z, arr(c), sDelimiter & sDelimiter)
+            Loop
+          End If
+          c = c + 1
+          str = Mid(str, x + ls)
+      Loop
+    xwSplit = arr
+End Function
+
+Function xwMax(ParamArray Values() As Variant) As Variant
+    'This function allows any number of parameters to be passed and it will return the largest (most +ve) value
+    'xwMin(#1/1/1900#, 50000) returns a date type
+    'xwMax(#1/1/1900#, 50000) returns a double data type
+    'Be careful when using different data types - see example in xwMin
+    'Min("Wet", "Dry") returns "Dry" as a string data type
+    Dim x As Integer, d As Variant
+    d = Values(0)
+    For x = 1 To UBound(Values)
+        If IsNull(d) Or (Not IsNull(Values(x)) And Values(x) > d) Then d = Values(x)
+    Next
+    xwMax = d
+End Function
+
+'************************************************
+' Decodes any %## values in a string to the valid characters
+'
+'
+' @author     Steve Falla <steve.falla@talkjcs.com>
+' @version    1.00
+' @suggestions
+' @param      String the full URL
+' @return     String the returned string with decoded characters
+'************************************************
+Function URLDecode(ByVal strUrl As String) As String
+  Dim iPos As Integer
+  Dim pPos As Integer
+
+  'replace + To Space
+  strUrl = Replace(strUrl, "+", " ")
+
+  On Error GoTo 0
+  'UfUf, this is a little slow method.
+  'Do Not use it For data length over 100k
+  iPos = InStr(1, strUrl, "%")
+  Do While iPos > 0
+    strUrl = Left(strUrl, iPos - 1) + _
+      Chr(CLng("&H" & Mid(strUrl, iPos + 1, 2))) + _
+      Mid(strUrl, iPos + 3)
+    iPos = InStr(iPos + 1, strUrl, "%")
+  Loop
+  URLDecode = strUrl
+End Function
+
+'************************************************
+' Get the path part from a URL
+'
+' This function will strip the document name part
+' of a URL and return just the parent path part.
+' eg http://www.google.com/folder/test.html will return
+'    http://www.google.com/folder/
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @author     Steve Falla <steve.falla@talkjcs.com>
+' @version    1.00
+' @suggestions
+' @param      String the full URL to parse
+' @return     String the path part if the supplied URL
+'************************************************
+Public Function getURLParent(strUrl As String) As String
+  Dim i As Integer
+  Dim strTmpPath As String
+
+  If Right$(strUrl, 1) = "/" Then
+    strTmpPath = Left$(strUrl, Len(strUrl) - 1)
+  Else
+    strTmpPath = strUrl
+  End If
+
+  i = asInStrRev(strTmpPath, "/")
+  If i = 0 Then
+    getURLParent = strTmpPath
+    Exit Function
+  End If
+  getURLParent = Left$(strTmpPath, i)
+End Function
+
+'************************************************
+' Strip the path from a URL
+'
+' This function will strip the path part from a
+' supplied URL, and return just the document name.
+' eg http://www.google.com/folder/test.html will return test.html
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @author     Steve Falla <steve.falla@talkjcs.com>
+' @version    1.00
+' @param      String the full URL to parse
+' @return     String the document part of the URL
+'************************************************
+Public Function stripURLPath(strUrl As String) As String
+  Dim i As Integer
+  Dim strTmpPath As String
+
+  If Right$(strUrl, 1) = "/" Then
+    strTmpPath = Left$(strUrl, Len(strUrl) - 1)
+  Else
+    strTmpPath = strUrl
+  End If
+
+  i = asInStrRev(strTmpPath, "/")
+  If i = 0 Then
+    stripURLPath = strTmpPath
+    Exit Function
+  End If
+  stripURLPath = Right$(strTmpPath, Len(strTmpPath) - i)
+End Function

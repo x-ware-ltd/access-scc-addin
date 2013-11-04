@@ -1,0 +1,10 @@
+Option Compare Database
+Option Explicit
+
+Public Function InProperties(ByRef Properties As DAO.Properties, ByRef sKey As String) As Boolean
+    Dim tempObj As Property
+    
+    On Error Resume Next
+    Set tempObj = Properties(sKey)
+    InProperties = Not (tempObj Is Nothing)
+End Function
