@@ -1,4 +1,4 @@
-# Offsite Hosted Project Downloads
+#summary Offsite Hosted Project Downloads
 
 = Project Downloads =
 
