@@ -177,7 +177,7 @@ Public Sub SaveReferencesAsText(FileName As String)
     If Not ref.BuiltIn Then
       Print #f, "    Begin Reference"
       Print #f, "        Name = " & ref.Name
-      Print #f, "        GUID = " & ref.GUID
+      Print #f, "        GUID = " & ref.Guid
       Print #f, "        Major = " & ref.Major
       Print #f, "        Minor = " & ref.Minor
       Print #f, "        FullPath = " & ref.FullPath
@@ -398,14 +398,27 @@ Public Sub LoadExtraFromText(FileName As String)
 End Sub
 
 '************************************************
-' Exports a table (definition and data) to a text file
-'
-' Used with SVN to store table definitions
 ' Version changed [BP] 30/6/2011 to allow and incorporate the asSaveAsMode rather than a simple boolean as previously
 '
 ' @param    String the name of the table to export
 ' @param    String the file name to export to
 ' &param    Boolean whether or not to include data
+'************************************************
+'************************************************
+' SaveTableAsText
+'
+' Exports a table (definition and data) to a text file
+'
+' Version history:
+' - 1.00 initial version
+' - 1.01 changed to allow and incorporate the asSaveAsMode rather than a simple boolean as previously [BP] 30/6/2011
+' - 1.02 Updated to allow export of Null data on single and double field types [SF] 18/03/2014
+'
+' @version 1.02
+' @param    String the name of the table to export
+' @param    String the file name to export to
+' @param    asSaveAsMode Optional param, whether or not to include data
+' @param    Database Optional param to provide a reference to the source database, defaults to currentDB
 '************************************************
 Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enmMode As asSaveAsMode = asFullWithData, Optional dbSource As DAO.Database = Nothing)
   'enmMode determines what is included in the file.
@@ -546,20 +559,24 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
           b() = StrConv("        ", vbFromUnicode)
           For Each fld In rs.Fields
             Select Case fld.Type
-              Case dbText, dbMemo
-                If IsNull(fld.Value) Or (Not fld.AllowZeroLength And fld.Value = "") Then
+              Case dbText, dbMemo ' Null is handled explicitly
+                If IsNull(fld.Value) Or (Not fld.AllowZeroLength And fld.Value = vbNullString) Then
                   b = ConcatByteArr(b, StrConv("#NULL#" & sSEPERATOR, vbFromUnicode))
                 ElseIf LenB(fld.Value) = 0 Then
-                  b = ConcatByteArr(b, StrConv("" & sSEPERATOR, vbFromUnicode))
+                  b = ConcatByteArr(b, StrConv(vbNullString & sSEPERATOR, vbFromUnicode))
                 Else
                   b = ConcatByteArr(b, StrConv(sDelimiter, vbFromUnicode), EncodeText(Replace(Replace(fld.Value, vbCrLf, CRSPLF, 1), sDelimiter, DLMTR, 1)), StrConv(sDelimiter & sSEPERATOR, vbFromUnicode))
                 End If
-              Case dbDate, dbTime
+              Case dbDate, dbTime ' Null is handled indirectly and is outputted as ##
                 b = ConcatByteArr(b, StrConv("#" & Format(fld.Value, "mm/dd/yyyy hh:mm:ss") & "#" & sSEPERATOR, vbFromUnicode))
-              Case dbLongBinary
+              Case dbLongBinary ' Null is handled indeirectly and is outputted as an empty string (vbNullString)
                 b = ConcatByteArr(b, StrConv(VarByteArrToHexString(fld.Value) & sSEPERATOR, vbFromUnicode))
               Case dbDouble, dbSingle ' store decimal places using dot notation rather than regional formatting
-                b = ConcatByteArr(b, StrConv(str$(fld.Value) & sSEPERATOR, vbFromUnicode))
+                If IsNull(fld.Value) Then ' Need to handle Null data specifically
+                  b = ConcatByteArr(b, StrConv(vbNullString & sSEPERATOR, vbFromUnicode))
+                Else
+                  b = ConcatByteArr(b, StrConv(str$(fld.Value) & sSEPERATOR, vbFromUnicode))
+                End If
               Case Else
                 b = ConcatByteArr(b, StrConv(fld.Value & sSEPERATOR, vbFromUnicode))
             End Select
