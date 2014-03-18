@@ -1,6 +1,6 @@
 Version =20
 VersionRequired =20
-Checksum =-61866526
+Checksum =-1014510869
 Begin Form
     PopUp = NotDefault
     RecordSelectors = NotDefault
@@ -117,7 +117,7 @@ Begin Form
                     Height =1202
                     Name ="Image6"
                     PictureData = Begin
-                        0x0e0000007b0946f6010000006c0000000000000000000000520000003a000000 ,
+                        0x0e000000e412466f010000006c0000000000000000000000520000003a000000 ,
                         0x0000000000000000180900009d06000020454d46000001006487000011000000 ,
                         0x01000000000000000000000000000000900600001a040000d60100002c010000 ,
                         0x000000000000000000000000f02b0700e093040046000000b8430000ac430000 ,
@@ -1276,11 +1276,11 @@ Private Sub Form_Load()
   Set rst = db.OpenRecordset("SELECT TOP 5 * FROM USysReleaseHistory ORDER BY Version_Number DESC")
   Me.lblReleaseHistory.Caption = "Release History:" & vbCrLf
   Do While Not rst.EOF
-    Me.lblReleaseHistory.Caption = Me.lblReleaseHistory.Caption & " " & rst!Version_Number & " - " & rst!Version_History & vbCrLf
+    Me.lblReleaseHistory.Caption = Me.lblReleaseHistory.Caption & " " & Format(rst!Version_Number, "0.00") & " - " & rst!Version_History & vbCrLf
     rst.MoveNext
   Loop
   rst.MoveFirst
-  Me.lblCurrentRelease.Caption = "Version: " & rst!Version_Number & "  (" & rst!Version_Date & ")"
+  Me.lblCurrentRelease.Caption = "Version: " & Format(rst!Version_Number, "0.00") & "  (" & rst!Version_Date & ")"
   rst.Close: Set rst = Nothing
   db.Close: Set db = Nothing
 End Sub
