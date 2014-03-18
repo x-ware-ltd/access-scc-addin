@@ -1,0 +1,560 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' SVN Module
+'
+' This is a collection of procedures to allow VBA
+' to talk to and initiate SVN functionality. It relies
+' on having Tortoise SVN and the SVN command line tool.
+' This has been tested with version 1.8 of the SVN tools
+'
+' @author       Steve Falla <steve.falla@talkjcs.com>
+' @Version      1.01
+'************************************************
+
+' Code module Constants
+Private Const SVNTAG_REVISION = "Last Changed Rev: "
+Private Const SVNTAG_PATH = "Path: "
+Private Const SVNTAG_NAME = "Name: "
+Private Const SVNTAG_CHECKSUM = "Checksum: "
+Private Const SVNTAG_URL = "URL: "
+  
+' Code module Types
+Public Type SVNITEM
+  svPath As String     ' The full working path of the file checked out from SVN
+  svName As String     ' The name of the file checked out from SVN
+  svRevision As String ' The last changed revision of the file checked out from SVN
+  svCheckSum As String ' The checksum of the file checked out from SVN
+  svStatus As String   ' The status of the file checked out fromm SVN, "M" modified or "N" normal
+End Type
+      
+' Code Module Variables
+Private mstrTORTOISE_SVN_PATH As String
+Private mstrSVN_CMD_PATH As String
+
+'************************************************
+' Triggers an SVN update using Tortoise SVN
+'
+' This sub triggers tortoise SVN to perform an SVN update
+' on the path specified.
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to wait until the update command has finished, then return [SF] 14/11/2011
+'   - 1.02 updated to pass preference to close the update screen or not [SF] 04/09/2012
+'
+' @version    1.02
+' @param      String the base path to perform an SVN update against
+'************************************************
+Public Sub SVN_Update(strPath As String, blnShowUpdates As Boolean)
+  Dim strCmd As String
+  
+  strCmd = GetTortoiseSVNPath() & " /command:update /path:""" & strPath & """"
+  
+  If blnShowUpdates Then
+    strCmd = strCmd & " /closeonend:0" ' closeonend:0 stops tortoise from closing (may need to setfocus to it though)
+  Else
+    strCmd = strCmd & " /closeonend:1" ' closeonend:1 forces tortoise to close after successful update
+  End If
+  ShellEx strCmd, vbNormalFocus ' wait until app closes
+End Sub
+
+'************************************************
+' Triggers an SVN commit using Tortoise SVN
+'
+' This sub triggers tortoise SVN to perform an SVN commit
+' on the path specified.
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to wait for the command to exit
+'
+' @version    1.01
+' @param      String the base path to perform an SVN commit against
+'************************************************
+Public Sub SVN_Commit(strPath As String, blnShowCommit As Boolean)
+  Dim strCmd As String
+  
+  strCmd = GetTortoiseSVNPath() & " /command:commit /path:""" & strPath & """"
+  If blnShowCommit Then
+    strCmd = strCmd & """ /closeonend:0" ' stop tortoise from closing
+  Else
+    strCmd = strCmd & """ /closeonend:3" ' force close if no errors
+  End If
+  ShellEx strCmd, vbNormalFocus
+End Sub
+
+'************************************************
+' Triggers an SVN add using Tortoise SVN
+'
+' This sub triggers SVN to perform an SVN add
+' on the path specified. No user intervention is required
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to use command line to stop dialog boxes all the time [SF] 14/11/2011
+'   - 1.02 updated to remove dependency on WSH [SF] 22/05/2012
+'   - 1.03 added error handling to detect SVN errors [SF] 04/09/2012
+'
+' @version    1.03
+' @param      String the base path to perform an SVN add against
+'************************************************
+Public Function SVN_Add_File(strPath As String)
+  Dim strCmd As String, strFilename As String, strRet As String
+
+  ' Only perform an SVN add if the .svn folder actually exists (we are using a working svn folder)
+  If Not FileExists(asParentFolder(strPath) & "\.svn\entries") Then Exit Function
+
+  On Error GoTo SVN_Add_File_Err
+  
+  strCmd = GetSVNPath() & " add """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd)
+  If Left$(strRet, 2) <> "A " Then Err.Raise vbObjectError + 1000
+  
+SVN_Add_File_Exit:
+  Exit Function
+  
+SVN_Add_File_Err:
+  MsgBox "An error occured whilst scheduling a file to be added to the repository." & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_Add_File_Exit
+
+End Function
+
+'************************************************
+' Triggers an SVN delete using Tortoise SVN
+'
+' This sub triggers tortoise SVN to perform an SVN delete
+' on the path specified.
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 added error handling to detect SVN errors, uses direct SVN cmd line interface now [SF] 04/09/2012
+'
+' @version    1.01
+' @param      String the base path to perform an SVN delete against
+'************************************************
+Public Function SVN_Delete_File(strPath As String)
+  Dim strCmd As String, strRet As String
+  
+  ' Only perform an SVN delete if the .svn folder actually exists (we are using a working svn folder)
+  If Not FileExists(asParentFolder(strPath) & "\.svn\entries") Then Exit Function
+  
+  On Error GoTo SVN_Delete_File_Err
+  
+  strCmd = GetSVNPath() & " delete """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd)
+  If Left$(strRet, 2) <> "D " Then Err.Raise vbObjectError + 1000
+
+SVN_Delete_File_Exit:
+  Exit Function
+  
+SVN_Delete_File_Err:
+  MsgBox "An error occured whilst scheduling a file to be deleted from the repository." & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_Delete_File_Exit
+
+End Function
+
+'************************************************
+' Gets the version of the SVN client
+'
+' This function returns the current version of the
+' installed SVN command line client.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      Boolean optional param to restrict the value to the minor version only eg. 1.5 rather than 1.5.4
+' @return     String the current version of the SVN client
+'************************************************
+Public Function SVN_ClientVersion(Optional minorVersionOnly As Boolean = False) As String
+  Dim strCmd As String, strRet As String
+  Dim strLines() As String
+    
+  strCmd = GetSVNPath() & " --version --quiet"
+  strRet = ExecAndCapture(strCmd)
+  If LenB(strRet) <> 0 Then
+    strLines = Split(strRet, vbCrLf)
+    SVN_ClientVersion = Trim$(strLines(0))
+    If minorVersionOnly Then SVN_ClientVersion = Left$(SVN_ClientVersion, InStr(InStr(SVN_ClientVersion, ".") + 1, SVN_ClientVersion, ".") - 1)
+  End If
+    
+End Function
+
+'************************************************
+' Gets the currently checked out version of an SVN repository
+'
+' This function uses the command line SVN tool to get the currently
+' checked out version of an SVN repository.
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to remove dependency on WSH [SF] 22/05/2012
+'   - 1.02 more reliable trapping of version
+'          Added error trapping for SVN errors [SF] 04/09/2012
+'
+' @version    1.02
+' @param      String the base path to use when getting the SVN version
+' @return     String the current SVN version of the code
+'************************************************
+Public Function SVN_GetVersion(strPath As String) As String
+  Dim strCmd As String, strRet As String, strLines() As String, strLine As String
+  Dim i As Integer, j As Integer
+    
+  On Error GoTo SVN_GetVersion_Err
+  
+  strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd)
+  If LenB(strRet) = 0 Then SVN_GetVersion = "0": Exit Function
+  
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
+  
+  strLines = Split(strRet, vbCrLf)
+  For i = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(i))
+    If InStrB(strLine, SVNTAG_REVISION) = 1 Then
+      SVN_GetVersion = Right$(strLine, Len(strLine) - Len(SVNTAG_REVISION))
+      Exit For
+    End If
+  Next i
+  
+SVN_GetVersion_Exit:
+  Exit Function
+  
+SVN_GetVersion_Err:
+  MsgBox "An error occured whilst getting working copy version." & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_GetVersion_Exit
+    
+End Function
+
+'************************************************
+' SVN Get Info
+'
+' Gathers information about a working copy file checked out from SVN
+'
+' Version history:
+'  - 1.00 initial version
+'  - 1.01 updated to eliminate dependency on WSH and to support version 1.7 of SVN [SF] 22/05/2012
+'
+' @version    1.01
+' @param      String the path of the checked out file
+' @return     SVNITEM details of the checked out file
+'************************************************
+Public Function SVN_GetInfo(strPath As String) As SVNITEM
+  Dim strCmd As String, strRet As String, strLine As String
+  Dim strLines() As String
+  Dim i As Integer
+  Dim oSVNItem As SVNITEM
+    
+  strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd, TempDir()) ' run in a temp folder, to ensure the path output is absolute, not relative
+  If LenB(strRet) = 0 Then Exit Function
+  
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
+    
+  strLines = Split(strRet, vbCrLf)
+  For i = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(i))
+    If InStrB(strLine, SVNTAG_PATH) = 1 Then ' Match at start of line only
+      oSVNItem.svPath = Right$(strLine, Len(strLine) - Len(SVNTAG_PATH))
+    ElseIf InStrB(strLine, SVNTAG_NAME) = 1 Then
+      oSVNItem.svName = Right$(strLine, Len(strLine) - Len(SVNTAG_NAME))
+    ElseIf InStrB(strLine, SVNTAG_REVISION) = 1 Then
+      oSVNItem.svRevision = Right$(strLine, Len(strLine) - Len(SVNTAG_REVISION))
+    ElseIf InStrB(strLine, SVNTAG_CHECKSUM) = 1 Then
+      oSVNItem.svCheckSum = Right$(strLine, Len(strLine) - Len(SVNTAG_CHECKSUM))
+    End If
+  Next i
+      
+'  oSVNItem.svStatus = SVN_GetStatus(strPath) ' removed due to performance issues
+    
+  SVN_GetInfo = oSVNItem
+End Function
+
+'************************************************
+' SVN Get Status
+'
+' Gathers the current status of the working copy file
+' It returns "M" modified or "N" normal
+' It could be extended in the future according to the getstatus definition
+'
+' Version history:
+'  - 1.00 initial version
+'  - 1.01 updated to eliminate dependency on WSH [SF] 22/05/2012
+'
+' @version    1.01
+' @param      String the path of the checked out file
+' @return     String status of the working copy file
+'************************************************
+Public Function SVN_GetStatus(strPath As String) As String
+  Dim strCmd As String, strRet As String, strLine As String
+  Dim strLines() As String
+  Dim i As Long
+  
+  SVN_GetStatus = "N" ' Normal
+  
+  strCmd = GetSVNPath() & " status """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd)
+  If LenB(strRet) = 0 Then Exit Function
+    
+  strLines = Split(strRet, vbCrLf)
+  For i = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(i))
+    If Left$(strLine, 1) = "M" Then
+      SVN_GetStatus = "M"
+    End If
+    Exit For
+  Next i
+
+End Function
+
+Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() As SVNITEM)
+  Dim strRet As String, strCmd As String, strLine As String
+  Dim strLines() As String
+  Dim lngLineEnd As Long, lngLineStart As Long
+  Dim i As Long, j As Long
+  Dim mySvnItem As SVNITEM
+  Dim intArrSize As Integer
+  
+  i = 0: j = 0
+  intArrSize = 100
+  
+  On Error GoTo SVN_GetAllVersionsSubFolder_Err
+  
+  strCmd = GetSVNPath() & " info -R """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd, TempDir()) ' run in a temp folder, to ensure the path output is absolute, not relative
+  If LenB(strRet) = 0 Then Exit Function
+    
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
+    
+  ReDim arrFill(intArrSize)
+  strLines = Split(strRet, vbCrLf)
+  For j = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(j))
+    If InStrB(strLine, SVNTAG_PATH) = 1 Then
+      mySvnItem.svPath = Right$(strLine, Len(strLine) - Len(SVNTAG_PATH))
+    ElseIf InStrB(strLine, SVNTAG_NAME) = 1 Then
+      mySvnItem.svName = Right$(strLine, Len(strLine) - Len(SVNTAG_NAME))
+    ElseIf InStrB(strLine, SVNTAG_REVISION) = 1 Then
+      mySvnItem.svRevision = Right$(strLine, Len(strLine) - Len(SVNTAG_REVISION))
+    ElseIf InStrB(strLine, SVNTAG_CHECKSUM) = 1 Then
+      mySvnItem.svCheckSum = Right$(strLine, Len(strLine) - Len(SVNTAG_CHECKSUM))
+    ElseIf LenB(Trim$(strLine)) = 0 Then
+      If mySvnItem.svName = "" Then ' found folder skip
+      Else
+        'mySvnItem.svStatus = SVN_GetStatus(mySvnItem.svPath) ' removed due to performance issues
+        arrFill(i) = mySvnItem
+        i = i + 1
+        If i > intArrSize Then
+          intArrSize = intArrSize + 100
+          ReDim Preserve arrFill(intArrSize)
+        End If
+      End If
+      mySvnItem.svName = vbNullString
+      mySvnItem.svPath = vbNullString
+      mySvnItem.svRevision = vbNullString
+      mySvnItem.svStatus = vbNullString
+    End If
+  Next j
+  
+SVN_GetAllVersionsSubFolder_Exit:
+  If i > 0 Then
+    ReDim Preserve arrFill(i - 1)
+  Else
+    ReDim Preserve arrFill(0)
+  End If
+  Exit Function
+  
+SVN_GetAllVersionsSubFolder_Err:
+  MsgBox "An error occured getting folder SVN information." & vbCrLf & vbCrLf & _
+         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_GetAllVersionsSubFolder_Exit
+End Function
+
+'************************************************
+' Gets the latest version identifier stored in an SVN repository
+'
+' This function uses the command line SVN tool to get the latest
+' version identifier of code from an SVN repository.
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to eliminate dependency on WSH and to support version 1.7 of SVN [SF] 22/05/2012
+'   - 1.02 added error detection on the SVN result
+'          converted to basic rather than XML output
+'          added more reliable detection on repository version [SF] 04/09/2012
+'
+' @version    1.02
+' @param      String the base path of a checked out SVN module to use when getting the SVN version
+' @return     String the latest SVN version of the code in the repository
+'************************************************
+Public Function SVN_GetLatestVersion(strPath As String) As String
+  Dim strRet As String, strCmd As String, strRev As String, strLine As String
+  Dim strLines() As String
+  Dim i As Long
+  
+  On Error GoTo SVN_GetLatestVersion_Err
+  
+  ' Get the latest revision in the repository by requesting the HEAD
+  strCmd = GetSVNPath() & " info -r ""HEAD"" """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd)
+  If LenB(strRet) = 0 Then Exit Function
+  
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
+  
+  strLines = Split(strRet, vbCrLf)
+  For i = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(i))
+    If InStrB(strLine, SVNTAG_REVISION) = 1 Then
+      strRev = Right$(strLine, Len(strLine) - Len(SVNTAG_REVISION))
+      Exit For
+    End If
+  Next i
+  
+  SVN_GetLatestVersion = strRev
+  
+SVN_GetLatestVersion_Exit:
+  If LenB(SVN_GetLatestVersion) = 0 Then SVN_GetLatestVersion = "No SVN version found"
+  Exit Function
+  
+SVN_GetLatestVersion_Err:
+  MsgBox "An error occured getting the HEAD repository version." & vbCrLf & vbCrLf & _
+         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_GetLatestVersion_Exit
+
+End Function
+
+'************************************************
+' Gets the latest SVN revision for the working folder
+'
+' This function uses the command line SVN tool to get
+' the latest SVN revision of the working folder. The
+' repository may be at a later version.
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to eliminate dependency on WSH and to support version 1.7 of SVN [SF] 22/05/2012
+'   - 1.02 added error detection on the SVN result
+'          added more reliable detection on repository version [SF] 04/09/2012
+'
+' @version    1.02
+' @param      String the base path of a checked out SVN module
+' @return     String the latest working copy revision
+'************************************************
+Public Function SVN_GetWorkingFolderVersion(strPath As String) As String
+  Dim strRet As String, strCmd As String, strRev As String, strLine As String
+  Dim strLines() As String
+  Dim i As Long
+  
+  On Error GoTo SVN_GetWorkingFolderVersion_Err
+  
+  ' get the SVN revision
+  strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd)
+  If LenB(strRet) = 0 Then Exit Function
+  
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
+  
+  strLines = Split(strRet, vbCrLf)
+  For i = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(i))
+    If InStrB(strLine, SVNTAG_REVISION) = 1 Then
+      strRev = Right$(strLine, Len(strLine) - Len(SVNTAG_REVISION))
+      Exit For
+    End If
+  Next i
+  
+  SVN_GetWorkingFolderVersion = strRev
+  
+SVN_GetWorkingFolderVersion_Exit:
+  If LenB(SVN_GetWorkingFolderVersion) = 0 Then SVN_GetWorkingFolderVersion = "No SVN version found"
+  Exit Function
+  
+SVN_GetWorkingFolderVersion_Err:
+  MsgBox "An error occured getting the latest working copy version." & vbCrLf & vbCrLf & _
+         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_GetWorkingFolderVersion_Exit
+  
+End Function
+
+'************************************************
+' Gets the Mapped SVN url for a working copy folder
+'
+' This function uses the command line SVN tool to get the mapped
+' svn url for a working copy folder.
+'
+' Version history:
+'   - 1.00 initial version
+'   - 1.01 updated to eliminate dependency on WSH and to support version 1.7 of SVN [SF] 22/05/2012
+'   - 1.02 added error detection on the SVN result
+'          added more reliable detection on repository version [SF] 04/09/2012
+'
+' @version    1.02
+' @param      String the base path of a checked out SVN module
+' @return     String the SVN URL mapped to the folder
+'************************************************
+Public Function SVN_GetMappedUrl(strPath As String) As String
+  Dim strCmd As String, strUrl As String, strRet As String, strLine As String
+  Dim strLines() As String
+  Dim i As Long
+  
+  On Error GoTo SVN_GetMappedUrl_Err
+  
+  ' get the SVN url
+  strCmd = GetSVNPath() & " info """ & stripSlash(strPath) & """"
+  strRet = ExecAndCapture(strCmd)
+  If LenB(strRet) = 0 Then Exit Function
+  
+  ' Perform some simple checking of the result
+  If Left$(strRet, Len(SVNTAG_PATH)) <> SVNTAG_PATH Then Err.Raise vbObjectError + 1000
+  
+  strLines = Split(strRet, vbCrLf)
+  For i = 0 To UBound(strLines) - 1
+    strLine = Trim$(strLines(i))
+    If InStrB(strLine, SVNTAG_URL) = 1 Then
+      strUrl = Right$(strLine, Len(strLine) - Len(SVNTAG_URL))
+      Exit For
+    End If
+  Next i
+  
+  If Right$(strUrl, 1) = "/" Then strUrl = Left$(strUrl, Len(strUrl) - 1) ' strip any trailing slash
+  
+  SVN_GetMappedUrl = URLDecode(strUrl)
+  
+SVN_GetMappedUrl_Exit:
+  If LenB(SVN_GetMappedUrl) = 0 Then SVN_GetMappedUrl = "No mapped SVN URL found"
+  Exit Function
+  
+SVN_GetMappedUrl_Err:
+  MsgBox "An error occured getting the SVN mapped URL." & vbCrLf & vbCrLf & _
+         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
+         strRet, vbCritical, "Subversion Error"
+  Resume SVN_GetMappedUrl_Exit
+
+End Function
+
+Public Function GetTortoiseSVNPath() As String
+  If LenB(mstrTORTOISE_SVN_PATH) = 0 Then
+    mstrTORTOISE_SVN_PATH = xwRegQueryValue(HKEY_LOCAL_MACHINE, "SOFTWARE\TortoiseSVN", "ProcPath")
+    If InStr(mstrTORTOISE_SVN_PATH, " ") Then
+      mstrTORTOISE_SVN_PATH = """" & mstrTORTOISE_SVN_PATH & """"
+    End If
+  End If
+  GetTortoiseSVNPath = mstrTORTOISE_SVN_PATH
+End Function
+
+Public Function GetSVNPath() As String
+  GetSVNPath = "svn.exe" ' svn must be in the PATH of the user
+End Function

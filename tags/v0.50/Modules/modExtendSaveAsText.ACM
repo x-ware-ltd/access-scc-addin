@@ -1,0 +1,1316 @@
+Option Compare Database
+Option Explicit
+
+Public Enum asObjectType ' Extended version of the acObjectType
+    acTable = 0
+    acQuery = 1
+    acForm = 2
+    acReport = 3
+    acMacro = 4
+    acModule = 5
+    acDataAccessPage = 6
+    acToolbar = 100
+    acExtra = 101
+    acReference = 102
+    acIMEXSpecs = 103
+End Enum
+
+Public Enum asSaveAsMode
+  asFullWithData = &HFFFFFFFF '-1
+  asFullNoData = &H0
+  asStructureOnly = &H1
+End Enum
+
+Private Type AccObject
+  obj As Object          'The Object tself
+  strObjType As String   'The type of object saved as a string
+  blnAppended As Boolean 'Indicating whether or not ithe object has been appended to its parent yet
+End Type
+
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
+
+'************************************************
+' This module extends out the saveAsText, loadFromText functionality of Access
+' to also be able to save tables, references, extras as well
+' This allows an entire Access Database to be exported into an SVN repository.
+'
+' @author Barry Pitfield (barry.pitfield@talkjcs.com)
+' @version 1.0
+'************************************************
+
+Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String)
+  Select Case objType
+    Case asObjectType.acQuery, asObjectType.acForm, asObjectType.acReport, asObjectType.acMacro, asObjectType.acModule
+      Application.SaveAsText objType, objName, strFilename
+    Case asObjectType.acTable, asObjectType.acIMEXSpecs
+      SaveTableAsText objName, strFilename
+    Case asObjectType.acToolbar
+      SaveCommandBarAsText objName, strFilename
+    Case asObjectType.acExtra
+      SaveExtraAsText strFilename
+    Case asObjectType.acReference
+      SaveReferencesAsText strFilename
+  End Select
+End Sub
+
+
+Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFilename As String, Optional strErr As String)
+  Dim strCatchErr As String
+  
+  Select Case objType
+    Case asObjectType.acForm
+      ' This is needed for when importing the SVN Tool from SVN using the SVN Tool!!!!!????
+      If FormIsLoaded(objName) Then
+        strErr = "The Form '" & objName & "' is already open. Inserted as " & objName & "-svntmp. Please rename after import"
+        objName = objName & "-svntmp"
+      End If
+      Application.LoadFromText acForm, objName, strFilename
+    Case asObjectType.acReport, asObjectType.acMacro, asObjectType.acModule
+      Application.LoadFromText objType, objName, strFilename
+    Case asObjectType.acTable, asObjectType.acIMEXSpecs
+      LoadTableFromText objName, strFilename
+    Case asObjectType.acQuery
+      LoadQueryFromText objName, strFilename
+    Case asObjectType.acToolbar
+      strCatchErr = LoadCommandBarFromText(objName, strFilename)
+      If strCatchErr <> "" Then
+        strErr = strCatchErr
+      End If
+    Case asObjectType.acExtra
+      LoadExtraFromText strFilename
+    Case asObjectType.acReference
+      LoadReferencesFromText strFilename
+  End Select
+
+End Sub
+
+'************************************************
+' Load Query From Text File
+'
+' Loads a query from a text file, but if the query has
+' been saved as a query definition (SQL) rather than a
+' Query Designer Definition, then the default view will
+' be switched to SQL instead of designer. This is to stop
+' the query designer 'optimising' certain queries as it opens
+' Example
+'  SELECT a FROM tbl WHERE a="z" AND (b="1" OR c="2")
+' becomes
+'  SELECT a AS Expr1
+'  FROM tbl
+'  WHERE ((([b])="1") AND (([a])="z")) OR ((([a])="z") AND (([c])="2"));
+'
+' @param    String the name of the query
+' @param    String the path of the filename to import
+'************************************************
+Public Sub LoadQueryFromText(strQryName As String, strFilename As String)
+  
+  Dim f As Integer
+  Dim strLine As String
+  Dim blnSetSQLView As Boolean
+  Dim frm As Form
+  
+  f = FreeFile
+  Open strFilename For Input As #f
+  Line Input #f, strLine
+  Close #f
+  If InStr(strLine, "dbMemo ""SQL"" =") Then
+    ' This is an SQL view query
+    blnSetSQLView = True
+  Else
+    ' standard query designer definition
+    blnSetSQLView = False
+  End If
+
+  Application.LoadFromText acQuery, strQryName, strFilename
+  If blnSetSQLView Then
+'    DoCmd.Echo True
+    ForceQuerySQLView strQryName
+    ' This messes up the entire window so force a repaint of all windows
+    For Each frm In Application.Forms
+      frm.Repaint
+    Next
+'    Application.RefreshDatabaseWindow
+'    DoCmd.Echo False
+  End If
+
+End Sub
+
+'************************************************
+' Exports references info about the DB file to a text file
+'
+' Used with SVN to store definitions
+'
+' @param    String the filename to export the references out to
+'************************************************
+'************************************************
+' SaveReferencesAsText
+'
+' Exports references info about the DB file to a text file
+'
+' Used with SVN to store definitions
+'
+' Version history:
+' - 1.00 initial version ??/??/????
+' - 1.01 modified to sort the references before output as they often get moved about
+'
+' @version 1.01
+' @param    String the filename to export the references out to
+'************************************************
+Public Sub SaveReferencesAsText(FileName As String)
+    
+  Dim ref As Access.Reference
+  Dim i, f As Integer
+  Dim strRefNames() As Variant
+  
+  ReDim strRefNames(1 To Application.References.Count)
+  For i = 1 To Application.References.Count
+    strRefNames(i) = Application.References.Item(i).Name
+  Next i
+  QuickSort strRefNames, 1, Application.References.Count
+  
+  f = FreeFile
+  If Dir(FileName) <> "" Then Kill FileName
+  Open FileName For Output As #f
+  Print #f, "Begin References"
+  For i = 1 To Application.References.Count
+    Set ref = Application.References.Item(strRefNames(i))
+    If Not ref.BuiltIn Then
+      Print #f, "    Begin Reference"
+      Print #f, "        Name = " & ref.Name
+      Print #f, "        GUID = " & ref.Guid
+      Print #f, "        Major = " & ref.Major
+      Print #f, "        Minor = " & ref.Minor
+      Print #f, "        FullPath = " & ref.FullPath
+      Print #f, "    End"
+    End If
+  Next
+  Print #f, "End"
+  Close #f
+End Sub
+
+'************************************************
+' Imports references info about the DB file from a Text file
+'
+' Used with SVN to store table definitions
+'
+' @param    String the filename to import references from
+'************************************************
+Public Sub LoadReferencesFromText(FileName As String)
+
+  Dim f As Integer, i As Integer
+  Dim strLine As String, strGUID As String, strMajor As String, strMinor As String, strName As String, strFullPath As String
+  Dim lngError As Long
+  Dim ref As Access.Reference
+  
+  'This works by reading each line in turn
+  
+  f = FreeFile
+  Open FileName For Input As #f
+  Line Input #f, strLine
+  If strLine <> "Begin References" Then Stop 'the file should always start with 'Begin Extra'
+  'First need to delete all existing non Built in references
+  For Each ref In Application.References
+    If Not ref.BuiltIn Then
+      Application.References.Remove ref
+    End If
+  Next
+  'Now add additional References
+  Do Until EOF(f)
+    Line Input #f, strLine
+    strLine = Trim$(strLine)
+    Select Case strLine
+      Case "End"
+        'This is called at the end of the file
+        Close #f
+        Exit Sub
+      Case "Begin Reference"
+        'This is a Non Built in Reference
+        
+        Line Input #f, strName
+        i = InStr(strName, "Name =")
+        If i = 0 Then Stop 'Error because this line should have 'Name =' in it
+        strName = Trim$(Mid(strName, i + 6))
+        
+        Line Input #f, strGUID
+        i = InStr(strGUID, "GUID =")
+        If i = 0 Then Stop 'Error because this line should have 'Type =' in it
+        strGUID = Trim$(Mid(strGUID, i + 6))
+        
+        Line Input #f, strMajor
+        i = InStr(strMajor, "Major =")
+        If i = 0 Then Stop 'Error because this line should have 'Value =' in it
+        strMajor = Trim$(Mid(strMajor, i + 7))
+             
+        Line Input #f, strMinor
+        i = InStr(strMinor, "Minor =")
+        If i = 0 Then Stop 'Error because this line should have 'Value =' in it
+        strMinor = Trim$(Mid(strMinor, i + 7))
+             
+        Line Input #f, strFullPath
+        i = InStr(strFullPath, "FullPath =")
+        If i = 0 Then Stop 'Error because this line should have 'Value =' in it
+        strFullPath = Trim$(Mid(strFullPath, i + 10))
+        
+        Line Input #f, strLine
+        If Trim$(strLine) <> "End" Then Stop 'This line should be 'end' to end the property
+        
+        On Error Resume Next
+        Application.References.AddFromGuid strGUID, strMajor, strMinor
+        lngError = Err
+        On Error GoTo 0
+        If lngError <> 0 Then
+          'Couldn't register the library
+          lngError = 0
+          On Error Resume Next
+          Application.References.AddFromFile strFullPath
+          lngError = Err
+          On Error GoTo 0
+          If lngError <> 0 Then
+            MsgBox "Unable to create reference to the " & strName & " " & strMajor & "." & strMinor & " (" & strFullPath & ") Library."
+          End If
+        End If
+        
+      Case Else
+        Stop 'Shouldn't have anything else!
+    End Select
+  Loop
+End Sub
+
+'************************************************
+' Exports additional info about the DB file to a text file
+'
+' Used with SVN to store definitions
+'
+' @param    String the filename to save the extras to
+'************************************************
+Public Sub SaveExtraAsText(FileName As String)
+      
+  Dim db As DAO.Database
+  Dim f As Integer
+  
+  Set db = CurrentDb()
+  f = FreeFile
+  If Dir(FileName) <> "" Then Kill FileName
+  Open FileName For Output As #f
+  Print #f, "Begin Extra"
+  Call WriteProperties(db, f, 4, ";Name;Connect;Transactions;Updatable;Version;RecordsAffected;ReplicaID;DesignMasterID;Connection;Build;", True) 'Name not required as Filename gives the name of the table
+  Print #f, "End"
+  Close #f
+End Sub
+
+'************************************************
+' Imports additional info about the DB file from a Text file
+'
+' Used with SVN to store table definitions
+'
+' @param    String the file name to load the extras from
+'************************************************
+Public Sub LoadExtraFromText(FileName As String)
+
+  Dim f As Integer, i As Integer
+  Dim strLine As String, strPrpName As String, strPrpValue As String, strPrpType As String, strLine2 As String
+  Dim lngError As Long
+  Dim db As DAO.Database
+  Dim prp As DAO.Property
+  
+  'This works by reading each line in turn
+  
+  f = FreeFile
+  Set db = CurrentDb()
+  Open FileName For Input As #f
+  Line Input #f, strLine
+  If strLine <> "Begin Extra" Then Stop 'the file should always start with 'Begin Extra'
+  'First delete all non built in properties
+  On Error Resume Next 'Can't delete built in properties
+  For Each prp In db.Properties
+      'Need to delete this property
+      db.Properties.Delete prp.Name
+  Next
+  On Error GoTo 0
+  Do Until EOF(f)
+    Line Input #f, strLine
+    strLine = Trim$(strLine)
+    If strLine = "End" Then
+        'This is called at the end of the file
+        Close #f
+        Exit Sub
+    Else
+      If strLine = "Begin Property" Then
+        'This is a user (access) defined property (ie not JET) and therefore we need to make sure the parent object (field, table, index etc) has been appended
+        
+        Line Input #f, strPrpName
+        i = InStr(strPrpName, "Name =")
+        If i = 0 Then Stop 'Error because this line should have 'Name =' in it
+        strPrpName = Trim$(Mid(strPrpName, i + 6))
+        
+        Line Input #f, strPrpType
+        i = InStr(strPrpType, "Type =")
+        If i = 0 Then Stop 'Error because this line should have 'Type =' in it
+        strPrpType = Trim$(Mid(strPrpType, i + 6))
+        
+        Line Input #f, strPrpValue
+        strLine = strPrpValue 'set here so that it can be read below to set the value correctly
+        i = InStr(strPrpValue, "Value =")
+        If i = 0 Then Stop 'Error because this line should have 'Value =' in it
+        strPrpValue = Trim$(Mid(strPrpValue, i + 7))
+             
+        Line Input #f, strLine2
+        If Trim$(strLine2) <> "End" Then Stop 'This line should be 'end' to end the property
+        
+        'Now have full details but don't know if property has been added or not
+        If Not InProperties(db.Properties, strPrpName) Then
+          'Need to add this property but don't set the value yet
+          Select Case strPrpType
+            Case dbMemo, dbText, dbChar
+              Set prp = db.CreateProperty(strPrpName, strPrpType, " ")
+            Case dbBigInt, dbBinary, dbByte, dbCurrency, dbDate, dbDecimal, dbDouble, dbFloat, dbInteger, dbLong, dbNumeric, dbSingle, dbTime, dbTimeStamp, dbVarBinary
+              Set prp = db.CreateProperty(strPrpName, strPrpType, 0)
+            Case dbBoolean
+              Set prp = db.CreateProperty(strPrpName, strPrpType, False)
+            Case dbGUID, dbLongBinary
+              Set prp = db.CreateProperty(strPrpName, strPrpType, Null)
+          End Select
+          db.Properties.Append prp
+        End If
+        i = InStr(strLine, "=")
+      Else
+        'This must be just a property setting (ie built in one
+          i = InStr(strLine, "=")
+          strPrpName = Trim$(Left(strLine, i - 1))
+      End If
+      Select Case Mid(strLine, i + 2, 1)
+        Case """"
+          'Property value starts with "
+          strPrpValue = Mid(strLine, i + 3, Len(strLine) - i - 3)
+          db.Properties(strPrpName).Value = strPrpValue
+        Case "#"
+          Stop
+        Case Else
+          strPrpValue = Mid(strLine, i + 2)
+          On Error Resume Next
+          db.Properties(strPrpName).Value = strPrpValue
+          lngError = Err
+          On Error GoTo 0
+          If lngError <> 3001 And lngError <> 0 And lngError <> 3219 Then Stop '3001 is Invalid Argument - caused by read only properties
+      End Select
+    End If
+  Loop
+End Sub
+
+'************************************************
+' Version changed [BP] 30/6/2011 to allow and incorporate the asSaveAsMode rather than a simple boolean as previously
+'
+' @param    String the name of the table to export
+' @param    String the file name to export to
+' &param    Boolean whether or not to include data
+'************************************************
+'************************************************
+' SaveTableAsText
+'
+' Exports a table (definition and data) to a text file
+'
+' Version history:
+' - 1.00 initial version
+' - 1.01 changed to allow and incorporate the asSaveAsMode rather than a simple boolean as previously [BP] 30/6/2011
+' - 1.02 Updated to allow export of Null data on single and double field types [SF] 18/03/2014
+'
+' @version 1.02
+' @param    String the name of the table to export
+' @param    String the file name to export to
+' @param    asSaveAsMode Optional param, whether or not to include data
+' @param    Database Optional param to provide a reference to the source database, defaults to currentDB
+'************************************************
+Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enmMode As asSaveAsMode = asFullWithData, Optional dbSource As DAO.Database = Nothing)
+  'enmMode determines what is included in the file.
+  'For use in SVN tool the Mode should be full with Data assuming it is a front end table holding data
+  'If Data is not required (ie an empty table) use Full No Data
+  'Both of the above formats can be used to create a new table when passed to LoadTableFromText Function
+  'If asStructureOnly is selected the output file does not have any display information in it.  This is design to check
+  'whether 2 files are structurally identical.  This format cannot be successfully used to recreate a table using LoadTableFromText function
+  'as fields will not be in the same order etc.
+  Dim CRSPLF As String
+  Dim DLMTR As String
+  Dim tdf As DAO.TableDef
+  Dim f As Integer
+  Dim fld As DAO.Field
+  Dim Idx As DAO.Index
+  Dim rs As DAO.Recordset
+  Dim strOut As String
+  Dim booContainsIndex As Boolean
+  Dim strPrimaryIndex As String
+  Dim strSortString As String
+  Dim strDumpSQLQuery As String
+  Dim sDelimiter As String
+  Dim sSEPERATOR As String
+  Dim b() As Byte
+  Dim strIgnoredPrpTables As String
+  Dim strIgnoredPrpFields As String
+  Dim strIgnoredPrpIndexes As String
+  Dim blnSort As Boolean
+  Dim arrNames() As Variant
+  Dim i As Long
+  
+  sDelimiter = Chr(135)
+  sSEPERATOR = Chr(149)
+  CRSPLF = Chr(213) & Chr(214) & Chr(210) 'This is used as an alternative to vbCRLF where it is itself found in a field
+  DLMTR = Chr(243) & Chr(242) & Chr(241) 'This is used as an alternative to sDelimiter where it is itself found in a field
+  
+  Select Case enmMode
+    Case asFullWithData, asFullNoData
+      strIgnoredPrpTables = ";DateCreated;LastUpdated;RecordCount;Name;ConflictTable;ReplicaFilter;NameMap;GUID;" 'NB Name not required as Filename gives the name of the table
+      strIgnoredPrpFields = ";DateCreated;LastUpdated;SourceField;SourceTable;ConflictTable;ReplicaFilter;CollatingOrder;GUID;"
+      blnSort = False
+    Case asStructureOnly
+      strIgnoredPrpTables = ";DateCreated;LastUpdated;RecordCount;Name;ConflictTable;ReplicaFilter;NameMap;GUID;OrderByOn;"
+      strIgnoredPrpFields = ";DateCreated;LastUpdated;SourceField;SourceTable;ConflictTable;ReplicaFilter;CollatingOrder;GUID;" & _
+                            "DisplayControl;ColumnWidth;ColumnOrder;ColumnHidden;DecimalPlaces;OrdinalPosition;Description;"
+      blnSort = True 'This means when doing comparisons we don't care if the field properties, fields etc are in the correct order
+  End Select
+  strIgnoredPrpIndexes = ";DateCreated;LastUpdated;ConflictTable;ReplicaFilter;GUID;DistinctCount;"
+  
+  If dbSource Is Nothing Then Set dbSource = CurrentDb() 'Set source to current DB if no value supplied
+  Set tdf = dbSource.TableDefs(TableName)
+  f = FreeFile
+  If Dir(FileName) <> "" Then Kill FileName
+  Open FileName For Output As #f
+  If tdf.Connect <> "" Then
+    'This is a connected table
+    Print #f, "Begin LinkedTableDef"
+    Print #f, "    Connect = " & tdf.Connect
+    Print #f, "    Attributes = " & tdf.Attributes
+    Print #f, "    SourceTableName = " & tdf.SourceTableName
+    Print #f, "End"
+  Else
+    Print #f, "Begin TableDef"
+      Call WriteProperties(tdf, f, 4, strIgnoredPrpTables, blnSort)
+      'Now do fields
+      'First load the Fields Names into any array
+      If tdf.Fields.Count > 0 Then
+        ReDim arrNames(0 To tdf.Fields.Count - 1)
+        For i = 0 To tdf.Fields.Count - 1
+          arrNames(i) = tdf.Fields(i).Name
+        Next
+        If blnSort Then QuickSort arrNames(), 0, tdf.Fields.Count - 1 'Sort Fields into order if required
+        For i = 0 To tdf.Fields.Count - 1
+          Print #f, "    Begin Field"
+          Call WriteProperties(tdf.Fields(arrNames(i)), f, 8, strIgnoredPrpFields, blnSort)
+          Print #f, "    End"
+        Next
+      End If
+      
+      'Now Indexes
+      'First Load index names into array
+      If tdf.Indexes.Count > 0 Then
+        ReDim arrNames(0 To tdf.Indexes.Count - 1)
+        For i = 0 To tdf.Indexes.Count - 1
+          arrNames(i) = tdf.Indexes(i).Name
+        Next
+        If blnSort Then QuickSort arrNames(), 0, tdf.Indexes.Count - 1
+        For i = 0 To tdf.Indexes.Count - 1
+          Set Idx = tdf.Indexes(i)
+          booContainsIndex = True
+          If Idx.Primary = True Then strPrimaryIndex = Idx.Name
+          Print #f, "    Begin Index"
+            Call WriteProperties(Idx, f, 8, strIgnoredPrpIndexes, blnSort)
+            For Each fld In Idx.Fields
+              Print #f, "        Begin Field"
+              Call WriteProperties(fld, f, 12, "")
+              Print #f, "        End"
+            Next
+          Print #f, "    End"
+        Next
+      End If
+
+      'Now Data
+      If enmMode = asFullWithData Then
+        If booContainsIndex Then
+          If strPrimaryIndex <> "" Then
+            Set Idx = tdf.Indexes(strPrimaryIndex)
+          Else
+            Set Idx = tdf.Indexes.Item(0)
+          End If
+          For Each fld In Idx.Fields
+            If strSortString <> "" Then
+              strSortString = strSortString & ", [" & fld.Name & "]"
+            Else
+              strSortString = "[" & fld.Name & "]"
+            End If
+          Next
+        Else
+          Set fld = tdf.Fields.Item(0)
+          strSortString = "[" & fld.Name & "]"
+        End If
+        strDumpSQLQuery = "SELECT * FROM [" & TableName & "] ORDER BY " & strSortString & " ASC"
+        Set rs = dbSource.OpenRecordset(strDumpSQLQuery, dbOpenDynaset, dbReadOnly)
+        Print #f, "    Begin Data"
+        'Write the field names
+        strOut = ""
+        For Each fld In rs.Fields
+          strOut = strOut & sDelimiter & fld.Name & sDelimiter & sSEPERATOR
+        Next
+        strOut = Left(strOut, Len(strOut) - Len(sSEPERATOR))
+        Print #f, "        " & strOut
+      
+        'Now write the data
+        Close #f 'We have to close the file becasue we now want to write in Binary Mode
+        Open FileName For Binary As #f
+        Do While Not rs.EOF
+          'strOut = ""
+          b() = StrConv("        ", vbFromUnicode)
+          For Each fld In rs.Fields
+            Select Case fld.Type
+              Case dbText, dbMemo ' Null is handled explicitly
+                If IsNull(fld.Value) Or (Not fld.AllowZeroLength And fld.Value = vbNullString) Then
+                  b = ConcatByteArr(b, StrConv("#NULL#" & sSEPERATOR, vbFromUnicode))
+                ElseIf LenB(fld.Value) = 0 Then
+                  b = ConcatByteArr(b, StrConv(vbNullString & sSEPERATOR, vbFromUnicode))
+                Else
+                  b = ConcatByteArr(b, StrConv(sDelimiter, vbFromUnicode), EncodeText(Replace(Replace(fld.Value, vbCrLf, CRSPLF, 1), sDelimiter, DLMTR, 1)), StrConv(sDelimiter & sSEPERATOR, vbFromUnicode))
+                End If
+              Case dbDate, dbTime ' Null is handled indirectly and is outputted as ##
+                b = ConcatByteArr(b, StrConv("#" & Format(fld.Value, "mm/dd/yyyy hh:mm:ss") & "#" & sSEPERATOR, vbFromUnicode))
+              Case dbLongBinary ' Null is handled indeirectly and is outputted as an empty string (vbNullString)
+                b = ConcatByteArr(b, StrConv(VarByteArrToHexString(fld.Value) & sSEPERATOR, vbFromUnicode))
+              Case dbDouble, dbSingle ' store decimal places using dot notation rather than regional formatting
+                If IsNull(fld.Value) Then ' Need to handle Null data specifically
+                  b = ConcatByteArr(b, StrConv(vbNullString & sSEPERATOR, vbFromUnicode))
+                Else
+                  b = ConcatByteArr(b, StrConv(str$(fld.Value) & sSEPERATOR, vbFromUnicode))
+                End If
+              Case Else
+                b = ConcatByteArr(b, StrConv(fld.Value & sSEPERATOR, vbFromUnicode))
+            End Select
+          Next
+          ReDim Preserve b(LBound(b) To UBound(b) - Len(sSEPERATOR))
+          Put #f, LOF(f) + 1, b
+          Put #f, LOF(f) + 1, vbCrLf
+          rs.MoveNext
+        Loop
+        Put #f, LOF(f) + 1, "    End" & vbCrLf
+        Close #f
+        Open FileName For Append As #f 're-open file in Append Mode
+      End If
+    Print #f, "End"
+  End If
+  Close #f
+  Set tdf = Nothing
+End Sub
+
+'************************************************
+' Imports a table (definition and Data) from a Text file
+'
+' Used with SVN to store table definitions
+'
+' @param    String the table name to import
+' @param    String the file name to import from
+'************************************************
+Public Sub LoadTableFromText(TableName As String, FileName As String, Optional blnIncludeData As Boolean = True, Optional dbDestination As DAO.Database = Nothing)
+
+  Dim CRSPLF As String
+  Dim DLMTR As String
+  
+  Dim f As Integer, i As Integer
+  Dim tdf As DAO.TableDef
+  Dim strLine As String, strPrpName As String, strPrpValue As String, strPrpType As String, strFieldNames As String
+  Dim lngError As Long
+  Dim rs As DAO.Recordset
+  Dim varData As Variant 'Temporary variable used to hold a data line as an array
+  Dim varFieldNames As Variant 'Temporary variable used to store the field names as an array
+  Dim AccObj() As AccObject 'The current obj which relates to the section we are looking at (same index as strsections)
+  Dim dt As Date
+  Dim sTemp As String
+  Dim arrbytFile() As Byte
+  Dim arrbytLine() As Byte
+  Dim arrbytCRLF() As Byte
+  
+  Dim sDelimiterOld As String
+  Dim sSeperatorOld As String
+  Dim sDelimiter As String
+  Dim sSEPERATOR As String
+  Dim blnExtendedDelimiters As Boolean
+  Dim lngLineStart As Long
+  Dim lngFileLength As Long
+  Dim lngEOL As Long
+  
+  sDelimiterOld = Chr(44)  '  ,
+  sSeperatorOld = Chr(34)  '  "
+  sDelimiter = Chr(135)    '  ‡
+  sSEPERATOR = Chr(149)    '  •
+  CRSPLF = Chr(213) & Chr(214) & Chr(210) 'This is used as an alternative to vbCRLF where ir is itself found in a field
+  DLMTR = Chr(243) & Chr(242) & Chr(241) 'This is used as an alternative to sDelimiter where it is itself found in a field
+  
+  'This works by reading each line in turn
+  'When it starts a new object (Begin ....) it adds a new object to the AccObj Array so it knows what it is currently working on
+  'When an 'End' is found it removes one from the AccObj Array
+  
+  If dbDestination Is Nothing Then Set dbDestination = CurrentDb()
+  f = FreeFile
+  Open FileName For Binary As #f
+  ReDim arrbytFile(0 To LOF(f) - 1)
+  Get #f, , arrbytFile()
+  Close #f
+  arrbytCRLF() = StrConv(vbCrLf, vbFromUnicode)
+  lngFileLength = UBound(arrbytFile)
+  lngLineStart = 0
+  Do
+    lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
+    If lngEOL = 0 Then Exit Do
+    arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
+    lngLineStart = lngEOL + 2
+    strLine = StrConv(arrbytLine, vbUnicode)
+    strLine = Trim$(strLine)
+    Select Case strLine
+      Case "Begin LinkedTableDef"
+        On Error Resume Next
+        CurrentDb().Execute "DROP TABLE " & TableName 'Done this way to ensure the table is dropped from CurrentDB not CodeDB which is what 'DoCmd.DeleteObject acTable, TableName' does.
+        On Error GoTo 0
+        Dim strConnect As String, strAttributes As String, strSourceTableName As String
+        Dim lngAtt As Long
+        lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
+        If lngEOL = 0 Then Exit Do
+        arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
+        lngLineStart = lngEOL + 2
+        strLine = StrConv(arrbytLine, vbUnicode)
+        If Left(strLine, 13) <> "    Connect =" Then Stop
+        strConnect = Mid(strLine, 15, Len(strLine) - 14)
+        lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
+        If lngEOL = 0 Then Exit Do
+        arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
+        lngLineStart = lngEOL + 2
+        strLine = StrConv(arrbytLine, vbUnicode)
+        If Left(strLine, 16) <> "    Attributes =" Then Stop
+        strAttributes = Mid(strLine, 18, Len(strLine) - 17)
+        lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
+        If lngEOL = 0 Then Exit Do
+        arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
+        lngLineStart = lngEOL + 2
+        strLine = StrConv(arrbytLine, vbUnicode)
+        If Left(strLine, 21) <> "    SourceTableName =" Then Stop
+        strSourceTableName = Mid(strLine, 23, Len(strLine) - 22)
+        lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
+        If lngEOL = 0 Then Exit Do
+        arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
+        lngLineStart = lngEOL + 2
+        strLine = StrConv(arrbytLine, vbUnicode)
+        If Trim$(strLine) <> "End" Then Stop
+        Set tdf = dbDestination.CreateTableDef(TableName)
+        tdf.SourceTableName = strSourceTableName
+        tdf.Connect = strConnect
+        lngAtt = CLng(strAttributes) 'dbAttachedTable and dbAttachedODBC are read only so can't be set here
+        If (lngAtt And dbAttachedTable) = dbAttachedTable Then lngAtt = lngAtt Xor dbAttachedTable
+        If (lngAtt And dbAttachedODBC) = dbAttachedODBC Then lngAtt = lngAtt Xor dbAttachedODBC
+        tdf.Attributes = tdf.Attributes Or lngAtt
+        dbDestination.TableDefs.Append tdf
+      Case "End"
+        'This is called at the end of a section so this is where the clean up and appending is done
+        With AccObj(UBound(AccObj))
+        Select Case .strObjType
+          Case "TableDef"
+            tdf.Fields.Delete sTemp
+          Case "Field"
+            If Not .blnAppended Then
+              AccObj(UBound(AccObj) - 1).obj.Fields.Append .obj
+              .blnAppended = True
+            End If
+          Case "Property"
+            If Not .blnAppended Then
+              AccObj(UBound(AccObj) - 1).obj.Properties.Append .obj
+              .blnAppended = True
+            End If
+          Case "Index"
+            If Not .blnAppended Then
+              AccObj(UBound(AccObj) - 1).obj.Indexes.Append .obj
+              .blnAppended = True
+            End If
+          Case "Data"
+            Set rs = Nothing
+        End Select
+        End With
+        If UBound(AccObj) <> 0 Then ReDim Preserve AccObj(UBound(AccObj) - 1)
+      Case "Begin TableDef"
+        On Error Resume Next
+        dbDestination.Execute "DROP TABLE [" & TableName & "]"
+        On Error GoTo 0
+        ReDim AccObj(0) 'Always 0 because this must be the first thing in this file
+        Set tdf = dbDestination.CreateTableDef(TableName)
+        sTemp = "Temp" & Int(Rnd() * 10000000000#)
+        tdf.Fields.Append tdf.CreateField(sTemp, dbText, 1)
+        dbDestination.TableDefs.Append tdf
+        With AccObj(0)
+          Set .obj = tdf
+          .strObjType = "TableDef"
+          .blnAppended = True
+        End With
+      Case "Begin Field"
+        ReDim Preserve AccObj(UBound(AccObj) + 1)
+        With AccObj(UBound(AccObj))
+          Set .obj = AccObj(UBound(AccObj) - 1).obj.CreateField()
+          .strObjType = "Field"
+          .blnAppended = False
+        End With
+      Case "Begin Property"
+        'This is a user (access) defined property (ie not JET) and therefore we need to make sure the parent object (field, table, index etc) has been appended
+        Call AppendParent(AccObj)
+        
+        ReDim Preserve AccObj(UBound(AccObj) + 1)
+        
+        lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
+        If lngEOL = 0 Then Exit Do
+        arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
+        lngLineStart = lngEOL + 2
+        strPrpName = StrConv(arrbytLine, vbUnicode)
+        
+        i = InStr(strPrpName, "Name =")
+        If i = 0 Then Stop 'Error because this line should have 'Name =' in it
+        strPrpName = Trim$(Mid(strPrpName, i + 6))
+        
+        lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
+        If lngEOL = 0 Then Exit Do
+        arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
+        lngLineStart = lngEOL + 2
+        strPrpType = StrConv(arrbytLine, vbUnicode)
+        
+        i = InStr(strPrpType, "Type =")
+        If i = 0 Then Stop 'Error because this line should have 'Type =' in it
+        strPrpType = Trim$(Mid(strPrpType, i + 6))
+             
+        With AccObj(UBound(AccObj))
+          Set .obj = AccObj(UBound(AccObj) - 1).obj.CreateProperty(strPrpName, strPrpType)
+          .strObjType = "Property"
+          .blnAppended = False
+        End With
+        
+      Case "Begin Index"
+        Call AppendParent(AccObj)
+        ReDim Preserve AccObj(UBound(AccObj) + 1)
+        With AccObj(UBound(AccObj))
+          Set .obj = AccObj(UBound(AccObj) - 1).obj.CreateIndex("Temp" & Int(Rnd() * 10000000000#))
+          .strObjType = "Index"
+          .blnAppended = False
+        End With
+      
+      Case "Begin Data"
+        If Not blnIncludeData Then Exit Do
+        ReDim Preserve AccObj(UBound(AccObj) + 1)
+        AccObj(UBound(AccObj)).strObjType = "Data"
+        Set rs = dbDestination.OpenRecordset(TableName, dbOpenTable, dbAppendOnly)
+        lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
+        If lngEOL = 0 Then Exit Do
+        arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
+        lngLineStart = lngEOL + 2
+        strFieldNames = StrConv(arrbytLine, vbUnicode) 'Loads the field names into this string
+        
+        ' Check if the text file is using the new extended delimiter character set
+        If Left$(Trim$(strFieldNames), Len(sDelimiter)) = sDelimiter Then
+          blnExtendedDelimiters = True
+          varFieldNames = xwSplit(Trim$(strFieldNames), sSEPERATOR, , , sDelimiter, False)
+        Else
+          varFieldNames = xwSplit(Trim$(strFieldNames), sSeperatorOld, , , sDelimiterOld, False)
+        End If
+      
+      Case Else
+        If AccObj(UBound(AccObj)).strObjType = "Data" Then
+          'We are in the data section
+          If blnExtendedDelimiters Then
+            varData = xwSplit(Trim$(strLine), sSEPERATOR, , , sDelimiter, False)
+          Else
+            varData = xwSplit(Trim$(strLine), sSeperatorOld, , , sDelimiterOld, False)
+          End If
+          rs.AddNew
+          For i = LBound(varData) To UBound(varData)
+            With rs.Fields(varFieldNames(i))
+              Select Case .Type
+                Case dbText, dbMemo
+                  If varData(i) = "#NULL#" Then
+                    .Value = Null
+                  Else
+                    If blnExtendedDelimiters Then
+                      .Value = Replace(Replace(DecodeText(CStr(varData(i))), CRSPLF, vbCrLf, 1), DLMTR, sDelimiter, 1)
+                    Else
+                      ' replace any double quotes with single quotes in old style export
+                      .Value = Replace(Replace(varData(i), CRSPLF, vbCrLf, 1), """""", """", 1)
+                    End If
+                  End If
+                Case dbLongBinary
+                  .Value = HexStringToVarByteArray(CStr(varData(i)))
+                Case dbDate, dbTime
+                  If Left(varData(i), 1) = "#" Then
+                    'This is in date format - using "MM/DD/YYYY hh:nn:ss"
+                    If varData(i) = "##" Then
+                      .Value = Null
+                    Else
+                      dt = DateSerial(Mid(varData(i), 8, 4), Mid(varData(i), 2, 2), Mid(varData(i), 5, 2))
+                      dt = dt + TimeSerial(Mid(varData(i), 13, 2), Mid(varData(i), 16, 2), Mid(varData(i), 19, Len(varData(i)) - 19))
+                      .Value = dt
+                    End If
+                  Else
+                    Stop 'Error - the field type is Time or Date but the data does not start with #
+                  End If
+                Case dbDouble, dbSingle
+                  If varData(i) = "" Then
+                    .Value = Null
+                  Else
+                    .Value = Val(varData(i)) ' read in decimal places from dot notation rather than regional formatting
+                  End If
+                Case Else
+                  'Numeric or boolean type of some kind
+                  If varData(i) = "" Then
+                    .Value = Null
+                  Else
+                    .Value = varData(i)
+                  End If
+              End Select
+            End With
+          Next
+          rs.Update
+        Else
+          i = InStr(strLine, "= ")
+          strPrpName = Trim$(Left(strLine, i - 1))
+          Select Case Mid(strLine, i + 2, 1)
+            Case """"
+              strPrpValue = Mid(strLine, i + 3, Len(strLine) - i - 3)
+              AccObj(UBound(AccObj)).obj.Properties(strPrpName).Value = strPrpValue
+            Case "#"
+              Stop
+            Case Else
+              strPrpValue = Mid(strLine, i + 2)
+              On Error Resume Next
+              AccObj(UBound(AccObj)).obj.Properties(strPrpName).Value = strPrpValue
+              lngError = Err
+              On Error GoTo 0
+              If lngError <> 3001 And lngError <> 0 And lngError <> 3219 Then Stop '3001 is Invalid Argument - caused by read only properties
+              'Select Case lngError
+              'Case 3270
+                'Property doesn't exist
+          End Select
+        End If
+    End Select
+  Loop
+End Sub
+
+Private Function WriteProperties(obj As Object, fNum As Integer, intOffset As Integer, strIgnoreProp As String, Optional blnSort As Boolean = False) As Boolean
+  ' This function writes properties to the file specified with the offset specified
+  ' Used by SaveTableAsText Sub
+  Dim prp As DAO.Property
+  Dim v As Variant
+  Dim i As Integer
+  Dim lngError As Long
+  Dim strPrpName As String
+  Dim blnBuiltIn As Boolean
+  Dim varPropNames() As Variant
+
+  ReDim varPropNames(0 To obj.Properties.Count - 1)
+  For Each prp In obj.Properties
+    For i = 0 To obj.Properties.Count - 1
+      varPropNames(i) = obj.Properties(i).Name
+    Next i
+
+  Next prp
+  If blnSort Then
+    QuickSort varPropNames, 0, obj.Properties.Count - 1
+  End If
+
+  For i = 0 To UBound(varPropNames)
+    Set prp = obj.Properties(varPropNames(i))
+    On Error Resume Next
+    If InStr(strIgnoreProp, ";" & prp.Name & ";") = 0 Then
+      v = prp.Value
+      lngError = Err
+      On Error GoTo 0
+      If lngError = 0 Then
+        'No error in reading the property's value
+        If Not IsNull(prp.Value) Then
+          If Not IsEmpty(prp.Value) Then
+            If prp.Value <> "" Then
+              strPrpName = prp.Name
+              blnBuiltIn = IsBuiltInProperty(obj, prp.Name)
+              If Not blnBuiltIn Then
+                'Property is not built in so need to define it
+                Print #fNum, Space(intOffset) & "Begin Property"
+                Print #fNum, Space(intOffset + 4) & "Name = " & prp.Name
+                Print #fNum, Space(intOffset + 4) & "Type = " & prp.Type
+                strPrpName = "    Value"
+              End If
+              Select Case prp.Type
+                Case dbText, dbMemo: Print #fNum, Space(intOffset) & strPrpName & " = """ & prp.Value & """"
+                Case dbDate, dbTime: Print #fNum, Space(intOffset) & strPrpName & " = #" & Format(prp.Value, "mm/dd/yyyy hh:mm:ss") & "#"
+                Case Else: Print #fNum, Space(intOffset) & strPrpName & " = " & prp.Value
+              End Select
+              If Not blnBuiltIn Then
+                Print #fNum, Space(intOffset) & "End"
+              End If
+            End If
+          End If
+        End If
+      End If
+    End If
+  Next
+End Function
+
+Private Function IsBuiltInProperty(obj As Object, strPropertyName As String) As Boolean
+  'This function should be added to the standard X-Ware functions and the DEBUG_Error handling added
+  Dim var As Variant
+  If TypeOf obj Is TableDef Then
+    Dim tdf As New DAO.TableDef
+    'Set tdf = New TableDef
+    On Error Resume Next
+    var = tdf.Properties(strPropertyName).Value
+    IsBuiltInProperty = (Err = 0)
+    Set tdf = Nothing
+  End If
+  If TypeOf obj Is Field Then
+    Dim fld As New DAO.Field
+    On Error Resume Next
+    var = fld.Properties(strPropertyName).Name
+    IsBuiltInProperty = (Err = 0)
+    Set fld = Nothing
+  End If
+  If TypeOf obj Is Index Then
+    Dim Idx As New DAO.Index
+    On Error Resume Next
+    var = Idx.Properties(strPropertyName).Value
+    IsBuiltInProperty = (Err = 0)
+    Set Idx = Nothing
+  End If
+  If TypeOf obj Is Database Then
+    Dim db As DAO.Database
+    Dim strFilename As String
+    strFilename = Environ("Temp") & "\Temp.mdb"
+    Set db = CreateDatabase(strFilename, dbLangGeneral)
+    On Error Resume Next
+    var = db.Properties(strPropertyName).Value
+    IsBuiltInProperty = (Err = 0)
+    Set db = Nothing
+    Kill strFilename
+  End If
+End Function
+Private Sub AppendParent(AccObj() As AccObject)
+  'This makes sure that the parent object has been appended before trying to add any new objects to it
+  'Used by LoadTableFromText
+  With AccObj(UBound(AccObj))
+    If Not .blnAppended Then
+      Select Case .strObjType
+        Case "TableDef"
+          'Do nothing tabledefs are already appended with a dummy field
+        Case "Field"
+          AccObj(UBound(AccObj) - 1).obj.Fields.Append .obj
+          .blnAppended = True
+        Case "Index"
+          AccObj(UBound(AccObj) - 1).obj.Indexes.Append .obj
+          .blnAppended = True
+      End Select
+    End If
+  End With
+End Sub
+
+'************************************************
+' VarByteArrToHexString
+'
+' Converts a byte array into a hex string
+'
+' Version history:
+' - 1.00 initial version
+' - 1.01 modified to handle non-zero based arrays 8/8/2008 [sf]
+'
+' @author Barry Pitfield <barry.pitfield@talkjcs.com>
+' @suggestions
+' @version 1.01
+' @param  Variant An Array of bytes to convert
+' @return String Hex String representing the byte array
+'************************************************
+Public Function VarByteArrToHexString(var As Variant) As String
+  'Takes a variant of type
+  If VarType(var) = vbArray + vbByte Then
+    'This function only works if passed an variant array of Bytes
+    Dim i As Long
+    Dim str As String
+    Dim h As String
+    Dim lb As Long
+    Dim ub As Long
+    lb = LBound(var)
+    ub = UBound(var)
+    str = Space((ub - lb + 1) * 2)
+    For i = lb To ub
+      h = Hex$(var(i))
+      If Len(h) = 1 Then Mid(str, (i - lb) * 2 + 1) = "0" & h Else Mid(str, (i - lb) * 2 + 1) = h
+    Next
+  End If
+  VarByteArrToHexString = str
+End Function
+Public Function HexStringToVarByteArray(str As String, Optional lb As Integer = 0) As Variant
+  'The exact opposite of VarByteArrToHexString
+  Dim i As Long
+  Dim b() As Byte
+  If LenB(str) = 0 Then
+    HexStringToVarByteArray = Null
+  Else
+    ReDim b(lb To (LenB(str) / 4 - 1) + lb)
+    For i = LBound(b) To UBound(b)
+      b(i) = invHex(Mid(str, i * 2 + 1, 2))
+    Next
+    HexStringToVarByteArray = b()
+  End If
+End Function
+Private Function HexStringToVarByteArray2(str As String, ByRef byt() As Byte, Optional lb As Integer = 0)
+  'The exact opposite of VarByteArrToHexString
+  Dim i As Long
+  If LenB(str) = 0 Then
+    byt = Array()
+  Else
+    ReDim byt(lb To (LenB(str) / 4 - 1) + lb)
+    For i = LBound(byt) To UBound(byt)
+      byt(i) = invHex(Mid(str, i * 2 + 1, 2))
+    Next
+  End If
+End Function
+Private Function invHex(strHex As String) As Long
+  'Does the exact opposite to the built in Hex function
+  Dim i As Long, lngLen As Long
+  Dim byt As Byte, bytAsc As Byte
+  lngLen = Len(strHex)
+  For i = 1 To lngLen
+    bytAsc = Asc(Mid(strHex, i, 1))
+    Select Case bytAsc
+      Case 48 To 57 '0 to 9
+        invHex = invHex + (bytAsc - 48) * (16 ^ (lngLen - i))
+      Case 65 To 70 'A to F
+        invHex = invHex + (bytAsc - 55) * (16 ^ (lngLen - i))
+      Case Else
+        Stop
+    End Select
+  Next
+End Function
+
+Private Sub QuickSort(ByRef MyArray() As Variant, ByVal lngLBound As Long, ByVal lngUBound As Long)
+    Dim varPivot As Variant
+    Dim k As Long
+    Dim P As Long
+    Dim varTemp As Variant
+    
+    If lngLBound >= lngUBound Then
+        Exit Sub
+    End If
+    
+    k = lngLBound + 1
+    
+    If lngUBound = k Then
+        If MyArray(lngLBound) > MyArray(lngUBound) Then
+            'swap MyArray(lngLBound) and MyArray(lngUBound)
+            varTemp = MyArray(lngLBound)
+            MyArray(lngLBound) = MyArray(lngUBound)
+            MyArray(lngUBound) = varTemp
+        End If
+        Exit Sub
+    End If
+    
+    varPivot = MyArray(lngLBound)
+    P = lngUBound
+    
+    Do Until (MyArray(k) > varPivot) Or (k >= lngUBound)
+        k = k + 1
+    Loop
+    
+    Do Until MyArray(P) <= varPivot
+        P = P - 1
+    Loop
+    
+    Do While k < P
+        'swap MyArray(k) and MyArray(p)
+        varTemp = MyArray(k)
+        MyArray(k) = MyArray(P)
+        MyArray(P) = varTemp
+        
+        Do
+            k = k + 1
+        Loop Until MyArray(k) > varPivot
+        
+        Do
+            P = P - 1
+        Loop Until MyArray(P) <= varPivot
+    Loop
+    
+    'swap MyArray(p) and MyArray(lngLBound)
+    varTemp = MyArray(P)
+    MyArray(P) = MyArray(lngLBound)
+    MyArray(lngLBound) = varTemp
+    
+    QuickSort MyArray, lngLBound, P - 1
+    QuickSort MyArray, P + 1, lngUBound
+End Sub
+
+Public Function createFileFromHexString(strFile As String, strHex As String)
+  Dim f As Integer
+  Dim byt() As Byte
+  
+  f = FreeFile
+  Open strFile For Binary Access Write As #f
+  HexStringToVarByteArray2 strHex, byt()
+  Put #f, , byt
+  Close #f
+End Function
+Private Function EncodeText(strIn As String) As Byte()
+  'This function Encodes Text, expanding out if there are any Unicode Characters
+  'When the Bytes are written to a file it represents the full Unicode version
+  'Preceeded by the Text #Unicode:
+  Dim arrbyt() As Byte
+  Dim arrbytHdr() As Byte
+  EncodeText = StrConv(strIn, vbFromUnicode)
+  If StrConv(EncodeText, vbUnicode) <> strIn Then 'The only way to test if we have Unicode characters is to see if
+    'There are Unicode Characters which the StrConv Cant handle
+    arrbytHdr() = StrConv("#Unicode:", vbFromUnicode)
+    arrbyt() = strIn
+    EncodeText = ConcatByteArr(arrbytHdr, arrbyt)
+  End If
+End Function
+Private Function DecodeText(strIn As String) As String
+  'This does exactly the opposite of EncodeText
+  If LenB(strIn) > 17 Then
+    'This is long enough that it could be Unicode
+    If Left$(strIn, 9) = "#Unicode:" Then
+      'This is Unicode
+      Dim arrbyt() As Byte
+      Dim arrbytOut() As Byte
+      Dim i As Long
+      arrbyt() = Mid$(strIn, 10)
+      ReDim arrbytOut(0 To (UBound(arrbyt) + 1) / 2 - 1)
+      For i = 0 To UBound(arrbytOut) - 1 Step 2
+        arrbytOut(i + 1) = arrbyt((i + 1) * 2)
+        arrbytOut(i) = arrbyt(i * 2)
+      Next
+      DecodeText = arrbytOut()
+    Else
+      DecodeText = strIn
+    End If
+  Else
+    DecodeText = strIn
+  End If
+End Function
+Private Function MidBytArr(arr() As Byte, lngStart As Long, lngEnd As Long, lngNewLBound As Long) As Byte()
+  'This function returns an array of bytes plucked from the middle of an array of bytes
+  If (Not arr) = -1 Then Exit Function
+  If lngStart > UBound(arr) Then Exit Function
+  If lngEnd < LBound(arr) Then Exit Function
+  If lngStart < LBound(arr) Then lngStart = LBound(arr)
+  If lngEnd > UBound(arr) Then lngEnd = UBound(arr)
+
+  Dim lngLength As Long
+
+  lngLength = lngEnd - lngStart + 1
+  ReDim arrOut(lngNewLBound To lngNewLBound + lngLength - 1) As Byte
+  CopyMemory VarPtr(arrOut(lngNewLBound)), VarPtr(arr(lngStart)), lngLength
+
+  MidBytArr = arrOut
+End Function
+Private Function InBytArr(ByVal lngStart As Long, arr1() As Byte, arr2() As Byte) As Long
+  'Returns the position of ByteArray 2 within BytArray 1
+  'If not found it returns 0
+  Dim i As Long
+  Dim j As Long
+  Dim lngLBound2 As Long
+  Dim lngUBound2 As Long
+  Dim byt1 As Byte       'The first Byte of the second array
+  Dim blnFound As Boolean
+  
+  If (Not arr1) = -1 Then Exit Function
+  If (Not arr2) = -1 Then Exit Function
+  lngLBound2 = LBound(arr2)
+  lngUBound2 = UBound(arr2)
+  byt1 = arr2(lngLBound2)
+  If lngStart < LBound(arr1) Then lngStart = LBound(arr1)
+  For i = lngStart To UBound(arr1) - (lngUBound2 - lngLBound2)
+    If arr1(i) = byt1 Then
+      blnFound = True
+      For j = 1 To (lngUBound2 - lngLBound2)
+        If arr1(i + j) <> arr2(lngLBound2 + j) Then
+          blnFound = False
+          Exit For
+        End If
+      Next
+      If blnFound Then InBytArr = i: Exit Function
+    End If
+  Next
+End Function
+Private Function ConcatByteArr(ParamArray arr()) As Byte()
+
+'This function concatenates byte arrays.  The LBound of the result will be the same as the LBound of the first array passed
+'Any number of Arrays can be passed but they must all be of Byte Type
+
+Dim i As Long
+Dim LBounds() As Long  'Has the same dimensions as the passed array and records the LBound of each Array passed
+Dim Lengths() As Long  'Has the same dimensions as the passed array and records the Length of each Array passed (UBound - LBound + 1)
+Dim lngLBound As Long  'LBound of the passed array
+Dim lngUBound As Long  'UBound of the passed array
+Dim lngLen As Long
+Dim arrbyt() As Byte
+Dim lngPosn As Long
+Dim b() As Byte
+
+lngLBound = LBound(arr)
+lngUBound = UBound(arr)
+ReDim LBounds(lngLBound To lngUBound)
+ReDim Lengths(lngLBound To lngUBound)
+
+For i = lngLBound To lngUBound
+  If VarType(arr(i)) = vbString Then
+    'We have been passed a string so we should convert it to a Byte Array
+    LBounds(i) = 0
+    Lengths(i) = LenB(arr(i))
+  ElseIf VarType(arr(i)) = vbArray + vbByte Then
+    LBounds(i) = LBound(arr(i))
+    Lengths(i) = UBound(arr(i)) - LBounds(i) + 1
+  Else
+    Exit Function
+  End If
+  lngLen = lngLen + Lengths(i)
+Next
+
+lngPosn = LBounds(lngLBound)
+ReDim arrbyt(lngPosn To LBounds(lngLBound) + lngLen - 1)
+
+For i = lngLBound To lngUBound
+  b() = arr(i)
+  CopyMemory VarPtr(arrbyt(lngPosn)), VarPtr(b(LBounds(i))), Lengths(i)
+  lngPosn = lngPosn + Lengths(i)
+Next i
+
+ConcatByteArr = arrbyt
+
+End Function
+Public Function getFileAsHexString(strFile As String) As String
+  Dim f As Integer
+  Dim lngFileLen As Long
+  Dim byt() As Byte
+  
+  f = FreeFile
+  Open strFile For Binary Access Read As #f
+  lngFileLen = LOF(f)
+  ReDim byt(lngFileLen - 1) As Byte
+  Get #f, , byt
+  Close #f
+  getFileAsHexString = VarByteArrToHexString(byt)
+End Function
+
+Function FormIsLoaded(ByVal strFormName As String) As Integer
+  Dim frm As Form
+  Dim ctl As Control
+  
+  'Returns a 0 if form is not open or a -1 if Open
+  If SysCmd(acSysCmdGetObjectState, acForm, strFormName) <> 0 Then
+    If Forms(strFormName).CurrentView <> 0 Then
+      FormIsLoaded = True
+      Exit Function
+    End If
+  End If
+
+  ' Check for sub forms
+  For Each frm In Forms
+    For Each ctl In frm.Controls
+      If ctl.ControlType = acSubform Then
+        If ctl.SourceObject = strFormName Then
+          FormIsLoaded = True
+          Exit Function
+        End If
+      End If
+    Next
+  Next frm
+End Function

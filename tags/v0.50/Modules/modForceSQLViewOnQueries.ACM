@@ -1,0 +1,175 @@
+Option Compare Database
+Option Explicit
+
+Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExA" (ByVal hWnd1 As Long, ByVal hWnd2 As Long, ByVal lpsz1 As String, ByVal lpsz2 As String) As Long
+Private Declare Function apiGetClassName Lib "user32" Alias "GetClassNameA" (ByVal hwnd As Long, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
+Private Declare Function GetFocus Lib "user32" () As Long
+Private Declare Function GetParent Lib "user32" (ByVal hwnd As Long) As Long
+Private Declare Function SetWindowText Lib "user32" Alias "SetWindowTextA" (ByVal hwnd As Long, ByVal lpString As String) As Long
+Private Declare Function GetWindowText Lib "user32" Alias "GetWindowTextA" (ByVal hwnd As Long, ByVal lpString As String, ByVal cch As Long) As Long
+Private Declare Function IsWindowVisible Lib "user32" (ByVal hwnd As Long) As Long
+
+'************************************************
+' Force Query to Open in SQL View
+'
+' This function takes an access query name as its
+' only parameter, and will set the SQL View flag
+' so that next time it opens, it will open in SQL
+' mode rather than design view.
+'
+' This will allow developers to get access to queries
+' that may have been 'corrupted' by Access and cannot
+' open in query designer view.
+'
+' The other use, and the reason why it was developed
+' is so that the SQL view flag can be reinstated on a
+' query that has been imported from a text file using
+' the hidden access function LoadFromText. This was to
+' stop Access 'optimising' certain queries when opened
+' in Query Designer View.
+'
+' Credits: I have got to credit Stephen Lebans for writing
+'          the code this was heavily based on, which allowed
+'          me check the window that had focus and to
+'          set the SQL in the window.
+'          Stephen@lebans.com
+'          Web Site: www.lebans.com
+'          Also Dev Asish from whom Stephen got the
+'          getClassName function from
+'
+' Version history:
+'   - 1.00 initial version 02/04/2009
+'
+' @author       Steve Falla <steve.falla@talkjcs.com>
+' @version      1.00
+' @param        String the name of the query to process
+' @return       Boolean True on success, False on failure
+'************************************************
+Public Function ForceQuerySQLView(sQueryName As String) As Boolean
+  On Error GoTo Err_ForceQuerySQLView
+  
+  Dim lngRet As Long
+  Dim hWndOQry As Long
+  Dim hWndOKttbx As Long
+  Dim hwndODsk As Long
+  Dim sCaption As String
+  Dim db As DAO.Database
+  Dim qdf As DAO.QueryDef
+  Dim sSQL As String
+  Dim sErrorText As String
+  
+  ' Get the original SQL from the query
+  Set db = CurrentDb()
+
+  Set qdf = db.QueryDefs(sQueryName)
+  sSQL = qdf.SQL
+  
+  ' If Access has 'corrupted' a query and cannot open it in query designer
+  ' view, poke in some new SQL which will allow the query designer to open
+  ' correctly before then switching to SQL view. By setting the open in SQL
+  ' view flag, the query will not break next time it is opened.
+  qdf.SQL = "SELECT * FROM test;"
+  
+  Set qdf = Nothing
+  Set db = Nothing
+  
+  ' Open the query in SQL view
+  DoCmd.Echo True, "Forcing SQL view mode on Query: " & sQueryName
+  
+  DoCmd.OpenQuery sQueryName, acViewDesign, acEdit
+  DoCmd.RunCommand acCmdSQLView
+  DoEvents
+  
+  hWndOKttbx = GetFocus
+  If fGetClassName(hWndOKttbx) <> "OKttbx" Then
+    ForceQuerySQLView = False
+    sErrorText = "Focus window is not a query window"
+    GoTo Err_ForceQuerySQLView
+  End If
+  
+  ' Get Parent
+  hWndOQry = GetParent(hWndOKttbx)
+  ' If not "OQry" then we are not in Query Design window
+  If hWndOQry = 0 Then
+    sErrorText = "Focus window Parent is wrong class, the Query design window is not open"
+    GoTo Err_ForceQuerySQLView
+  End If
+  
+  If fGetClassName(hWndOQry) <> "OQry" Then
+    sErrorText = "Window with focus is not a query window"
+    ForceQuerySQLView = False
+    GoTo Err_ForceQuerySQLView
+  End If
+  
+  ' Get the Caption of the SQL Design window
+  sCaption = Space(512)
+  lngRet = GetWindowText(hWndOQry, sCaption, 256)
+  sCaption = Left(sCaption, lngRet)
+  If Len(sCaption & vbNullString) = 0 Then
+    sErrorText = "Could not get the title of the SQL Design window"
+    GoTo Err_ForceQuerySQLView
+  End If
+  
+  ' Find the window of class ODsk
+  hwndODsk = FindWindowEx(hWndOQry, 0&, "ODsk", vbNullString)
+  ' If does not exist then we are not in the Query Design window
+  If hwndODsk = 0 Then
+    sErrorText = "Not in Query design window"
+    GoTo Err_ForceQuerySQLView
+  End If
+  
+  ' If this Window is Visible then we are not in the
+  ' SQL View window!
+  lngRet = IsWindowVisible(hwndODsk)
+  If lngRet <> 0 Then
+    sErrorText = "Not in SQL Design View"
+    GoTo Err_ForceQuerySQLView
+  End If
+  
+  ' Update the SQL in the window to the original SQL
+  lngRet = SetWindowText(hWndOKttbx, sSQL)
+  
+  ' When the query is now saved, from SQL view it will
+  ' be force to open in SQL view again
+  DoCmd.Close acQuery, sQueryName, acSaveYes
+  
+  ForceQuerySQLView = True
+  
+Exit_Err_ForceQuerySQLView:
+  DoCmd.Echo True, ""
+  Exit Function
+  
+Err_ForceQuerySQLView:
+  If Err.Number = 3265 Then ' Item not found in this collection
+    MsgBox "The query '" & sQueryName & "' could not be found in the database", vbCritical, "Force SQL View on Query"
+    Resume Exit_Err_ForceQuerySQLView
+  End If
+  
+  Set db = CurrentDb()
+  Set qdf = db.QueryDefs(sQueryName)
+  qdf.SQL = sSQL
+  Set qdf = Nothing
+  Set db = Nothing
+  
+  MsgBox "Error: Could not set query " & sQueryName & " to SQL view." & vbCrLf & _
+         "  Description: " & sErrorText & vbCrLf & _
+         "  Error Message: " & Err.Description, vbCritical, "Force SQL View on Query"
+  Resume Exit_Err_ForceQuerySQLView
+
+End Function
+
+
+' From Dev Ashish's Site
+' The Access Web
+' http://www.mvps.org/access/
+Private Function fGetClassName(hwnd As Long)
+  Dim strBuffer As String
+  Dim lngLen As Long
+  
+  Const MAX_LEN = 255
+  strBuffer = Space$(MAX_LEN)
+  lngLen = apiGetClassName(hwnd, strBuffer, MAX_LEN)
+  If lngLen > 0 Then
+    fGetClassName = Left$(strBuffer, lngLen)
+  End If
+End Function

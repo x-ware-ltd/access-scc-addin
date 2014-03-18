@@ -1,0 +1,234 @@
+Version =20
+VersionRequired =20
+Checksum =1890493945
+Begin Form
+    PopUp = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =5669
+    DatasheetFontHeight =10
+    ItemSuffix =10
+    Left =7110
+    Top =1725
+    Right =12780
+    Bottom =5745
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xb16371146d43e340
+    End
+    DatasheetFontName ="Arial"
+    Begin
+        Begin Label
+            BackStyle =0
+        End
+        Begin CheckBox
+            SpecialEffect =2
+            LabelX =230
+            LabelY =-30
+        End
+        Begin TextBox
+            SpecialEffect =2
+            OldBorderStyle =0
+            Width =1701
+            LabelX =-1701
+        End
+        Begin ComboBox
+            SpecialEffect =2
+            Width =1701
+            LabelX =-1701
+        End
+        Begin Section
+            Height =2437
+            BackColor =-2147483633
+            Name ="Detail"
+            Begin
+                Begin ComboBox
+                    OverlapFlags =215
+                    Left =343
+                    Top =283
+                    Width =5099
+                    Height =283
+                    ColumnInfo ="\"\";\"\";\"10\";\"510\""
+                    Name ="cboReportList"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT MSysObjects.Name FROM MSysObjects WHERE (((MSysObjects.Type)=-32764)) ORD"
+                        "ER BY MSysObjects.Name;"
+                    AfterUpdate ="[Event Procedure]"
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            Left =340
+                            Top =56
+                            Width =705
+                            Height =240
+                            Name ="lblReports"
+                            Caption ="Reports:"
+                        End
+                    End
+                End
+                Begin TextBox
+                    SpecialEffect =0
+                    OldBorderStyle =1
+                    OverlapFlags =85
+                    BackStyle =0
+                    Left =1474
+                    Top =793
+                    Width =3968
+                    Height =280
+                    TabIndex =1
+                    BorderColor =8421504
+                    Name ="txtDriverOffset"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextAlign =3
+                            Left =448
+                            Top =793
+                            Width =870
+                            Height =240
+                            Name ="lblDriverOffset"
+                            Caption ="DriverOffset"
+                        End
+                    End
+                End
+                Begin TextBox
+                    SpecialEffect =0
+                    OldBorderStyle =1
+                    OverlapFlags =85
+                    BackStyle =0
+                    Left =1474
+                    Top =1193
+                    Width =3968
+                    Height =280
+                    TabIndex =2
+                    BorderColor =8421504
+                    Name ="txtDeviceOffset"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextAlign =3
+                            Left =448
+                            Top =1193
+                            Width =870
+                            Height =240
+                            Name ="lblDeviceOffset"
+                            Caption ="Device Offset:"
+                        End
+                    End
+                End
+                Begin TextBox
+                    SpecialEffect =0
+                    OldBorderStyle =1
+                    OverlapFlags =85
+                    BackStyle =0
+                    Left =1474
+                    Top =1593
+                    Width =3968
+                    Height =280
+                    TabIndex =3
+                    BorderColor =8421504
+                    Name ="txtOutputOffset"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            TextAlign =3
+                            Left =448
+                            Top =1593
+                            Width =870
+                            Height =240
+                            Name ="lblOuputOffset"
+                            Caption ="Ouput Offset:"
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =1474
+                    Top =2040
+                    Width =226
+                    Height =227
+                    TabIndex =4
+                    Name ="chkDefault"
+                    DefaultValue ="False"
+                    Begin
+                        Begin Label
+                            OverlapFlags =85
+                            Left =1704
+                            Top =2010
+                            Width =3720
+                            Height =240
+                            Name ="lblDefaultPrinter"
+                            Caption ="Printing to Default Printer"
+                        End
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Type DEV_NAMES_STRING
+    RGB As String * 80
+End Type
+
+Private Type DEV_NAMES_STRING_NARROW
+    RGB As String * 4
+End Type
+
+Private Type DEV_NAMES_NARROW
+    wDriverOffset As Integer
+    wDeviceOffset As Integer
+    wOutputoffset As Integer
+    wDefault As Integer
+End Type
+
+Private Sub cboReportList_AfterUpdate()
+    
+    On Error Resume Next
+    Dim strReport As String
+    Dim rpt As Report
+    Dim obj As Object, App As Object, Proj As Object
+    Dim strDNString As String
+    Dim udtDNamesStr As DEV_NAMES_STRING
+    Dim udtDNStrNarrow As DEV_NAMES_STRING_NARROW
+    Dim udtDN As DEV_NAMES_NARROW
+
+    strReport = Me.cboReportList
+    DoCmd.OpenReport strReport, acViewDesign
+    
+    strDNString = Reports(strReport).PrtDevNames    ' get device names
+    udtDNamesStr.RGB = strDNString                  ' set DN string to the DEV_NAME_STRING.rgb
+    LSet udtDN = udtDNamesStr                       ' put the DEV_NAME_STRING into a DEV_NAME_NARROW type
+    'udtDN.wDefault = 1                              ' set the wDefault param of the DEV_NAME_NARROW type
+
+    Me.txtDriverOffset = udtDN.wDriverOffset
+    Me.txtDeviceOffset = udtDN.wDeviceOffset
+    Me.txtOutputOffset = udtDN.wOutputoffset
+    If udtDN.wDefault = 1 Then
+        Me.chkDefault = True
+    Else
+        Me.chkDefault = False
+    End If
+    DoCmd.Close acReport, strReport, acSaveNo
+'    LSet udtDNStrNarrow = udtDN                     ' set the DEV_NAME_NARROW into a DEV_NAMES_STRING_NARROW
+'    Mid(strDNString, 1, 4) = udtDNStrNarrow.RGB     '
+'    Reports(strReport).PrtDevNames = strDNString
+'    DoCmd.Close acReport, strReport, acSavePrompt
+    
+End Sub

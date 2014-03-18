@@ -1,0 +1,123 @@
+Begin TableDef
+    Updatable = True
+    Attributes = 2
+    Begin Field
+        Attributes = 2
+        Type = 4
+        Name = "Attributes"
+        OrdinalPosition = 0
+        Size = 4
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 3
+        Name = "DataType"
+        OrdinalPosition = 0
+        Size = 2
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 2
+        Type = 10
+        Name = "FieldName"
+        OrdinalPosition = 0
+        Size = 64
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 2
+        Name = "IndexType"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 1
+        Name = "SkipColumn"
+        OrdinalPosition = 0
+        Size = 1
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 2
+        Type = 4
+        Name = "SpecID"
+        OrdinalPosition = 0
+        Size = 4
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 3
+        Name = "Start"
+        OrdinalPosition = 0
+        Size = 2
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Field
+        Attributes = 1
+        Type = 3
+        Name = "Width"
+        OrdinalPosition = 0
+        Size = 2
+        DataUpdatable = False
+        Required = False
+        AllowZeroLength = False
+    End
+    Begin Index
+        Name = "Index1"
+        Unique = False
+        Clustered = False
+        Primary = False
+        Foreign = False
+        Required = False
+        IgnoreNulls = False
+        DistinctCount = 0
+        Begin Field
+            Attributes = 0
+            Name = "SpecID"
+        End
+        Begin Field
+            Attributes = 0
+            Name = "Start"
+        End
+    End
+    Begin Index
+        Name = "PrimaryKey"
+        Unique = True
+        Clustered = False
+        Primary = True
+        Foreign = False
+        Required = True
+        IgnoreNulls = False
+        DistinctCount = 0
+        Begin Field
+            Attributes = 0
+            Name = "SpecID"
+        End
+        Begin Field
+            Attributes = 0
+            Name = "FieldName"
+        End
+    End
+    Begin Data
+        ‡Attributes‡•‡DataType‡•‡FieldName‡•‡IndexType‡•‡SkipColumn‡•‡SpecID‡•‡Start‡•‡Width‡
+    End
+End
