@@ -1,40 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset='utf-8'>
+    <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <title>Access-scc-addin by sfalla</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <title>Access-scc-addin by sfalla</title>
   </head>
-
   <body>
-    <div id="container">
-      <div class="inner">
-
-        <header>
-          <h1>Access-scc-addin</h1>
-          <h2>Microsoft Access SCC Addin</h2>
-        </header>
-
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/sfalla/access-scc-addin/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/sfalla/access-scc-addin/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/sfalla/access-scc-addin" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
-
-        <hr>
-
-        <section id="main_content">
-          <h3>
-<a id="summary" class="anchor" href="#summary" aria-hidden="true"><span class="octicon octicon-link"></span></a>Summary</h3>
-
-<p>This project is an Add In to Microsoft Access to allow users to import and export the entire database to a Version Control System such as Subversion.</p>
+    <div class="wrapper">
+      <header>
+        <h1>Access-scc-addin</h1>
+        <p>Microsoft Access SCC Addin</p>
+        <p class="view"><a href="https://github.com/sfalla/access-scc-addin">View the Project on GitHub <small>sfalla/access-scc-addin</small></a></p>
+        <ul>
+          <li><a href="https://github.com/sfalla/access-scc-addin/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/sfalla/access-scc-addin/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/sfalla/access-scc-addin">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p>This project is an Add In to Microsoft Access to allow users to import and export the entire database to a Version Control System such as Subversion.</p>
 
 <p>It was demonstrated at the UK Access Users Group in 2011 and received enough attention to warrant making it an open source project.</p>
 
@@ -48,16 +41,28 @@
 <li>It allows separate export of Toolbars</li>
 </ul>
 
-<p><strong>Stop the press:</strong> As of Access 2013, the SCC layer of Access has been "deprecated". This means if you are already using systems that rely on the MSSCCI layer, such as Visual Sourcesafe, PushOK SCC plugin or Unified SCC, this will no longer work from Access 2013 onwards.</p>
+<p><em>Stop the press</em>: As of Access 2013, the SCC layer of Access has been "deprecated". This means if you are already using systems that rely on the MSSCCI layer, such as Visual Sourcesafe, <a href="http://www.pushok.com/software/svn.html">PushOK SCC plugin</a> or <a href="http://aigenta.com/products/UnifiedScc.aspx">Unified SCC</a>, this will no longer work from Access 2013 onwards.</p>
 
 <h3>
 <a id="recent-release-history" class="anchor" href="#recent-release-history" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recent Release History</h3>
 
-<p>0.50  Updated to support export of null data in numeric fields. This issue was introduced when support for international number formats was added.</p>
+<p>0.50</p>
 
-<p>0.49 Updated to support version 1.8 of the subversion libraries, and to stop nagging users that are using Access 2007 and above. The previous caveats on Access 2007 and above still exist though.</p>
+<ul>
+<li>Updated to support export of null data in numeric fields. This issue was introduced when support for international number formats was added.</li>
+</ul>
 
-<p>0.47 Update to handle regional formatting of numbers. Prior to this release some regions may have caused errors, and would have stored numeric table data incorrectly in the repository. Thanks to Florian Reitmeit for spotting this one.</p>
+<p>0.49</p>
+
+<ul>
+<li>Updated to support version 1.8 of the subversion libraries, and to stop nagging users that are using Access 2007 and above. The previous caveats on Access 2007 and above still exist though.</li>
+</ul>
+
+<p>0.47 </p>
+
+<ul>
+<li>Update to handle regional formatting of numbers. Prior to this release some regions may have caused errors, and would have stored numeric table data incorrectly in the repository. Thanks to Florian Reitmeit for spotting this one.</li>
+</ul>
 
 <h3>
 <a id="version-control-systems" class="anchor" href="#version-control-systems" aria-hidden="true"><span class="octicon octicon-link"></span></a>Version Control Systems</h3>
@@ -67,10 +72,12 @@
 <h3>
 <a id="access-versions" class="anchor" href="#access-versions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Access Versions</h3>
 
-<p>This tool was originally developed for Access 97, but it now built around Access XP. There is no reason why it cannot be built and used in Access 2003, 2007 and 2010, however any of the new features present in those systems will not work and may cause errors during export.</p>
+<p>This tool was originally developed for Access 97, but it now built around Access XP.
+There is no reason why it cannot be built and used in Access 2003, 2007 and 2010, however
+any of the new features present in those systems will not work and may cause errors during
+export. </p>
 
-<h3>
-<a id="known-issues-are" class="anchor" href="#known-issues-are" aria-hidden="true"><span class="octicon octicon-link"></span></a>Known issues are:</h3>
+<p>Known issues are:</p>
 
 <ul>
 <li>Relationships not being imported/exported (we have no need for them, so have not implemented them)</li>
@@ -95,10 +102,13 @@
 <h3>
 <a id="instructions" class="anchor" href="#instructions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Instructions</h3>
 
-<p>How to install the addin
-How to use the addin
-How to contribute to the source
-Frequently Asked Questions</p>
+<p><a href="https://github.com/sfalla/access-scc-addin/wiki/Installation">How to install the addin</a></p>
+
+<p><a href="https://github.com/sfalla/access-scc-addin/wiki/Usage">How to use the addin</a></p>
+
+<p><a href="https://github.com/sfalla/access-scc-addin/wiki/Development">How to contribute to the source</a></p>
+
+<p><a href="https://github.com/sfalla/access-scc-addin/wiki/FAQ">Frequently Asked Questions</a></p>
 
 <h3>
 <a id="how-can-i-contribute" class="anchor" href="#how-can-i-contribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>How Can I Contribute?</h3>
@@ -108,15 +118,13 @@ Frequently Asked Questions</p>
 <p>The current developers have a very rough roadmap of where to go forward, but if you have ideas then just exercise your initiative and commit the changes. The use of SCC on this project allows for full oversight, so if things need to be changed after review, then we can easily do that.</p>
 
 <p>If you are interested in joining the team, send an email to <a href="mailto:steve.falla@talkjcs.com">steve.falla@talkjcs.com</a> with your contact info. We look forward to working with you!</p>
-        </section>
-
-        <footer>
-          Access-scc-addin is maintained by <a href="https://github.com/sfalla">sfalla</a><br>
-          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
-        </footer>
-
-        
-      </div>
+      </section>
     </div>
+    <footer>
+      <p>Project maintained by <a href="https://github.com/sfalla">sfalla</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
   </body>
 </html>
