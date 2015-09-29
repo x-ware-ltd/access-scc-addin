@@ -1485,6 +1485,8 @@ End Function
 ' @return     Boolean True if supported, otherwise False
 '************************************************
 Private Function asSupportedFileFormat() As Boolean
+  Dim x As Long
+  
   Select Case CurrentProject.FileFormat
     Case asFileFormatAccess2:       asSupportedFileFormat = False
     Case asFileFormatAccess95:      asSupportedFileFormat = False
@@ -1504,6 +1506,15 @@ Private Function asSupportedFileFormat() As Boolean
            "If this is a new database, ensure that your options state " & _
            "new databases are Access 2002 file format or newer.", vbCritical + vbOKOnly, "Unsupported Access File Format"
   End If
+  
+  For x = 1 To VBE.VBProjects.Count
+    If VBE.VBProjects(x).FileName = CurrentProject.FullName Then ' this is the correct VBE project
+      If VBE.VBProjects(x).Name = "Database" Then ' This is an access database created from the explorer window "create new access database", it sets a bad default which breaks some references
+        VBE.VBProjects(x).Name = Replace(Replace(asStripPath(CurrentProject.FullName), ".mdb", ""), ".accdb", "")
+        Exit For
+      End If
+    End If
+  Next x
 End Function
 
 Private Sub asMkDir(strPath As String)
