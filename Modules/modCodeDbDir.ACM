@@ -36,9 +36,9 @@ Function CompileDatabase() As Boolean
         DoCmd.Close acForm, ctr.Documents(0).Name
       End If
     End If
+    Set ctr = Nothing
+    db.Close: Set db = Nothing
   End If
-  Set ctr = Nothing
-  db.Close: Set db = Nothing
   CompileDatabase = Application.IsCompiled
 
 End Function
