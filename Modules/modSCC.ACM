@@ -256,8 +256,9 @@ End Function
 '   - 1.00 initial version
 '   - 1.01 updated to handle internationalised number formats such as in Germany [SF] 29/11/2012
 '   - 1.02 updated to handle version 1.8 of SVN [SF] 02/10/2013
+'   - 1.03 updated to handle version 1.9 of SVN [SF] 29/09/2015
 '
-' @version    1.02
+' @version    1.03
 ' @return     Boolean True if supported, False if not
 '************************************************
 Public Function SCC_IsSupportedClient() As Boolean
@@ -267,13 +268,13 @@ Public Function SCC_IsSupportedClient() As Boolean
     Case sccSystemSubversion
       sngVersion = Val(SVN_ClientVersion(True)) ' Use Val rather than CSng as SVN does not return an internationally formatted version number, it always uses . as the decimal separator
       Select Case sngVersion
-        Case Is <= 1.8
+        Case Is <= 1.9
           SCC_IsSupportedClient = True
         
         Case Else
           MsgBox "The installed command line SVN client is not supported!" & vbCrLf & vbCrLf & _
                  " Installed version: " & sngVersion & vbCrLf & _
-                 " Latest supported version: 1.8", vbCritical + vbOKOnly, "Unsupported Client Version"
+                 " Latest supported version: 1.9", vbCritical + vbOKOnly, "Unsupported Client Version"
           SCC_IsSupportedClient = False
       
       End Select
