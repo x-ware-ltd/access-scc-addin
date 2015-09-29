@@ -134,7 +134,7 @@ Public Function UpdateObjectProperties(oType As asObjectType) As Boolean
       Exit Function
     Case asObjectType.acTable
       'For Queries and Tables the correct Modified date/Time is stored in the MSysObjects Table as it was on previous versions
-      CurrentDb.Execute "INSERT INTO MSysSCCObjectProperties ( objType, objName, objCreateDate, objUpdateDate ) SELECT 0, [Name], DateCreate, DateUpdate FROM MSysObjects WHERE [Type] = 1 OR [Type] = 6"
+      CurrentDb.Execute "INSERT INTO MSysSCCObjectProperties ( objType, objName, objCreateDate, objUpdateDate ) SELECT 0, [Name], DateCreate, DateUpdate FROM MSysObjects WHERE [Type] IN (1,4,6)" ' access table, linked odbc table, linked access table
       UpdateObjectProperties = True
       Exit Function
     Case asObjectType.acIMEXSpecs
