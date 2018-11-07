@@ -43,6 +43,56 @@ Public Function Init()
     DoCmd.OpenForm "Access SVN - Options", acNormal, , , , acHidden
   End If
 End Function
+
+Public Function RemoveRef(strName As String)
+  Dim ref As Reference
+  ' Remove reference to self
+  For Each ref In Application.References
+    If ref.Name = strName Then
+      Application.References.Remove ref
+    End If
+  Next ref
+End Function
+
+Public Function ImportSilent(strImportPath As String)
+  CreateLocalSCCTables
+  
+  UpdateObjectProperties (asObjectType.acTable)     ' Tables
+  UpdateObjectProperties (asObjectType.acQuery)     ' Queries
+  UpdateObjectProperties (asObjectType.acForm)      ' Forms
+  UpdateObjectProperties (asObjectType.acReport)    ' Reports
+  UpdateObjectProperties (asObjectType.acMacro)     ' Macros
+  UpdateObjectProperties (asObjectType.acModule)    ' Modules
+  UpdateObjectProperties (asObjectType.acToolbar)   ' Toolbars
+  UpdateObjectProperties (asObjectType.acExtra)     ' Extras
+  UpdateObjectProperties (asObjectType.acReference) ' References
+  UpdateObjectProperties (asObjectType.acIMEXSpecs) ' Import Export Specs
+
+  
+  asPopulateTmpObjectsImport objTable, strImportPath & "Tables", modSCC.arrTables             ' Tables
+  asPopulateTmpObjectsImport objQuery, strImportPath & "Queries", modSCC.arrQueries           ' Queries
+  asPopulateTmpObjectsImport objForm, strImportPath & "Forms", modSCC.arrForms                ' Forms
+  asPopulateTmpObjectsImport objReport, strImportPath & "Reports", modSCC.arrReports          ' Reports
+  asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSCC.arrMacros             ' Macros
+  asPopulateTmpObjectsImport objModule, strImportPath & "Modules", modSCC.arrModules          ' Modules
+  asPopulateTmpObjectsImport objToolbar, strImportPath & "Toolbars", modSCC.arrToolbars       ' Toolbars
+  asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras             ' Extras
+  asPopulateTmpObjectsImport objReference, strImportPath & "References", modSCC.arrReferences ' References
+  asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSCC.arrIMEXSpecs   ' Import Export Sepcs
+  
+  CurrentDb.Execute ("UPDATE MSysSCCTmpObjects SET selected=True")
+  
+  asImportObjects objExtra, strImportPath & "Extras\"         ' Extras
+  asImportObjects objTable, strImportPath & "Tables\"         ' Tables
+  asImportObjects objQuery, strImportPath & "Queries\"        ' Queries
+  asImportObjects objForm, strImportPath & "Forms\"           ' Forms
+  asImportObjects objReport, strImportPath & "Reports\"       ' Reports
+  asImportObjects objMacro, strImportPath & "Macros\"         ' Macros
+  asImportObjects objModule, strImportPath & "Modules\"       ' Modules
+  asImportObjects objToolbar, strImportPath & "Toolbars\"     ' Toolbars
+  asImportObjects objReference, strImportPath & "References\" ' References
+  asImportObjects objIMEXSpecs, strImportPath & "IMEXSpecs\"  ' Import Export Specs
+End Function
     
 Public Function asRunExport()
   Dim strSVNPath As String
