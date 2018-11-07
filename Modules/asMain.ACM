@@ -506,8 +506,10 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
     
     If Not booSkipObject Then
       strObjectFileName = winPathSpecialChars(rst!objName) & asGetObjectExportFileExtension(objExportType)
-      Application.Forms![Access SVN - Results].txtStatus = "Exporting " & strObjectType & " '" & rst!objName & "'"
-      Application.Forms![Access SVN - Results].Repaint
+      
+      SetStatus "Exporting " & strObjectType & " '" & rst!objName & "'"
+
+        
       DoEvents
       Select Case rst!objStatus
         Case "Deleted"
@@ -546,8 +548,7 @@ Exit_asExportObjects:
 Err_asExportObjects:
   Echo True
   If Err.Number = 2220 Then
-      Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-          "Cannot Add " & strObjectType & " '" & strObjectFileName & "' - " & Err.Description
+      AddResult "Cannot Add " & strObjectType & " '" & strObjectFileName & "' - " & Err.Description
       Echo False
       Resume Next
   End If
@@ -718,35 +719,24 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
   DoEvents
   Select Case objStatus
     Case "Deleted"
-      Application.Forms![Access SVN - Results].txtStatus = "Deleting " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
-      Echo True
-      Application.Forms![Access SVN - Results].Repaint
-      Echo False
+      SetStatus "Deleting " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
       asDeleteObject objType, objName
       UpdateStatusEntry asImport, objType, objName, asDelete
       
     Case "New"
-      Application.Forms![Access SVN - Results].txtStatus = "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
-      Echo True
-      Application.Forms![Access SVN - Results].Repaint
-      Echo False
+      SetStatus "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
       LoadFromText asGetAccessType(objType), objName, appendSlash(strImportPath) & strImportFileName, strLoadError
       If strLoadError <> "" Then
-        Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                                  "Error importing " & objName & ": " & strLoadError & vbCrLf
+        AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf
         strLoadError = ""
       End If
       UpdateStatusEntry asImport, objType, objName, asAdd, appendSlash(strImportPath) & strImportFileName
       
     Case Else
-      Application.Forms![Access SVN - Results].txtStatus = "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
-      Echo True
-      Application.Forms![Access SVN - Results].Repaint
-      Echo False
+      SetStatus "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
       LoadFromText asGetAccessType(objType), objName, appendSlash(strImportPath) & strImportFileName, strLoadError
       If strLoadError <> "" Then
-        Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                                  "Error importing " & objName & ": " & strLoadError & vbCrLf
+        AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf
         strLoadError = ""
       End If
       UpdateStatusEntry asImport, objType, objName, asCommit, appendSlash(strImportPath) & strImportFileName
@@ -754,32 +744,26 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
   End Select
 
 Exit_asImportObject:
-  Application.Forms![Access SVN - Results].txtStatus = vbNullString
-  Echo True
-  Application.Forms![Access SVN - Results].Repaint
-  Echo False
+  SetStatus vbNullString
   Exit Sub
 
 Err_asImportObject:
   Echo True
   ' bad file name
   If Err.Number = 2128 Then
-    Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                              "Cannot Import " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
+    AddResult "Cannot Import " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
     Echo False
     Resume Next
   End If
   ' bad import of table
   If Err.Number = 3315 Then
-    Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                              "Error Importing " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
+    AddResult "Error Importing " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
     Echo False
     Resume Next
   End If
   ' unknown issue with form module
   If Err.Number = 29002 Then
-    Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                              "Error Importing " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
+    AddResult "Error Importing " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
     Echo False
     Resume Next
   End If
@@ -1725,3 +1709,21 @@ Public Function winPathSpecialCharsDecode(ByVal strName As String) As String
     
     winPathSpecialCharsDecode = strName
 End Function
+
+Private Sub SetStatus(strStatus As String)
+  'This is needed as when running silently the form is not loaded
+  On Error Resume Next
+
+  Application.Forms![Access SVN - Results].txtStatus = strStatus
+  Echo True
+  Application.Forms![Access SVN - Results].Repaint
+  Echo False
+End Sub
+
+Private Sub AddResult(strResult As String)
+
+  'This is needed as when running silently the form is not loaded
+  On Error Resume Next
+  
+  Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & strResult
+End Sub
