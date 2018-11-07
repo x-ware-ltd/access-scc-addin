@@ -44,6 +44,21 @@ Public Function Init()
   End If
 End Function
 
+'************************************************
+' RemoveRef
+'
+' Remove the given reference. This can be used in conjunction with ImportSilent
+' To import from SCC into an access database then remove the reference to itself
+'
+' Version history:
+'   - 1.00 initial version 07/11/2018
+'
+' @author       Gilbert Bishop-White <gilbert.bishopwhite@talkjcs.com>
+' @version      1.00
+' @suggestions
+' @param        String The reference to remove
+' @return       Variant
+'************************************************
 Public Function RemoveRef(strName As String)
   Dim ref As Reference
   ' Remove reference to self
@@ -54,6 +69,21 @@ Public Function RemoveRef(strName As String)
   Next ref
 End Function
 
+'************************************************
+' ImportSilent
+'
+' Import the given repository without requiring user interaction. This
+' is designed to be called by an external program using COM interop.
+'
+' Version history:
+'   - 1.00 initial version 07/11/2018
+'
+' @author       Gilbert Bishop-White <gilbert.bishopwhite@talkjcs.com>
+' @version      1.00
+' @suggestions
+' @param        String The path to a SCC Addin repository. Must include trailing slash.
+' @return       Variant
+'************************************************
 Public Function ImportSilent(strImportPath As String)
   CreateLocalSCCTables
   
