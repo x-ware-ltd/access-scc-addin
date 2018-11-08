@@ -43,6 +43,86 @@ Public Function Init()
     DoCmd.OpenForm "Access SVN - Options", acNormal, , , , acHidden
   End If
 End Function
+
+'************************************************
+' RemoveRef
+'
+' Remove the given reference. This can be used in conjunction with ImportSilent
+' To import from SCC into an access database then remove the reference to itself
+'
+' Version history:
+'   - 1.00 initial version 07/11/2018
+'
+' @author       Gilbert Bishop-White <gilbert.bishopwhite@talkjcs.com>
+' @version      1.00
+' @suggestions
+' @param        String The reference to remove
+' @return       Variant
+'************************************************
+Public Function RemoveRef(strName As String)
+  Dim ref As Reference
+  ' Remove reference to self
+  For Each ref In Application.References
+    If ref.Name = strName Then
+      Application.References.Remove ref
+    End If
+  Next ref
+End Function
+
+'************************************************
+' ImportSilent
+'
+' Import the given repository without requiring user interaction. This
+' is designed to be called by an external program using COM interop.
+'
+' Version history:
+'   - 1.00 initial version 07/11/2018
+'
+' @author       Gilbert Bishop-White <gilbert.bishopwhite@talkjcs.com>
+' @version      1.00
+' @suggestions
+' @param        String The path to a SCC Addin repository. Must include trailing slash.
+' @return       Variant
+'************************************************
+Public Function ImportSilent(strImportPath As String)
+  CreateLocalSCCTables
+  
+  UpdateObjectProperties (asObjectType.acTable)     ' Tables
+  UpdateObjectProperties (asObjectType.acQuery)     ' Queries
+  UpdateObjectProperties (asObjectType.acForm)      ' Forms
+  UpdateObjectProperties (asObjectType.acReport)    ' Reports
+  UpdateObjectProperties (asObjectType.acMacro)     ' Macros
+  UpdateObjectProperties (asObjectType.acModule)    ' Modules
+  UpdateObjectProperties (asObjectType.acToolbar)   ' Toolbars
+  UpdateObjectProperties (asObjectType.acExtra)     ' Extras
+  UpdateObjectProperties (asObjectType.acReference) ' References
+  UpdateObjectProperties (asObjectType.acIMEXSpecs) ' Import Export Specs
+
+  
+  asPopulateTmpObjectsImport objTable, strImportPath & "Tables", modSCC.arrTables             ' Tables
+  asPopulateTmpObjectsImport objQuery, strImportPath & "Queries", modSCC.arrQueries           ' Queries
+  asPopulateTmpObjectsImport objForm, strImportPath & "Forms", modSCC.arrForms                ' Forms
+  asPopulateTmpObjectsImport objReport, strImportPath & "Reports", modSCC.arrReports          ' Reports
+  asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSCC.arrMacros             ' Macros
+  asPopulateTmpObjectsImport objModule, strImportPath & "Modules", modSCC.arrModules          ' Modules
+  asPopulateTmpObjectsImport objToolbar, strImportPath & "Toolbars", modSCC.arrToolbars       ' Toolbars
+  asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras             ' Extras
+  asPopulateTmpObjectsImport objReference, strImportPath & "References", modSCC.arrReferences ' References
+  asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSCC.arrIMEXSpecs   ' Import Export Sepcs
+  
+  CurrentDb.Execute ("UPDATE MSysSCCTmpObjects SET selected=True")
+  
+  asImportObjects objExtra, strImportPath & "Extras\"         ' Extras
+  asImportObjects objTable, strImportPath & "Tables\"         ' Tables
+  asImportObjects objQuery, strImportPath & "Queries\"        ' Queries
+  asImportObjects objForm, strImportPath & "Forms\"           ' Forms
+  asImportObjects objReport, strImportPath & "Reports\"       ' Reports
+  asImportObjects objMacro, strImportPath & "Macros\"         ' Macros
+  asImportObjects objModule, strImportPath & "Modules\"       ' Modules
+  asImportObjects objToolbar, strImportPath & "Toolbars\"     ' Toolbars
+  asImportObjects objReference, strImportPath & "References\" ' References
+  asImportObjects objIMEXSpecs, strImportPath & "IMEXSpecs\"  ' Import Export Specs
+End Function
     
 Public Function asRunExport()
   Dim strSVNPath As String
@@ -456,8 +536,10 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
     
     If Not booSkipObject Then
       strObjectFileName = winPathSpecialChars(rst!objName) & asGetObjectExportFileExtension(objExportType)
-      Application.Forms![Access SVN - Results].txtStatus = "Exporting " & strObjectType & " '" & rst!objName & "'"
-      Application.Forms![Access SVN - Results].Repaint
+      
+      SetStatus "Exporting " & strObjectType & " '" & rst!objName & "'"
+
+        
       DoEvents
       Select Case rst!objStatus
         Case "Deleted"
@@ -496,8 +578,7 @@ Exit_asExportObjects:
 Err_asExportObjects:
   Echo True
   If Err.Number = 2220 Then
-      Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-          "Cannot Add " & strObjectType & " '" & strObjectFileName & "' - " & Err.Description
+      AddResult "Cannot Add " & strObjectType & " '" & strObjectFileName & "' - " & Err.Description
       Echo False
       Resume Next
   End If
@@ -668,35 +749,24 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
   DoEvents
   Select Case objStatus
     Case "Deleted"
-      Application.Forms![Access SVN - Results].txtStatus = "Deleting " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
-      Echo True
-      Application.Forms![Access SVN - Results].Repaint
-      Echo False
+      SetStatus "Deleting " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
       asDeleteObject objType, objName
       UpdateStatusEntry asImport, objType, objName, asDelete
       
     Case "New"
-      Application.Forms![Access SVN - Results].txtStatus = "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
-      Echo True
-      Application.Forms![Access SVN - Results].Repaint
-      Echo False
+      SetStatus "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
       LoadFromText asGetAccessType(objType), objName, appendSlash(strImportPath) & strImportFileName, strLoadError
       If strLoadError <> "" Then
-        Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                                  "Error importing " & objName & ": " & strLoadError & vbCrLf
+        AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf
         strLoadError = ""
       End If
       UpdateStatusEntry asImport, objType, objName, asAdd, appendSlash(strImportPath) & strImportFileName
       
     Case Else
-      Application.Forms![Access SVN - Results].txtStatus = "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
-      Echo True
-      Application.Forms![Access SVN - Results].Repaint
-      Echo False
+      SetStatus "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
       LoadFromText asGetAccessType(objType), objName, appendSlash(strImportPath) & strImportFileName, strLoadError
       If strLoadError <> "" Then
-        Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                                  "Error importing " & objName & ": " & strLoadError & vbCrLf
+        AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf
         strLoadError = ""
       End If
       UpdateStatusEntry asImport, objType, objName, asCommit, appendSlash(strImportPath) & strImportFileName
@@ -704,32 +774,26 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
   End Select
 
 Exit_asImportObject:
-  Application.Forms![Access SVN - Results].txtStatus = vbNullString
-  Echo True
-  Application.Forms![Access SVN - Results].Repaint
-  Echo False
+  SetStatus vbNullString
   Exit Sub
 
 Err_asImportObject:
   Echo True
   ' bad file name
   If Err.Number = 2128 Then
-    Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                              "Cannot Import " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
+    AddResult "Cannot Import " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
     Echo False
     Resume Next
   End If
   ' bad import of table
   If Err.Number = 3315 Then
-    Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                              "Error Importing " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
+    AddResult "Error Importing " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
     Echo False
     Resume Next
   End If
   ' unknown issue with form module
   If Err.Number = 29002 Then
-    Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & _
-                              "Error Importing " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
+    AddResult "Error Importing " & strObjectType & " '" & objName & "' - " & Err.Number & ": " & Err.Description
     Echo False
     Resume Next
   End If
@@ -1675,3 +1739,21 @@ Public Function winPathSpecialCharsDecode(ByVal strName As String) As String
     
     winPathSpecialCharsDecode = strName
 End Function
+
+Private Sub SetStatus(strStatus As String)
+  'This is needed as when running silently the form is not loaded
+  On Error Resume Next
+
+  Application.Forms![Access SVN - Results].txtStatus = strStatus
+  Echo True
+  Application.Forms![Access SVN - Results].Repaint
+  Echo False
+End Sub
+
+Private Sub AddResult(strResult As String)
+
+  'This is needed as when running silently the form is not loaded
+  On Error Resume Next
+  
+  Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & strResult
+End Sub
