@@ -1,0 +1,257 @@
+Option Compare Database
+Option Explicit
+
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
+
+Function IsUCS2(strFilename As String) As Boolean
+  ' Returns true if the file specified is in UCS2 little endian format
+  Dim f As Long
+  Dim byts() As Byte
+  
+  If FileExists(strFilename) Then
+    ' load the file into the bytsFile array
+    f = FreeFile()
+    Open strFilename For Binary Access Read As #f
+    ReDim byts(2)
+    Get #f, 1, byts()
+    Close #f
+    IsUCS2 = ((byts(0) = 255) And (byts(1) = 254))
+  End If
+End Function
+
+Function ConvFileUTF8_to_UCS2(strFilename As String, Optional strNewFilename As String) As Boolean
+  ' Converts the supplied file from UTF8 to UCS2 format
+  Dim byts() As Byte
+  Dim bytsOut() As Byte
+  
+  If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
+  If ReadFromFile(strFilename, byts) Then
+    If UTF8_to_UCS2(byts, bytsOut) Then
+      ConvFileUTF8_to_UCS2 = WriteToFile(bytsOut, strNewFilename)
+    End If
+  End If
+    
+End Function
+
+Function ConvFileUCS2_to_UTF8(strFilename As String, Optional strNewFilename As String) As Boolean
+  ' Converts the supplied file from UCS2 to UTF8 format
+  Dim byts() As Byte
+  Dim bytsOut() As Byte
+  
+  If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
+  If ReadFromFile(strFilename, byts) Then
+    If UCS2_to_UTF8(byts, bytsOut) Then
+      ConvFileUCS2_to_UTF8 = WriteToFile(bytsOut, strNewFilename)
+    End If
+  End If
+    
+End Function
+
+Function ReadFromFile(strFilename As String, byts() As Byte) As Boolean
+  ' Reads data from the supplied file into the supplied byte array
+  
+  Dim f As Long
+  
+  If FileExists(strFilename) Then
+    ' load the file into the bytsFile array
+    f = FreeFile()
+    Open strFilename For Binary Access Read As #f
+    ReDim byts(LOF(f) - 1)
+    Get #f, , byts()
+    Close #f
+    ReadFromFile = True
+  End If
+End Function
+
+Function WriteToFile(byts() As Byte, strFilename As String) As Boolean
+  ' Writes data from the supplied byte array into the file specified
+  Dim f As Long
+  
+  If FileExists(strFilename) Then Kill strFilename
+  
+  ' Open file ready for output
+  f = FreeFile()
+  Open strFilename For Binary Access Write As #f
+  Put #f, 1, byts
+  Close #f
+  
+  WriteToFile = True
+  
+End Function
+
+Function UCS2_to_UTF8(bytsUCS2() As Byte, ByRef bytsUTF8() As Byte) As Boolean
+  ' This converts a UCS2 Little Endian encoded byte array into UTF8
+  ' Returns True if successful, False if it fails for any reason
+  
+  Dim lenUCS2 As Long
+  Dim b As Long ' The next write position in the UTF8 byte array
+  Dim i As Long ' The current byte position in UCS2 byte array
+  Dim CP_UCS2(1) As Byte
+  Dim CP_UTF8() As Byte
+  
+  UCS2_to_UTF8 = False ' intially set return value to be false
+  
+  lenUCS2 = UBound(bytsUCS2) - LBound(bytsUCS2) + 1
+  
+  ' Check that the length of the UCS2 array is at least 2 bytes
+  If lenUCS2 < 2 Then Exit Function
+  
+  ' Check that the length of the UCS2 array is an even number of bytes
+  If lenUCS2 Mod 2 <> 0 Then Exit Function
+  
+  ' Check that the supplied array has the correct Byte Order Mark (BOM)
+  If bytsUCS2(LBound(bytsUCS2)) <> 255 Or bytsUCS2(LBound(bytsUCS2) + 1) <> 254 Then Exit Function '255 = &HFF, 254 = &HFE
+  
+  ' Redim bytsUTF8 to the maximum it can be ( max 3 bytes per character )
+  ' ignore header of UCS2 (2 bytes) then for each 2 bytes in UCS2 need potentially 3 bytes in UTF8
+  If lenUCS2 = 2 Then
+    ' we need to return an empty array
+    Erase bytsUTF8
+    UCS2_to_UTF8 = True
+    Exit Function
+  End If
+  
+  ReDim bytsUTF8((lenUCS2 - 2) * 3 / 2 - 1)
+  
+  For i = LBound(bytsUCS2) + 2 To UBound(bytsUCS2) Step 2
+    CopyMemory VarPtr(CP_UCS2(0)), VarPtr(bytsUCS2(i)), 2 ' Copy CodePoint into CP array
+    If Not UCS2CP_to_UTF8CP(CP_UCS2, CP_UTF8) Then Exit Function
+    CopyMemory VarPtr(bytsUTF8(b)), VarPtr(CP_UTF8(0)), UBound(CP_UTF8) + 1
+    b = b + UBound(CP_UTF8) + 1
+  Next
+  
+  ReDim Preserve bytsUTF8(b - 1)
+  UCS2_to_UTF8 = True
+  
+End Function
+
+Function UTF8_to_UCS2(bytsUTF8() As Byte, ByRef bytsUCS2() As Byte) As Boolean
+  ' This converts a UTF8 encoded byte array into ucs2 Little Endian
+  ' Returns True if successful, False if it fails for any reason
+  
+  Dim b As Long ' The next write position in the UCS2 array
+  Dim CP_UCS2() As Byte
+  Dim lenUTF8 As Long
+  Dim i As Long
+  Dim j As Long
+  
+  UTF8_to_UCS2 = False ' intially set return value to be false
+  
+  lenUTF8 = UBound(bytsUTF8) - LBound(bytsUTF8) + 1
+  
+  ' Redim bytsUCS2 to the maximum it can be (header plus 2 bytes for each byte in UTF8
+  ReDim bytsUCS2(2 + lenUTF8 * 2)
+  
+  ' Write the BOM
+  bytsUCS2(0) = 255
+  bytsUCS2(1) = 254
+  b = 2
+  
+  For i = LBound(bytsUTF8) To UBound(bytsUTF8)
+    j = UTF8CP_to_UCS2CP(bytsUTF8, i, CP_UCS2)
+    If j = 0 Then Exit Function
+    CopyMemory VarPtr(bytsUCS2(b)), VarPtr(CP_UCS2(0)), 2
+    b = b + 2
+    i = i + j - 1
+  Next
+  
+  ReDim Preserve bytsUCS2(b - 1)
+  UTF8_to_UCS2 = True
+  
+End Function
+
+Private Function UTF8CP_to_UCS2CP(bytsUTF8() As Byte, P As Long, bytsUCS2() As Byte) As Long
+  ' This function takes a UTF8 byte array and converts the codepoint at location p into a UCS2 byte array (length 2)
+  ' In the event of an error this function returns zero, otherwise it returns the number
+  ' of bytes which were used to encode the UTF8 character
+  
+  Dim c As Long
+  
+  UTF8CP_to_UCS2CP = 0 ' intitally set to zero (fail)
+  
+  If P > UBound(bytsUTF8) Then Exit Function
+  If P < LBound(bytsUTF8) Then Exit Function
+  
+  ReDim bytsUCS2(1) ' always 2 bytes
+  
+  If (bytsUTF8(P) And 128) = 0 Then '128 = 1000 0000 'this byte is 0xxx xxxx
+    ' We have a single byte UTF8
+    bytsUCS2(0) = bytsUTF8(P)
+    bytsUCS2(1) = 0
+    UTF8CP_to_UCS2CP = 1
+  ElseIf (bytsUTF8(P) And 224) = 192 Then  '224 = 1110 0000, 192 = 1100 0000 'this byte is 110x xxxx
+    If UBound(bytsUTF8) < P + 1 Then Exit Function 'check we have enough bytes left
+    If (bytsUTF8(P + 1) And 192) <> 128 Then Exit Function '192 = 1100 0000, 128 = 1000 0000 2nd byte must be 10xx xxxx
+    ' We have a valid 2 byte UTF8
+    c = bit16ShiftR((bytsUTF8(P) And 31), -6) '31 = 0001 1111
+    c = c Or (bytsUTF8(P + 1) And 63) '63 = 0011 1111
+    bytsUCS2(0) = c And 255 '255 = 1111 1111  least significant byte
+    bytsUCS2(1) = bit16ShiftR(c, 8) ' most significant Byte
+    UTF8CP_to_UCS2CP = 2
+  ElseIf (bytsUTF8(P) And 240) = 224 Then '240 = 1111 0000, 224 = 1110 0000 'this byte is 1110 xxxx
+    If UBound(bytsUTF8) < P + 2 Then Exit Function 'check we have enough bytes left
+    If (bytsUTF8(P + 1) And 192) <> 128 Then Exit Function '2nd byte must be 10xx xxxx
+    If (bytsUTF8(P + 2) And 192) <> 128 Then Exit Function '3rd byte must be 10xx xxxx
+    ' We have a valid 3 byte UTF8
+    c = bit16ShiftR((bytsUTF8(P) And 15), -12) '15 = 0000 1111
+    c = c Or bit16ShiftR((bytsUTF8(P + 1) And 63), -6) '63 = 0011 1111
+    c = c Or (bytsUTF8(P + 2) And 63) '63 = 0011 1111
+    bytsUCS2(0) = c And 255 '255 = 1111 1111  least significant byte
+    bytsUCS2(1) = bit16ShiftR(c, 8) ' most significant Byte
+    UTF8CP_to_UCS2CP = 3
+  Else
+    ' we cannot deal with 4 byte UTF8 so we get an error
+    Exit Function
+  End If
+    
+End Function
+
+Private Function UCS2CP_to_UTF8CP(bytsUCS2() As Byte, bytsUTF8() As Byte) As Boolean
+  ' This function takes a 2 byte zero based array encoded in UCS2 and returns a 1 to 3 byte array encoded in UTF8
+  
+  Dim i As Long ' this is used to represent the character we have
+  Dim j As Long
+  
+  UCS2CP_to_UTF8CP = False ' intially set return value to be false
+  
+  If LBound(bytsUCS2) <> 0 Then Exit Function
+  If UBound(bytsUCS2) <> 1 Then Exit Function
+  
+  i = bytsUCS2(1) * 256 + bytsUCS2(0) ' Little Endian
+  
+  If i < 128 Then '128 = &H80
+    ' encoded in 1 byte in UTF8
+    ReDim bytsUTF8(0)
+    bytsUTF8(0) = i
+    UCS2CP_to_UTF8CP = True
+  ElseIf i < 2048 Then '2048 = &H0800
+    ' encoded in 2 bytes in UTF8
+    ReDim bytsUTF8(1)
+    bytsUTF8(1) = (i And 63) Or 128 ' 63 = 00111111, 128 = 10000000
+    i = bit16ShiftR(i, 6)
+    bytsUTF8(0) = (i And 31) Or 192 ' 31 = 00011111, 192 = 11000000
+    UCS2CP_to_UTF8CP = True
+  Else
+    ' encoded in 3 bytes in UTF8
+    ReDim bytsUTF8(2)
+    bytsUTF8(2) = (i And 63) Or 128 ' 63 = 0011 1111, 128 = 1000 0000
+    i = bit16ShiftR(i, 6)
+    bytsUTF8(1) = (i And 63) Or 128 ' 63 = 0011 1111, 128 = 1000 0000
+    i = bit16ShiftR(i, 6)
+    bytsUTF8(0) = (i And 15) Or 224 ' 15 = 00001111, 224 = 11100000
+    UCS2CP_to_UTF8CP = True
+  End If
+End Function
+
+Private Function bit16ShiftR(i As Long, s As Integer) As Long
+  ' takes 16 bit numeric (passed in as long) and bit shifts it right by the specified number of bits
+  ' if we are shifting left (-ve s) then we will loose the left most s bits
+  
+  If s > 15 Then bit16ShiftR = 0: Exit Function
+  If s < -15 Then bit16ShiftR = 0: Exit Function
+  bit16ShiftR = i And 65535 '&HFFFF
+  
+  bit16ShiftR = Fix(bit16ShiftR / (2 ^ s))
+  
+  bit16ShiftR = bit16ShiftR And 65535 '&HFFFF
+End Function

@@ -72,8 +72,12 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
         MsgBox "Something went wrong cleaning the file for " & objName & "."
       End If
       If FileExists(strFilename & ".tmp") Then Kill strFilename & ".tmp"
-    Case asObjectType.acQuery, asObjectType.acMacro, asObjectType.acModule
+      If Forms("Access SVN - Options").chkOutputUTF8 And IsUCS2(strFilename) Then ConvFileUCS2_to_UTF8 strFilename 'convert file to UTF8
+    Case asObjectType.acQuery, asObjectType.acMacro
       Application.SaveAsText objType, objName, strFilename
+      If Forms("Access SVN - Options").chkOutputUTF8 And IsUCS2(strFilename) Then ConvFileUCS2_to_UTF8 strFilename 'convert file to UTF8
+    Case asObjectType.acModule
+      Application.SaveAsText objType, objName, strFilename ' no conversion needed - modules are output as ANSI
     Case asObjectType.acTable, asObjectType.acIMEXSpecs
       SaveTableAsText objName, strFilename
     Case asObjectType.acToolbar
@@ -89,6 +93,10 @@ End Sub
 Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFilename As String, Optional strErr As String)
   Dim strCatchErr As String
   
+  ' Forms, Reports, Queries and Reports are produced and read by Access from UCS2 ( 2 byte ) encoded files
+  ' These are re-encoded to UTF-8 on saving so that all SVN tools work
+  ' Due to the historic files not having been converted we need to check whether these files are in UTF8 or UCS2 format and convert if required
+  
   Select Case objType
     Case asObjectType.acForm
       ' This is needed for when importing the SVN Tool from SVN using the SVN Tool!!!!!????
@@ -96,13 +104,33 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
         strErr = "The Form '" & objName & "' is already open. Inserted as " & objName & "-svntmp. Please rename after import"
         objName = objName & "-svntmp"
       End If
-      Application.LoadFromText acForm, objName, strFilename
-    Case asObjectType.acReport, asObjectType.acMacro, asObjectType.acModule
+      If IsUCS2(strFilename) Then
+        Application.LoadFromText objType, objName, strFilename
+      Else
+        ConvFileUTF8_to_UCS2 strFilename, strFilename & ".tmp"
+        Application.LoadFromText objType, objName, strFilename & ".tmp"
+        Kill strFilename & ".tmp"
+      End If
+    Case asObjectType.acReport, asObjectType.acMacro
+      If IsUCS2(strFilename) Then
+        Application.LoadFromText objType, objName, strFilename
+      Else
+        ConvFileUTF8_to_UCS2 strFilename, strFilename & ".tmp"
+        Application.LoadFromText objType, objName, strFilename & ".tmp"
+        Kill strFilename & ".tmp"
+      End If
+    Case asObjectType.acModule
       Application.LoadFromText objType, objName, strFilename
     Case asObjectType.acTable, asObjectType.acIMEXSpecs
       LoadTableFromText objName, strFilename
     Case asObjectType.acQuery
-      LoadQueryFromText objName, strFilename
+      If IsUCS2(strFilename) Then
+        LoadQueryFromText objName, strFilename
+      Else
+        ConvFileUTF8_to_UCS2 strFilename, strFilename & ".tmp"
+        LoadQueryFromText objName, strFilename & ".tmp"
+        Kill strFilename & ".tmp"
+      End If
     Case asObjectType.acToolbar
       strCatchErr = LoadCommandBarFromText(objName, strFilename)
       If strCatchErr <> "" Then
