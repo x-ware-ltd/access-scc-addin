@@ -348,6 +348,7 @@ Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() A
       mySvnItem.svCheckSum = Right$(strLine, Len(strLine) - Len(SVNTAG_CHECKSUM))
     ElseIf LenB(Trim$(strLine)) = 0 Then
       If mySvnItem.svName = "" Then ' found folder skip
+      ElseIf Right$(mySvnItem.svName, 10) = ".sccignore" Then ' found github ignore file skip
       Else
         'mySvnItem.svStatus = SVN_GetStatus(mySvnItem.svPath) ' removed due to performance issues
         arrFill(i) = mySvnItem
