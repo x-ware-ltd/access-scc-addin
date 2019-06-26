@@ -46,7 +46,7 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Desti
 '************************************************
 
 Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String)
-  Dim Ignores(6) As Ignore
+  Dim Ignores(7) As Ignore
 
   Ignores(0).bytArrStart = "GUID = Begin" & vbCrLf
   Ignores(0).bytArrEnd = "End" & vbCrLf
@@ -62,6 +62,8 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Ignores(5).bytArrEnd = "End" & vbCrLf
   Ignores(6).bytArrStart = "Checksum ="
   Ignores(6).bytArrEnd = vbCrLf
+  Ignores(7).bytArrStart = "NameMap = Begin" & vbCrLf
+  Ignores(7).bytArrEnd = "End" & vbCrLf
   
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
