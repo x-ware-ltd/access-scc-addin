@@ -47,6 +47,7 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Desti
 
 Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String)
   Dim Ignores(7) As Ignore
+  Dim blnSaveAsUTF8 As Boolean
 
   Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
   Ignores(0).bytsEnd = "End" & vbCrLf
@@ -65,17 +66,47 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
   Ignores(7).bytsEnd = "End" & vbCrLf
   
+  ' work out whether we need to convert the file to UTF8
+  ' initially set to the user selection
+  blnSaveAsUTF8 = Forms("Access SVN - Options").chkOutputUTF8
+  ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
+  ' on later versions of MS Access, otherwise it is in ANSI
+  ' If we already have this file in the repository and it is in UTF-8 we should save it as UTF-8 anyway
+  Select Case objType
+    Case asObjectType.acForm, asObjectType.acReport, asObjectType.acQuery, asObjectType.acMacro
+      If FileExists(strFilename) Then
+        If IsUTF8(strFilename) Then
+          ' Fileis already in the repository and it's in UTF8 so save in that format now overriding user selection
+          blnSaveAsUTF8 = True
+        End If
+      End If
+  End Select
+      
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then
-        MsgBox "Something went wrong cleaning the file for " & objName & "."
+      If IsUCS2(strFilename & ".tmp") Then
+        If CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then
+          If blnSaveAsUTF8 And IsUCS2(strFilename) Then
+            If Not ConvFileUCS2_to_UTF8(strFilename) Then 'convert file to UTF8
+              MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
+            End If
+          End If
+        Else
+          MsgBox "Something went wrong cleaning the file for " & objName & "."
+        End If
+      Else
+        ' This version of Access doesn't produce UCS2 output
+        Name strFilename & ".tmp" As strFilename
       End If
       If FileExists(strFilename & ".tmp") Then Kill strFilename & ".tmp"
-      If Forms("Access SVN - Options").chkOutputUTF8 And IsUCS2(strFilename) Then ConvFileUCS2_to_UTF8 strFilename 'convert file to UTF8
     Case asObjectType.acQuery, asObjectType.acMacro
       Application.SaveAsText objType, objName, strFilename
-      If Forms("Access SVN - Options").chkOutputUTF8 And IsUCS2(strFilename) Then ConvFileUCS2_to_UTF8 strFilename 'convert file to UTF8
+      If blnSaveAsUTF8 And IsUCS2(strFilename) Then
+        If Not ConvFileUCS2_to_UTF8(strFilename) Then 'convert file to UTF8
+          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
+        End If
+      End If
     Case asObjectType.acModule
       Application.SaveAsText objType, objName, strFilename ' no conversion needed - modules are output as ANSI
     Case asObjectType.acTable, asObjectType.acIMEXSpecs
@@ -104,32 +135,41 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
         strErr = "The Form '" & objName & "' is already open. Inserted as " & objName & "-svntmp. Please rename after import"
         objName = objName & "-svntmp"
       End If
-      If IsUCS2(strFilename) Then
-        Application.LoadFromText objType, objName, strFilename
+      If IsUTF8(strFilename) Then
+        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
+          Application.LoadFromText objType, objName, strFilename & ".tmp"
+          Kill strFilename & ".tmp"
+        Else
+          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
+        End If
       Else
-        ConvFileUTF8_to_UCS2 strFilename, strFilename & ".tmp"
-        Application.LoadFromText objType, objName, strFilename & ".tmp"
-        Kill strFilename & ".tmp"
+        Application.LoadFromText objType, objName, strFilename
       End If
     Case asObjectType.acReport, asObjectType.acMacro
-      If IsUCS2(strFilename) Then
-        Application.LoadFromText objType, objName, strFilename
+      If IsUTF8(strFilename) Then
+        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
+          Application.LoadFromText objType, objName, strFilename & ".tmp"
+          Kill strFilename & ".tmp"
+        Else
+          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
+        End If
       Else
-        ConvFileUTF8_to_UCS2 strFilename, strFilename & ".tmp"
-        Application.LoadFromText objType, objName, strFilename & ".tmp"
-        Kill strFilename & ".tmp"
+        Application.LoadFromText objType, objName, strFilename
       End If
     Case asObjectType.acModule
       Application.LoadFromText objType, objName, strFilename
     Case asObjectType.acTable, asObjectType.acIMEXSpecs
       LoadTableFromText objName, strFilename
     Case asObjectType.acQuery
-      If IsUCS2(strFilename) Then
-        LoadQueryFromText objName, strFilename
+      If IsUTF8(strFilename) Then
+        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
+          LoadQueryFromText objName, strFilename & ".tmp"
+          Kill strFilename & ".tmp"
+        Else
+          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
+        End If
       Else
-        ConvFileUTF8_to_UCS2 strFilename, strFilename & ".tmp"
-        LoadQueryFromText objName, strFilename & ".tmp"
-        Kill strFilename & ".tmp"
+        LoadQueryFromText objName, strFilename
       End If
     Case asObjectType.acToolbar
       strCatchErr = LoadCommandBarFromText(objName, strFilename)

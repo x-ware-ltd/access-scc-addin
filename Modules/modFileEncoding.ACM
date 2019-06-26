@@ -12,10 +12,32 @@ Function IsUCS2(strFilename As String) As Boolean
     ' load the file into the bytsFile array
     f = FreeFile()
     Open strFilename For Binary Access Read As #f
-    ReDim byts(2)
-    Get #f, 1, byts()
+    If LOF(f) >= 2 Then
+      ReDim byts(1)
+      Get #f, 1, byts()
+      IsUCS2 = ((byts(0) = 255) And (byts(1) = 254)) ' &HFF and &HFE
+    End If
     Close #f
-    IsUCS2 = ((byts(0) = 255) And (byts(1) = 254))
+  End If
+End Function
+
+Function IsUTF8(strFilename As String) As Boolean
+  ' Returns true if the file specified is in UTF8 format
+  ' NB this needs the BOM to be present in order to identify as UTF8 - this is not strictly in accordance with
+  ' UTF8 specififcations, but is the same as many Windows implementations
+  Dim f As Long
+  Dim byts() As Byte
+  
+  If FileExists(strFilename) Then
+    ' load the file into the bytsFile array
+    f = FreeFile()
+    Open strFilename For Binary Access Read As #f
+    If LOF(f) >= 3 Then
+      ReDim byts(2)
+      Get #f, 1, byts()
+      IsUTF8 = ((byts(0) = 239) And (byts(1) = 187) And (byts(1) = 191)) '&HEF, &HBB, &HBF
+    End If
+    Close #f
   End If
 End Function
 
@@ -103,17 +125,12 @@ Function UCS2_to_UTF8(bytsUCS2() As Byte, ByRef bytsUTF8() As Byte) As Boolean
   If bytsUCS2(LBound(bytsUCS2)) <> 255 Or bytsUCS2(LBound(bytsUCS2) + 1) <> 254 Then Exit Function '255 = &HFF, 254 = &HFE
   
   ' Redim bytsUTF8 to the maximum it can be ( max 3 bytes per character )
-  ' ignore header of UCS2 (2 bytes) then for each 2 bytes in UCS2 need potentially 3 bytes in UTF8
-  If lenUCS2 = 2 Then
-    ' we need to return an empty array
-    Erase bytsUTF8
-    UCS2_to_UTF8 = True
-    Exit Function
-  End If
+  ' for each 2 bytes in UCS2 need potentially 3 bytes in UTF8
+  ReDim bytsUTF8(lenUCS2 * 3 / 2 - 1)
   
-  ReDim bytsUTF8((lenUCS2 - 2) * 3 / 2 - 1)
+  b = 0
   
-  For i = LBound(bytsUCS2) + 2 To UBound(bytsUCS2) Step 2
+  For i = LBound(bytsUCS2) To UBound(bytsUCS2) Step 2
     CopyMemory VarPtr(CP_UCS2(0)), VarPtr(bytsUCS2(i)), 2 ' Copy CodePoint into CP array
     If Not UCS2CP_to_UTF8CP(CP_UCS2, CP_UTF8) Then Exit Function
     CopyMemory VarPtr(bytsUTF8(b)), VarPtr(CP_UTF8(0)), UBound(CP_UTF8) + 1
@@ -139,20 +156,23 @@ Function UTF8_to_UCS2(bytsUTF8() As Byte, ByRef bytsUCS2() As Byte) As Boolean
   
   lenUTF8 = UBound(bytsUTF8) - LBound(bytsUTF8) + 1
   
-  ' Redim bytsUCS2 to the maximum it can be (header plus 2 bytes for each byte in UTF8
-  ReDim bytsUCS2(2 + lenUTF8 * 2)
+  ' Check that the length of the UTF8 array is at least 3 bytes
+  If lenUTF8 < 3 Then Exit Function
   
-  ' Write the BOM
-  bytsUCS2(0) = 255
-  bytsUCS2(1) = 254
-  b = 2
+  ' Check that the supplied array has the correct Byte Order Mark (BOM)
+  If bytsUTF8(LBound(bytsUTF8)) <> 239 Or bytsUTF8(LBound(bytsUTF8) + 1) <> 187 Or bytsUTF8(LBound(bytsUTF8) + 2) <> 191 Then Exit Function '239 = &HEF, 187 = &HBB, 191 = &HBF
+  
+  ' Redim bytsUCS2 to the maximum it can be (2 bytes for each byte in UTF8)
+  ReDim bytsUCS2(lenUTF8 * 2 - 1)
+  
+  b = 0
   
   For i = LBound(bytsUTF8) To UBound(bytsUTF8)
-    j = UTF8CP_to_UCS2CP(bytsUTF8, i, CP_UCS2)
+    j = UTF8CP_to_UCS2CP(bytsUTF8, i, CP_UCS2) 'j represents the length of the UTF8 character found (in bytes)
     If j = 0 Then Exit Function
     CopyMemory VarPtr(bytsUCS2(b)), VarPtr(CP_UCS2(0)), 2
     b = b + 2
-    i = i + j - 1
+    i = i + j - 1 ' if UTF8 was more than 1 byte, skip forwards
   Next
   
   ReDim Preserve bytsUCS2(b - 1)
@@ -160,8 +180,31 @@ Function UTF8_to_UCS2(bytsUTF8() As Byte, ByRef bytsUCS2() As Byte) As Boolean
   
 End Function
 
-Private Function UTF8CP_to_UCS2CP(bytsUTF8() As Byte, P As Long, bytsUCS2() As Byte) As Long
-  ' This function takes a UTF8 byte array and converts the codepoint at location p into a UCS2 byte array (length 2)
+' The 2 Functions UTF8CP_to_UCS2CP and UCS2CP_to_UTF8CP convert individual Codepoints (characters) to/from the 2 encodings
+' The format of UTF8 is laid out below (extract from wikipedia)
+'
+' Since the restriction of the Unicode code-space to 21-bit values in 2003, UTF-8 is defined to encode code points in one to
+' four bytes, depending on the number of significant bits in the numerical value of the code point. The following table shows
+' the structure of the encoding. The x characters are replaced by the bits of the code point. If the number of significant
+' bits is no more than seven, the first line applies; if no more than 11 bits, the second line applies, and so on.
+'
+' Number    Bits for    First       Last           Byte 1    Byte 2    Byte 3    Byte 4
+' of bytes  code point  code point  code point
+'    1          7         U+0000      U+007F      0xxxxxxx
+'    2         11         U+0080      U+07FF      110xxxxx  10xxxxxx
+'    3         16         U+0800      U+FFFF      1110xxxx  10xxxxxx  10xxxxxx
+'    4         21         U+10000     U+10FFFF    11110xxx  10xxxxxx  10xxxxxx  10xxxxxx
+'
+' MS Access always converts Hex literals into the smallest integer they will fit into before assigning to a variable
+' and also has no concept of unsigned integers.
+' Therefore:
+'   lngExample = &HFFFF
+' will return -1 rather than 65535 as would be expected (it is first converted to an Integer (16 bit)
+' before being assigned to the long.
+' To ensure this doesn't mess up our code we use decimal notation but comment where appropriate with the Hex or Binary equivalent
+
+Private Function UTF8CP_to_UCS2CP(bytsUTF8() As Byte, lngPosn As Long, bytsUCS2() As Byte) As Long
+  ' This function takes a UTF8 byte array and converts the codepoint at location lngPosn into a UCS2 byte array (length 2)
   ' In the event of an error this function returns zero, otherwise it returns the number
   ' of bytes which were used to encode the UTF8 character
   
@@ -169,38 +212,38 @@ Private Function UTF8CP_to_UCS2CP(bytsUTF8() As Byte, P As Long, bytsUCS2() As B
   
   UTF8CP_to_UCS2CP = 0 ' intitally set to zero (fail)
   
-  If P > UBound(bytsUTF8) Then Exit Function
-  If P < LBound(bytsUTF8) Then Exit Function
+  If lngPosn > UBound(bytsUTF8) Then Exit Function
+  If lngPosn < LBound(bytsUTF8) Then Exit Function
   
   ReDim bytsUCS2(1) ' always 2 bytes
   
-  If (bytsUTF8(P) And 128) = 0 Then '128 = 1000 0000 'this byte is 0xxx xxxx
+  If (bytsUTF8(lngPosn) And 128) = 0 Then '128 = 1000 0000 'this byte is 0xxx xxxx
     ' We have a single byte UTF8
-    bytsUCS2(0) = bytsUTF8(P)
+    bytsUCS2(0) = bytsUTF8(lngPosn)
     bytsUCS2(1) = 0
     UTF8CP_to_UCS2CP = 1
-  ElseIf (bytsUTF8(P) And 224) = 192 Then  '224 = 1110 0000, 192 = 1100 0000 'this byte is 110x xxxx
-    If UBound(bytsUTF8) < P + 1 Then Exit Function 'check we have enough bytes left
-    If (bytsUTF8(P + 1) And 192) <> 128 Then Exit Function '192 = 1100 0000, 128 = 1000 0000 2nd byte must be 10xx xxxx
+  ElseIf (bytsUTF8(lngPosn) And 224) = 192 Then  '224 = 1110 0000, 192 = 1100 0000 'this byte is 110x xxxx
+    If UBound(bytsUTF8) < lngPosn + 1 Then Exit Function 'check we have enough bytes left
+    If (bytsUTF8(lngPosn + 1) And 192) <> 128 Then Exit Function '192 = 1100 0000, 128 = 1000 0000 2nd byte must be 10xx xxxx
     ' We have a valid 2 byte UTF8
-    c = bit16ShiftR((bytsUTF8(P) And 31), -6) '31 = 0001 1111
-    c = c Or (bytsUTF8(P + 1) And 63) '63 = 0011 1111
+    c = bit16ShiftL((bytsUTF8(lngPosn) And 31), 6) '31 = 0001 1111
+    c = c Or (bytsUTF8(lngPosn + 1) And 63) '63 = 0011 1111
     bytsUCS2(0) = c And 255 '255 = 1111 1111  least significant byte
     bytsUCS2(1) = bit16ShiftR(c, 8) ' most significant Byte
     UTF8CP_to_UCS2CP = 2
-  ElseIf (bytsUTF8(P) And 240) = 224 Then '240 = 1111 0000, 224 = 1110 0000 'this byte is 1110 xxxx
-    If UBound(bytsUTF8) < P + 2 Then Exit Function 'check we have enough bytes left
-    If (bytsUTF8(P + 1) And 192) <> 128 Then Exit Function '2nd byte must be 10xx xxxx
-    If (bytsUTF8(P + 2) And 192) <> 128 Then Exit Function '3rd byte must be 10xx xxxx
+  ElseIf (bytsUTF8(lngPosn) And 240) = 224 Then '240 = 1111 0000, 224 = 1110 0000 'this byte is 1110 xxxx
+    If UBound(bytsUTF8) < lngPosn + 2 Then Exit Function 'check we have enough bytes left
+    If (bytsUTF8(lngPosn + 1) And 192) <> 128 Then Exit Function '2nd byte must be 10xx xxxx
+    If (bytsUTF8(lngPosn + 2) And 192) <> 128 Then Exit Function '3rd byte must be 10xx xxxx
     ' We have a valid 3 byte UTF8
-    c = bit16ShiftR((bytsUTF8(P) And 15), -12) '15 = 0000 1111
-    c = c Or bit16ShiftR((bytsUTF8(P + 1) And 63), -6) '63 = 0011 1111
-    c = c Or (bytsUTF8(P + 2) And 63) '63 = 0011 1111
+    c = bit16ShiftL((bytsUTF8(lngPosn) And 15), 12) '15 = 0000 1111
+    c = c Or bit16ShiftL((bytsUTF8(lngPosn + 1) And 63), 6) '63 = 0011 1111
+    c = c Or (bytsUTF8(lngPosn + 2) And 63)    '63 = 0011 1111
     bytsUCS2(0) = c And 255 '255 = 1111 1111  least significant byte
     bytsUCS2(1) = bit16ShiftR(c, 8) ' most significant Byte
     UTF8CP_to_UCS2CP = 3
   Else
-    ' we cannot deal with 4 byte UTF8 so we get an error
+    ' we cannot deal with 4 byte UTF8 (it cannot be represented in 2 Bytes) so we return an error
     Exit Function
   End If
     
@@ -209,38 +252,41 @@ End Function
 Private Function UCS2CP_to_UTF8CP(bytsUCS2() As Byte, bytsUTF8() As Byte) As Boolean
   ' This function takes a 2 byte zero based array encoded in UCS2 and returns a 1 to 3 byte array encoded in UTF8
   
-  Dim i As Long ' this is used to represent the character we have
-  Dim j As Long
+  Dim lngCodePoint As Long ' this is used to represent the character we have
   
   UCS2CP_to_UTF8CP = False ' intially set return value to be false
   
   If LBound(bytsUCS2) <> 0 Then Exit Function
   If UBound(bytsUCS2) <> 1 Then Exit Function
   
-  i = bytsUCS2(1) * 256 + bytsUCS2(0) ' Little Endian
+  lngCodePoint = CLng(bytsUCS2(1)) * 256 + CLng(bytsUCS2(0)) ' Little Endian
   
-  If i < 128 Then '128 = &H80
+  If lngCodePoint < 128 Then '128 = &H80
     ' encoded in 1 byte in UTF8
     ReDim bytsUTF8(0)
-    bytsUTF8(0) = i
+    bytsUTF8(0) = lngCodePoint
     UCS2CP_to_UTF8CP = True
-  ElseIf i < 2048 Then '2048 = &H0800
+  ElseIf lngCodePoint < 2048 Then '2048 = &H0800
     ' encoded in 2 bytes in UTF8
     ReDim bytsUTF8(1)
-    bytsUTF8(1) = (i And 63) Or 128 ' 63 = 00111111, 128 = 10000000
-    i = bit16ShiftR(i, 6)
-    bytsUTF8(0) = (i And 31) Or 192 ' 31 = 00011111, 192 = 11000000
+    bytsUTF8(1) = (lngCodePoint And 63) Or 128 ' 63 = 00111111, 128 = 10000000
+    lngCodePoint = bit16ShiftR(lngCodePoint, 6)
+    bytsUTF8(0) = (lngCodePoint And 31) Or 192 ' 31 = 00011111, 192 = 11000000
     UCS2CP_to_UTF8CP = True
   Else
     ' encoded in 3 bytes in UTF8
     ReDim bytsUTF8(2)
-    bytsUTF8(2) = (i And 63) Or 128 ' 63 = 0011 1111, 128 = 1000 0000
-    i = bit16ShiftR(i, 6)
-    bytsUTF8(1) = (i And 63) Or 128 ' 63 = 0011 1111, 128 = 1000 0000
-    i = bit16ShiftR(i, 6)
-    bytsUTF8(0) = (i And 15) Or 224 ' 15 = 00001111, 224 = 11100000
+    bytsUTF8(2) = (lngCodePoint And 63) Or 128 ' 63 = 0011 1111, 128 = 1000 0000
+    lngCodePoint = bit16ShiftR(lngCodePoint, 6)
+    bytsUTF8(1) = (lngCodePoint And 63) Or 128 ' 63 = 0011 1111, 128 = 1000 0000
+    lngCodePoint = bit16ShiftR(lngCodePoint, 6)
+    bytsUTF8(0) = (lngCodePoint And 15) Or 224 ' 15 = 00001111, 224 = 11100000
     UCS2CP_to_UTF8CP = True
   End If
+End Function
+Private Function bit16ShiftL(i As Long, s As Integer) As Long
+  ' takes a 16 bit numeric (passed in as Long) and bit shifts it left by the specified number of bits
+  bit16ShiftL = bit16ShiftR(i, -s)
 End Function
 
 Private Function bit16ShiftR(i As Long, s As Integer) As Long
@@ -253,5 +299,5 @@ Private Function bit16ShiftR(i As Long, s As Integer) As Long
   
   bit16ShiftR = Fix(bit16ShiftR / (2 ^ s))
   
-  bit16ShiftR = bit16ShiftR And 65535 '&HFFFF
+  bit16ShiftR = bit16ShiftR And 65535 '&HFFFF ' ensure we only have least significant 16 bits
 End Function
