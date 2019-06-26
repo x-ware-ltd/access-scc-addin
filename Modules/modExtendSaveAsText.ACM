@@ -27,6 +27,13 @@ Private Type AccObject
   blnAppended As Boolean 'Indicating whether or not ithe object has been appended to its parent yet
 End Type
 
+Private Type Ignore
+  bytsStart() As Byte
+  bytsEnd() As Byte
+End Type
+
+Private Const clngNOTFOUND = -2147483648#
+
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
 '************************************************
@@ -39,8 +46,33 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Desti
 '************************************************
 
 Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String)
+  Dim Ignores(7) As Ignore
+
+  Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
+  Ignores(0).bytsEnd = "End" & vbCrLf
+  Ignores(1).bytsStart = "PrtMip = Begin" & vbCrLf
+  Ignores(1).bytsEnd = "End" & vbCrLf
+  Ignores(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
+  Ignores(2).bytsEnd = "End" & vbCrLf
+  Ignores(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
+  Ignores(3).bytsEnd = "End" & vbCrLf
+  Ignores(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
+  Ignores(4).bytsEnd = "End" & vbCrLf
+  Ignores(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
+  Ignores(5).bytsEnd = "End" & vbCrLf
+  Ignores(6).bytsStart = "Checksum ="
+  Ignores(6).bytsEnd = vbCrLf
+  Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
+  Ignores(7).bytsEnd = "End" & vbCrLf
+  
   Select Case objType
-    Case asObjectType.acQuery, asObjectType.acForm, asObjectType.acReport, asObjectType.acMacro, asObjectType.acModule
+    Case asObjectType.acForm, asObjectType.acReport
+      Application.SaveAsText objType, objName, strFilename & ".tmp"
+      If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then
+        MsgBox "Something went wrong cleaning the file for " & objName & "."
+      End If
+      If FileExists(strFilename & ".tmp") Then Kill strFilename & ".tmp"
+    Case asObjectType.acQuery, asObjectType.acMacro, asObjectType.acModule
       Application.SaveAsText objType, objName, strFilename
     Case asObjectType.acTable, asObjectType.acIMEXSpecs
       SaveTableAsText objName, strFilename
@@ -654,7 +686,7 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
   lngLineStart = 0
   Do
     lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
-    If lngEOL = 0 Then Exit Do
+    If lngEOL = clngNOTFOUND Then Exit Do
     arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
     lngLineStart = lngEOL + 2
     strLine = StrConv(arrbytLine, vbUnicode)
@@ -667,28 +699,28 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
         Dim strConnect As String, strAttributes As String, strSourceTableName As String
         Dim lngAtt As Long
         lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
-        If lngEOL = 0 Then Exit Do
+        If lngEOL = clngNOTFOUND Then Exit Do
         arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
         lngLineStart = lngEOL + 2
         strLine = StrConv(arrbytLine, vbUnicode)
         If Left(strLine, 13) <> "    Connect =" Then Stop
         strConnect = Mid(strLine, 15, Len(strLine) - 14)
         lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
-        If lngEOL = 0 Then Exit Do
+        If lngEOL = clngNOTFOUND Then Exit Do
         arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
         lngLineStart = lngEOL + 2
         strLine = StrConv(arrbytLine, vbUnicode)
         If Left(strLine, 16) <> "    Attributes =" Then Stop
         strAttributes = Mid(strLine, 18, Len(strLine) - 17)
         lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
-        If lngEOL = 0 Then Exit Do
+        If lngEOL = clngNOTFOUND Then Exit Do
         arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
         lngLineStart = lngEOL + 2
         strLine = StrConv(arrbytLine, vbUnicode)
         If Left(strLine, 21) <> "    SourceTableName =" Then Stop
         strSourceTableName = Mid(strLine, 23, Len(strLine) - 22)
         lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
-        If lngEOL = 0 Then Exit Do
+        If lngEOL = clngNOTFOUND Then Exit Do
         arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
         lngLineStart = lngEOL + 2
         strLine = StrConv(arrbytLine, vbUnicode)
@@ -755,7 +787,7 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
         ReDim Preserve AccObj(UBound(AccObj) + 1)
         
         lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
-        If lngEOL = 0 Then Exit Do
+        If lngEOL = clngNOTFOUND Then Exit Do
         arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
         lngLineStart = lngEOL + 2
         strPrpName = StrConv(arrbytLine, vbUnicode)
@@ -765,7 +797,7 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
         strPrpName = Trim$(Mid(strPrpName, i + 6))
         
         lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
-        If lngEOL = 0 Then Exit Do
+        If lngEOL = clngNOTFOUND Then Exit Do
         arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
         lngLineStart = lngEOL + 2
         strPrpType = StrConv(arrbytLine, vbUnicode)
@@ -795,7 +827,7 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
         AccObj(UBound(AccObj)).strObjType = "Data"
         Set rs = dbDestination.OpenRecordset(TableName, dbOpenTable, dbAppendOnly)
         lngEOL = InBytArr(lngLineStart, arrbytFile, arrbytCRLF)
-        If lngEOL = 0 Then Exit Do
+        If lngEOL = clngNOTFOUND Then Exit Do
         arrbytLine = MidBytArr(arrbytFile, lngLineStart, lngEOL - 1, 0)
         lngLineStart = lngEOL + 2
         strFieldNames = StrConv(arrbytLine, vbUnicode) 'Loads the field names into this string
@@ -1003,6 +1035,113 @@ Private Sub AppendParent(AccObj() As AccObject)
   End With
 End Sub
 
+Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
+  ' This function takes a file and cleans out the lines (Sections) specified in the Ignores Array
+  
+  Dim bytsFile() As Byte
+  Dim bytsLine() As Byte
+  Dim f As Long
+  Dim lngStartPos As Long ' the start position of the line we are looking at
+  Dim lngNextStartPos As Long ' the start position of the next line we need to look at
+  Dim lngWritePos As Long ' the byte position in the output file for the write
+  Dim lngLineLen As Long
+  Dim x As Long
+  Dim bytsCrLf() As Byte
+  Dim blnEOF As Boolean
+  Dim blnCodeBehind As Boolean ' indicates that we are in the CodeBehind section of the file
+  Dim bytsCodeBehind() As Byte
+  
+  bytsCodeBehind = "CodeBehind" ' The text which indicates the start of the code section
+  blnCodeBehind = False
+  bytsCrLf() = vbCrLf
+  
+  ' load the file into the bytsFile array
+  f = FreeFile()
+  Open strFilename For Binary Access Read As #f
+  ReDim bytsFile(LOF(f) - 1)
+  Get #f, , bytsFile()
+  Close #f
+    
+  lngWritePos = 1 ' The next location to write into the output file (starts at 1 ie not zero based)
+  lngStartPos = 0 ' The initial start location (0 based)
+  blnEOF = False
+  
+  ' Open file ready for output
+  f = FreeFile()
+  If FileExists(strFilenameNew) Then Kill strFilenameNew
+  Open strFilenameNew For Binary Access Write As #f
+  
+  ' Loop through line by line
+  Do
+    x = InBytArr(lngStartPos, bytsFile, bytsCrLf) ' look for end of line (CrLf)
+    If x = clngNOTFOUND Then
+      ' we did not find an end of line so we must now be at the end of the file
+      lngNextStartPos = UBound(bytsFile) + 1
+      blnEOF = True
+    Else
+      lngNextStartPos = x + 4 'to allow for the CrLf we found (2 bytes per character)
+    End If
+    
+    ' extract the line we are looking at into bytsLine
+    lngLineLen = lngNextStartPos - lngStartPos
+    ReDim bytsLine(lngLineLen - 1)
+    CopyMemory VarPtr(bytsLine(0)), VarPtr(bytsFile(lngStartPos)), lngLineLen
+    
+    If Not blnCodeBehind Then
+      'look to see if we are at the codebehind line
+      If InBytArr(0, bytsLine, bytsCodeBehind) = 0 Then blnCodeBehind = True
+    End If
+    
+    If blnCodeBehind Then 'NB we need to do this in 2 sections of the IF because we dont want IgnoreSection to run if blnCodeBehind is true
+      ' Always write line if we are in the code section
+      Put #f, lngWritePos, bytsLine
+      lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
+    ElseIf Not IgnoreSection(bytsFile, bytsLine, lngStartPos, lngNextStartPos, Ignores) Then
+      ' Write the line if it is not part of a section we need to ignore
+      If UBound(bytsLine) > 3 Then ' only write the line if it is not blank
+        Put #f, lngWritePos, bytsLine
+        lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
+      End If
+    End If
+    
+    lngStartPos = lngNextStartPos ' move on to the next line
+  Loop While Not blnEOF
+  Close #f
+  
+  CleanFormReportFile = True
+End Function
+
+Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartPos As Long, ByRef lngNextStartPos As Long, Ignores() As Ignore) As Boolean
+  ' This function looks in the bytsFile array with start point of lngStartPos to see if we need to ignore this section
+  ' If we have to ignore this section it returns true and adjusts lngNextStartPos to the beginning of the next line after the section to ignore
+  ' Otherwise it returns false
+  ' NB bytsLine is the line which starts at point lngStartPos and this function assumes this to be the case
+  
+  Dim lngStartIgnore As Long
+  Dim lngEndIgnore As Long
+  Dim lngIgnoreLen As Long
+  Dim i As Long
+  
+  IgnoreSection = False ' initially set to false
+  
+  For i = LBound(Ignores) To UBound(Ignores)
+    lngStartIgnore = InBytArr(0, bytsLine, Ignores(i).bytsStart)
+    If lngStartIgnore <> clngNOTFOUND Then
+      ' We have found the start string
+      lngEndIgnore = InBytArr(lngStartPos + lngStartIgnore, bytsFile, Ignores(i).bytsEnd)
+      If lngEndIgnore <> clngNOTFOUND Then
+        ' we found the associated end section
+        ' adjust the next (lngNextStartPos) to be after the ignore section
+        lngIgnoreLen = UBound(Ignores(i).bytsEnd) - LBound(Ignores(i).bytsEnd) + 1
+        lngNextStartPos = lngEndIgnore + lngIgnoreLen
+        IgnoreSection = True
+        Exit Function
+      End If
+    End If
+  Next i
+  
+End Function
+
 '************************************************
 ' VarByteArrToHexString
 '
@@ -1203,13 +1342,15 @@ Private Function MidBytArr(arr() As Byte, lngStart As Long, lngEnd As Long, lngN
 End Function
 Private Function InBytArr(ByVal lngStart As Long, arr1() As Byte, arr2() As Byte) As Long
   'Returns the position of ByteArray 2 within BytArray 1
-  'If not found it returns 0
+  'If not found it returns clngNOTFOUND (-2147483648)
   Dim i As Long
   Dim j As Long
   Dim lngLBound2 As Long
   Dim lngUBound2 As Long
   Dim byt1 As Byte       'The first Byte of the second array
   Dim blnFound As Boolean
+  
+  InBytArr = clngNOTFOUND
   
   If (Not arr1) = -1 Then Exit Function
   If (Not arr2) = -1 Then Exit Function
