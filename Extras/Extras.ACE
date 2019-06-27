@@ -37,7 +37,7 @@ Begin Extra
     Begin Property
         Name = AppTitle
         Type = 10
-        Value = "Subversion for Access XP"
+        Value = "Subversion for MS Access"
     End
     CollatingOrder = 1033
     Begin Property

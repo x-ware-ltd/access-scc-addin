@@ -28,7 +28,7 @@ Begin Form
     RecSrcDt = Begin
         0xb319a669b144e340
     End
-    Caption ="Subversion for Access XP"
+    Caption ="Subversion for MS Access"
     DatasheetFontName ="Arial"
     PrtMip = Begin
         0x8905000089050000890500008905000000000000201c0000e010000001000000 ,
@@ -212,7 +212,7 @@ Begin Form
                     FontSize =16
                     FontWeight =600
                     Name ="lblTitle"
-                    Caption ="Subversion for Access XP"
+                    Caption ="Subversion for MS Access"
                     FontName ="Arial"
                 End
                 Begin CommandButton
