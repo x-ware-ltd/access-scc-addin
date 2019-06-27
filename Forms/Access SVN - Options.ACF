@@ -128,12 +128,14 @@ Begin Form
         Begin Rectangle
             SpecialEffect =3
             BackStyle =0
+            BorderLineStyle =0
             Width =850
             Height =850
         End
         Begin Image
             BackStyle =0
             OldBorderStyle =0
+            BorderLineStyle =0
             PictureAlignment =2
             Width =1701
             Height =1701
@@ -145,20 +147,23 @@ Begin Form
             FontWeight =400
             ForeColor =-2147483630
             FontName ="MS Sans Serif"
+            BorderLineStyle =0
         End
         Begin CheckBox
             SpecialEffect =2
+            BorderLineStyle =0
             LabelX =230
             LabelY =-30
         End
         Begin TextBox
             SpecialEffect =2
             OldBorderStyle =0
+            BorderLineStyle =0
             Width =1701
             LabelX =-1701
         End
         Begin Section
-            Height =7653
+            Height =7972
             Name ="Detail"
             Begin
                 Begin Rectangle
@@ -166,8 +171,12 @@ Begin Form
                     Left =238
                     Top =1981
                     Width =3335
-                    Height =1245
+                    Height =1650
                     Name ="Box24"
+                    LayoutCachedLeft =238
+                    LayoutCachedTop =1981
+                    LayoutCachedWidth =3573
+                    LayoutCachedHeight =3631
                 End
                 Begin TextBox
                     OverlapFlags =85
@@ -180,6 +189,7 @@ Begin Form
                     ControlSource ="ExportPath"
                     AfterUpdate ="[Event Procedure]"
                     DefaultValue ="\"C:\\SVNRoot\\\""
+
                     Begin
                         Begin Label
                             OverlapFlags =85
@@ -208,13 +218,23 @@ Begin Form
                 Begin CommandButton
                     OverlapFlags =215
                     Left =1995
-                    Top =2850
+                    Top =3240
                     Width =1520
                     Height =340
                     TabIndex =10
                     Name ="cmdRun"
                     Caption ="Export Objects"
                     OnClick ="[Event Procedure]"
+
+                    LayoutCachedLeft =1995
+                    LayoutCachedTop =3240
+                    LayoutCachedWidth =3515
+                    LayoutCachedHeight =3580
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
                 End
                 Begin CheckBox
                     OverlapFlags =93
@@ -226,6 +246,7 @@ Begin Form
                     Name ="chkQueries"
                     ControlSource ="QueriesFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =93
@@ -248,6 +269,7 @@ Begin Form
                     Name ="chkForms"
                     ControlSource ="FormsFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =93
@@ -270,6 +292,7 @@ Begin Form
                     Name ="chkReports"
                     ControlSource ="ReportsFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =93
@@ -292,6 +315,7 @@ Begin Form
                     Name ="chkMacros"
                     ControlSource ="MacrosFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =93
@@ -314,6 +338,7 @@ Begin Form
                     Name ="chkModules"
                     ControlSource ="ModulesFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =93
@@ -329,13 +354,23 @@ Begin Form
                 Begin CommandButton
                     OverlapFlags =93
                     Left =1995
-                    Top =4125
+                    Top =4515
                     Width =1520
                     Height =340
                     TabIndex =17
                     Name ="btnImport"
                     Caption ="Import Objects"
                     OnClick ="[Event Procedure]"
+
+                    LayoutCachedLeft =1995
+                    LayoutCachedTop =4515
+                    LayoutCachedWidth =3515
+                    LayoutCachedHeight =4855
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
                 End
                 Begin CommandButton
                     OverlapFlags =85
@@ -358,10 +393,13 @@ Begin Form
                         0xadadadadadadadad
                     End
                     ObjectPalette = Begin
-                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
-                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
-                        0xffffff0000000000
+                        0x000301000000000000000000
                     End
+
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
                 End
                 Begin CheckBox
                     OverlapFlags =215
@@ -374,6 +412,7 @@ Begin Form
                     ControlSource ="CommitAfterExport"
                     AfterUpdate ="[Event Procedure]"
                     DefaultValue ="=True"
+
                     Begin
                         Begin Label
                             OverlapFlags =223
@@ -400,15 +439,19 @@ Begin Form
                 Begin Rectangle
                     OverlapFlags =223
                     Left =240
-                    Top =3408
+                    Top =3798
                     Width =3335
                     Height =1155
                     Name ="Box29"
+                    LayoutCachedLeft =240
+                    LayoutCachedTop =3798
+                    LayoutCachedWidth =3575
+                    LayoutCachedHeight =4953
                 End
                 Begin CheckBox
                     OverlapFlags =215
                     Left =3141
-                    Top =3612
+                    Top =4002
                     Width =171
                     Height =170
                     TabIndex =13
@@ -416,15 +459,24 @@ Begin Form
                     ControlSource ="UpdateBeforeImport"
                     AfterUpdate ="[Event Procedure]"
                     DefaultValue ="=True"
+
+                    LayoutCachedLeft =3141
+                    LayoutCachedTop =4002
+                    LayoutCachedWidth =3312
+                    LayoutCachedHeight =4172
                     Begin
                         Begin Label
                             OverlapFlags =223
                             Left =345
-                            Top =3555
+                            Top =3945
                             Width =2385
                             Height =240
                             Name ="lblUpdate"
                             Caption ="Update from SVN before import?"
+                            LayoutCachedLeft =345
+                            LayoutCachedTop =3945
+                            LayoutCachedWidth =2730
+                            LayoutCachedHeight =4185
                         End
                     End
                 End
@@ -432,20 +484,28 @@ Begin Form
                     BackStyle =1
                     OverlapFlags =215
                     Left =405
-                    Top =3285
+                    Top =3675
                     Width =690
                     Height =210
                     FontWeight =700
                     Name ="lblImport"
                     Caption ="Import"
+                    LayoutCachedLeft =405
+                    LayoutCachedTop =3675
+                    LayoutCachedWidth =1095
+                    LayoutCachedHeight =3885
                 End
                 Begin Rectangle
                     OverlapFlags =255
                     Left =3701
                     Top =1981
                     Width =2375
-                    Height =4500
+                    Height =4905
                     Name ="Box33"
+                    LayoutCachedLeft =3701
+                    LayoutCachedTop =1981
+                    LayoutCachedWidth =6076
+                    LayoutCachedHeight =6886
                 End
                 Begin Label
                     BackStyle =1
@@ -468,6 +528,7 @@ Begin Form
                     Name ="chkSelectAllObjects"
                     DefaultValue ="True"
                     OnClick ="[Event Procedure]"
+
                     Begin
                         Begin Label
                             OverlapFlags =247
@@ -483,21 +544,29 @@ Begin Form
                 Begin Rectangle
                     OverlapFlags =93
                     Left =210
-                    Top =4762
+                    Top =5152
                     Width =3335
                     Height =1740
                     Name ="Box37"
+                    LayoutCachedLeft =210
+                    LayoutCachedTop =5152
+                    LayoutCachedWidth =3545
+                    LayoutCachedHeight =6892
                 End
                 Begin Label
                     BackStyle =1
                     OverlapFlags =215
                     Left =375
-                    Top =4650
+                    Top =5040
                     Width =690
                     Height =210
                     FontWeight =700
                     Name ="Label38"
                     Caption ="Status"
+                    LayoutCachedLeft =375
+                    LayoutCachedTop =5040
+                    LayoutCachedWidth =1065
+                    LayoutCachedHeight =5250
                 End
                 Begin TextBox
                     Enabled = NotDefault
@@ -505,7 +574,7 @@ Begin Form
                     SpecialEffect =0
                     OverlapFlags =215
                     Left =1466
-                    Top =4935
+                    Top =5325
                     Width =2021
                     Height =238
                     FontWeight =600
@@ -514,15 +583,24 @@ Begin Form
                     Name ="txtLastImported"
                     ControlSource ="LastImportDate"
                     Format ="Short Date"
+
+                    LayoutCachedLeft =1466
+                    LayoutCachedTop =5325
+                    LayoutCachedWidth =3487
+                    LayoutCachedHeight =5563
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =270
-                            Top =4935
+                            Top =5325
                             Width =1095
                             Height =240
                             Name ="lblStatus1"
                             Caption ="Last Imported:"
+                            LayoutCachedLeft =270
+                            LayoutCachedTop =5325
+                            LayoutCachedWidth =1365
+                            LayoutCachedHeight =5565
                         End
                     End
                 End
@@ -533,7 +611,7 @@ Begin Form
                     OverlapFlags =215
                     TextAlign =3
                     Left =2546
-                    Top =5250
+                    Top =5640
                     Width =926
                     Height =238
                     FontWeight =600
@@ -541,15 +619,24 @@ Begin Form
                     BorderColor =8421504
                     Name ="txtLastVersion"
                     ControlSource ="LastCheckoutVersion"
+
+                    LayoutCachedLeft =2546
+                    LayoutCachedTop =5640
+                    LayoutCachedWidth =3472
+                    LayoutCachedHeight =5878
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =270
-                            Top =5250
+                            Top =5640
                             Width =2205
                             Height =240
                             Name ="Label42"
                             Caption ="BASE Version in Access:"
+                            LayoutCachedLeft =270
+                            LayoutCachedTop =5640
+                            LayoutCachedWidth =2475
+                            LayoutCachedHeight =5880
                         End
                     End
                 End
@@ -560,22 +647,31 @@ Begin Form
                     OverlapFlags =215
                     TextAlign =3
                     Left =2546
-                    Top =5880
+                    Top =6270
                     Width =926
                     Height =238
                     FontWeight =600
                     TabIndex =26
                     BorderColor =8421504
                     Name ="txtLatestVersion"
+
+                    LayoutCachedLeft =2546
+                    LayoutCachedTop =6270
+                    LayoutCachedWidth =3472
+                    LayoutCachedHeight =6508
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =270
-                            Top =5880
+                            Top =6270
                             Width =2205
                             Height =240
                             Name ="lblLatestVersio"
                             Caption ="HEAD Version in Respository:"
+                            LayoutCachedLeft =270
+                            LayoutCachedTop =6270
+                            LayoutCachedWidth =2475
+                            LayoutCachedHeight =6510
                         End
                     End
                 End
@@ -589,6 +685,7 @@ Begin Form
                     Name ="chkTables"
                     ControlSource ="TablesFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =247
@@ -611,6 +708,7 @@ Begin Form
                     Name ="chkCmdBars"
                     ControlSource ="ToolbarsFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =247
@@ -634,6 +732,7 @@ Begin Form
                     Name ="chkImportExport"
                     ControlSource ="ImExSpecsFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =247
@@ -658,6 +757,7 @@ Begin Form
                     TabIndex =24
                     Name ="chkRelationships"
                     ControlSource ="RelationshipsFlag"
+
                     Begin
                         Begin Label
                             OverlapFlags =247
@@ -674,7 +774,7 @@ Begin Form
                 Begin CheckBox
                     OverlapFlags =215
                     Left =2938
-                    Top =6228
+                    Top =6618
                     Width =170
                     Height =170
                     TabIndex =27
@@ -682,15 +782,24 @@ Begin Form
                     ControlSource ="CheckRepoOnSartup"
                     AfterUpdate ="[Event Procedure]"
                     DefaultValue ="=True"
+
+                    LayoutCachedLeft =2938
+                    LayoutCachedTop =6618
+                    LayoutCachedWidth =3108
+                    LayoutCachedHeight =6788
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =272
-                            Top =6198
+                            Top =6588
                             Width =2535
                             Height =240
                             Name ="lblCheckRepository"
                             Caption ="Check repository version on startup"
+                            LayoutCachedLeft =272
+                            LayoutCachedTop =6588
+                            LayoutCachedWidth =2807
+                            LayoutCachedHeight =6828
                         End
                     End
                 End
@@ -704,6 +813,7 @@ Begin Form
                     Name ="chkExtras"
                     ControlSource ="ExtrasFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =247
@@ -726,6 +836,7 @@ Begin Form
                     Name ="chkReferences"
                     ControlSource ="ReferencesFlag"
                     DefaultValue ="True"
+
                     Begin
                         Begin Label
                             OverlapFlags =247
@@ -742,7 +853,7 @@ Begin Form
                     Enabled = NotDefault
                     OverlapFlags =93
                     Left =2095
-                    Top =6782
+                    Top =7172
                     Width =340
                     Height =328
                     TabIndex =28
@@ -760,38 +871,58 @@ Begin Form
                         0xadadadadadadadad
                     End
                     ObjectPalette = Begin
-                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
-                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
-                        0xffffff0000000000
+                        0x000301000000000000000000
                     End
+
+                    LayoutCachedLeft =2095
+                    LayoutCachedTop =7172
+                    LayoutCachedWidth =2435
+                    LayoutCachedHeight =7500
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
                 End
                 Begin Label
                     OverlapFlags =93
                     Left =395
-                    Top =6839
+                    Top =7229
                     Width =1635
                     Height =210
                     Name ="lblCompact"
                     Caption ="Compact Database?"
+                    LayoutCachedLeft =395
+                    LayoutCachedTop =7229
+                    LayoutCachedWidth =2030
+                    LayoutCachedHeight =7439
                 End
                 Begin Rectangle
                     OverlapFlags =223
                     Left =225
-                    Top =6682
+                    Top =7072
                     Width =5840
                     Height =870
                     Name ="Box62"
+                    LayoutCachedLeft =225
+                    LayoutCachedTop =7072
+                    LayoutCachedWidth =6065
+                    LayoutCachedHeight =7942
                 End
                 Begin Label
                     BackStyle =1
                     OverlapFlags =215
                     Left =395
-                    Top =6555
+                    Top =6945
                     Width =1140
                     Height =210
                     FontWeight =700
                     Name ="lblTool"
                     Caption ="Other Tools"
+                    LayoutCachedLeft =395
+                    LayoutCachedTop =6945
+                    LayoutCachedWidth =1535
+                    LayoutCachedHeight =7155
                 End
                 Begin TextBox
                     SpecialEffect =0
@@ -799,28 +930,37 @@ Begin Form
                     OverlapFlags =215
                     BackStyle =0
                     Left =3627
-                    Top =6782
+                    Top =7172
                     Width =2324
                     Height =227
                     TabIndex =29
                     BorderColor =8421504
                     Name ="txtDBFile"
+
+                    LayoutCachedLeft =3627
+                    LayoutCachedTop =7172
+                    LayoutCachedWidth =5951
+                    LayoutCachedHeight =7399
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =2890
-                            Top =6782
+                            Top =7172
                             Width =615
                             Height =240
                             Name ="Label65"
                             Caption ="DB Size:"
+                            LayoutCachedLeft =2890
+                            LayoutCachedTop =7172
+                            LayoutCachedWidth =3505
+                            LayoutCachedHeight =7412
                         End
                     End
                 End
                 Begin CommandButton
                     OverlapFlags =215
                     Left =2090
-                    Top =7140
+                    Top =7530
                     Width =340
                     Height =328
                     TabIndex =30
@@ -838,19 +978,31 @@ Begin Form
                         0xadadadadadadadad
                     End
                     ObjectPalette = Begin
-                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
-                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
-                        0xffffff0000000000
+                        0x000301000000000000000000
                     End
+
+                    LayoutCachedLeft =2090
+                    LayoutCachedTop =7530
+                    LayoutCachedWidth =2430
+                    LayoutCachedHeight =7858
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
                 End
                 Begin Label
                     OverlapFlags =215
                     Left =390
-                    Top =7197
+                    Top =7587
                     Width =1635
                     Height =210
                     Name ="Label69"
                     Caption ="Repair Printer Names"
+                    LayoutCachedLeft =390
+                    LayoutCachedTop =7587
+                    LayoutCachedWidth =2025
+                    LayoutCachedHeight =7797
                 End
                 Begin TextBox
                     Enabled = NotDefault
@@ -859,22 +1011,31 @@ Begin Form
                     OverlapFlags =215
                     TextAlign =3
                     Left =2546
-                    Top =5565
+                    Top =5955
                     Width =926
                     Height =238
                     FontWeight =600
                     TabIndex =25
                     BorderColor =8421504
                     Name ="txtFolderVersion"
+
+                    LayoutCachedLeft =2546
+                    LayoutCachedTop =5955
+                    LayoutCachedWidth =3472
+                    LayoutCachedHeight =6193
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =270
-                            Top =5565
+                            Top =5955
                             Width =2205
                             Height =240
                             Name ="Label71"
                             Caption ="BASE Version in SVN Folder:"
+                            LayoutCachedLeft =270
+                            LayoutCachedTop =5955
+                            LayoutCachedWidth =2475
+                            LayoutCachedHeight =6195
                         End
                     End
                 End
@@ -894,6 +1055,7 @@ Begin Form
                     BorderColor =8421504
                     ForeColor =12615680
                     Name ="txtSvnUrl"
+
                 End
                 Begin CommandButton
                     OverlapFlags =85
@@ -915,13 +1077,16 @@ Begin Form
                         0xadadadadadadadad
                     End
                     ObjectPalette = Begin
-                        0x0003100000000000800000000080000080800000000080008000800000808000 ,
-                        0x80808000c0c0c000ff000000c0c0c000ffff00000000ff00c0c0c00000ffff00 ,
-                        0xffffff0000000000
+                        0x000301000000000000000000
                     End
                     GUID = Begin
                         0xa47e8cf1809dd24e92b78d63a4f4eb9f
                     End
+
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
                 End
                 Begin Label
                     OverlapFlags =85
@@ -942,7 +1107,7 @@ Begin Form
                     Height =962
                     Name ="Image6"
                     PictureData = Begin
-                        0x0e000000940c46e8010000006c0000000000000000000000520000003a000000 ,
+                        0x0e00000000000000010000006c0000000000000000000000520000003a000000 ,
                         0x0000000000000000180900009d06000020454d46000001006487000011000000 ,
                         0x01000000000000000000000000000000900600001a040000d60100002c010000 ,
                         0x000000000000000000000000f02b0700e093040046000000b8430000ac430000 ,
@@ -2027,15 +2192,17 @@ Begin Form
                         0x0c0000000f0000804b0000001000000000000000050000000e00000014000000 ,
                         0x000000001000000014000000
                     End
-                    Picture ="C:\\Documents and Settings\\Mike\\My Documents\\My Pictures\\subversion-logo.PNG"
+                    Picture ="subversion-logo.PNG"
                     GUID = Begin
                         0xa961e7550492d74686ac48ae557e5070
                     End
+
+                    TabIndex =33
                 End
                 Begin CheckBox
                     OverlapFlags =215
                     Left =5751
-                    Top =7264
+                    Top =7654
                     Width =170
                     Height =170
                     TabIndex =31
@@ -2044,11 +2211,16 @@ Begin Form
                     GUID = Begin
                         0x4fe0e5285bd96f46a9a1784c00b69596
                     End
+
+                    LayoutCachedLeft =5751
+                    LayoutCachedTop =7654
+                    LayoutCachedWidth =5921
+                    LayoutCachedHeight =7824
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =4050
-                            Top =7208
+                            Top =7598
                             Width =1590
                             Height =240
                             Name ="Label81"
@@ -2056,6 +2228,10 @@ Begin Form
                             GUID = Begin
                                 0xe43a4967611bae4ca68f44ed904d1fc2
                             End
+                            LayoutCachedLeft =4050
+                            LayoutCachedTop =7598
+                            LayoutCachedWidth =5640
+                            LayoutCachedHeight =7838
                         End
                     End
                 End
@@ -2074,6 +2250,7 @@ Begin Form
                     GUID = Begin
                         0x6cd96ee08ab3a64c884ce79be152aaac
                     End
+
                     Begin
                         Begin Label
                             OverlapFlags =223
@@ -2092,7 +2269,7 @@ Begin Form
                 Begin CheckBox
                     OverlapFlags =215
                     Left =3141
-                    Top =3852
+                    Top =4242
                     Width =171
                     Height =170
                     TabIndex =15
@@ -2102,11 +2279,16 @@ Begin Form
                     GUID = Begin
                         0x668b492f627992469a6ae5bd79faf129
                     End
+
+                    LayoutCachedLeft =3141
+                    LayoutCachedTop =4242
+                    LayoutCachedWidth =3312
+                    LayoutCachedHeight =4412
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =480
-                            Top =3795
+                            Top =4185
                             Width =2535
                             Height =240
                             Name ="Label89"
@@ -2114,6 +2296,10 @@ Begin Form
                             GUID = Begin
                                 0xe6ca32001f59144c86a38cc027be55d4
                             End
+                            LayoutCachedLeft =480
+                            LayoutCachedTop =4185
+                            LayoutCachedWidth =3015
+                            LayoutCachedHeight =4425
                         End
                     End
                 End
@@ -2130,6 +2316,7 @@ Begin Form
                     GUID = Begin
                         0xdf6986384e06fd438543b5cca0ef086c
                     End
+
                     Begin
                         Begin Label
                             OverlapFlags =215
@@ -2142,6 +2329,43 @@ Begin Form
                             GUID = Begin
                                 0x2ed165d4dd619248b871843ccb7a1163
                             End
+                        End
+                    End
+                End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =3156
+                    Top =2952
+                    Width =171
+                    Height =170
+                    TabIndex =32
+                    Name ="chkOutputUTF8"
+                    ControlSource ="OutputUTF8"
+                    DefaultValue ="=True"
+                    GUID = Begin
+                        0x2043d428c314ff47adc10df8533562ab
+                    End
+
+                    LayoutCachedLeft =3156
+                    LayoutCachedTop =2952
+                    LayoutCachedWidth =3327
+                    LayoutCachedHeight =3122
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =345
+                            Top =2895
+                            Width =2565
+                            Height =240
+                            Name ="Label94"
+                            Caption ="UTF8 Encoding (rather than UCS2)"
+                            GUID = Begin
+                                0x2c7198c27e35ad48aaef82670f582a94
+                            End
+                            LayoutCachedLeft =345
+                            LayoutCachedTop =2895
+                            LayoutCachedWidth =2910
+                            LayoutCachedHeight =3135
                         End
                     End
                 End
@@ -2278,7 +2502,7 @@ Private Sub Form_Load()
   Me.txtOutputLocation.SetFocus
 
   DoCmd.Hourglass True
-  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
+  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow, OutputUTF8 FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
 
   Me.RecordSource = strRecordSource
 
