@@ -44,6 +44,10 @@ Public Sub CreateLocalSCCTables()
     Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "OutputUTF8", dbBoolean, 0, "Whether output for Forms, Reports, Queries and Macros should be in UTF8 rather than UCS2", , , , , , , , True)
   End If
   
+  If InFields(db.TableDefs("MSysSCCPrefs").Fields, "ReplaceCodeOnly") = False Then
+    Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "ReplaceCodeOnly", dbBoolean, 0, "Whether output for Forms, Reports, Queries and Macros should be in UTF8 rather than UCS2", , , , , , , , True)
+  End If
+  
   db.Close: Set db = Nothing
 End Sub
 
@@ -193,6 +197,7 @@ Private Function CreateSCCPrefsTable(db As DAO.Database)
   Set fd = AddField(td, "ShowCommitWindow", dbBoolean, 0, "Whether to show the commit window, or auto close it", , , , , , , , True)
   Set fd = AddField(td, "ShowUpdateWindow", dbBoolean, 0, "Whether to show the update window, or auto close it", , , , , , , , True)
   Set fd = AddField(td, "OutputUTF8", dbBoolean, 0, "Whether output for Forms, Reports, Queries and Macros should be in UTF8 rather than UCS2", , , , , , , , True)
+  Set fd = AddField(td, "ReplaceCodeOnly", dbBoolean, 0, "Whether output for Forms, Reports, Queries and Macros should be in UTF8 rather than UCS2", , , , , , , , False)
   td.Fields.Delete "Temp"
   
   strSQL = "INSERT INTO [MSysSCCPrefs] (ExportPath) VALUES ('" & CurrentDbDir() & "')"
