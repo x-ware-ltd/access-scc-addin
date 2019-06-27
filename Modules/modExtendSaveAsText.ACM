@@ -1247,8 +1247,12 @@ Public Function ReplaceCodeSection(strFilename As String, strNewCodeFilename As 
   Close #f
   
   lngCodeStart = InBytArr(0, bytsCodeFile, bytsCodeBehind)
-  If lngCodeStart = clngNOTFOUND Then Exit Function ' there is no code section in the code file supplied
-  lngNewCodeLength = UBound(bytsCodeFile) - lngCodeStart + 1
+  If lngCodeStart = clngNOTFOUND Then
+    ' there is no code section in the code file supplied
+    lngNewCodeLength = 0
+  Else
+    lngNewCodeLength = UBound(bytsCodeFile) - lngCodeStart + 1
+  End If
   
   ' Load original file into Byte Array
   f = FreeFile()
@@ -1261,18 +1265,20 @@ Public Function ReplaceCodeSection(strFilename As String, strNewCodeFilename As 
   
   If lngCodeStartOrig = clngNOTFOUND Then
     ' There is no new code section in the source file at present so add one
-    lngCodeStartOrig = UBound(bytsFileOrig) + 1
-    ReDim Preserve bytsFileOrig(UBound(bytsFileOrig) + lngNewCodeLength + 4)
-    ' Copy in a CrLf before adding the new code section
-    CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCrLf(0)), 4
-    lngCodeStartOrig = lngCodeStartOrig + 4 ' to allow for CrLf added
+    If lngNewCodeLength <> 0 Then
+      lngCodeStartOrig = UBound(bytsFileOrig) + 1
+      ReDim Preserve bytsFileOrig(UBound(bytsFileOrig) + lngNewCodeLength + 4)
+      ' Copy in a CrLf before adding the new code section
+      CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCrLf(0)), 4
+      lngCodeStartOrig = lngCodeStartOrig + 4 ' to allow for CrLf added
+    End If
   Else
     ' There is a code section in the source file so we will overwrite it
     ReDim Preserve bytsFileOrig(lngCodeStartOrig + lngNewCodeLength - 1)
   End If
   
   ' Copy the new code section into orig array
-  CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCodeFile(lngCodeStart)), lngNewCodeLength
+  If lngNewCodeLength <> 0 Then CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCodeFile(lngCodeStart)), lngNewCodeLength
   
   Kill strFilename
   
