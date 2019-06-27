@@ -96,7 +96,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
       End If
       ' now we have a UCS2 file stored with .tmp suffix
       
-      If Forms("Access SVN - Options").ReplaceCodeOnly Then
+      If Forms("Access SVN - Options").chkReplaceCodeOnly Then
         ' Replacing code only so there is no requirement to Clean the Form/Report Layout section
         ' we need to use the existing file as well - ensure it is in UCS2 format
         If Not ConvFile_to_UCS2(strFilename) Then blnFail = True: GoTo End_Processing
