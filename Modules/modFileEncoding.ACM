@@ -3,6 +3,41 @@ Option Explicit
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
+Function canConvUCS2ToANSI(strFilename As String) As Boolean
+  ' Returns true if this file (which must be UCS2) can be converted to ANSI
+  ' The UCS2 encoding supports a full 16 bit character set, whereas ANSI only supports 8 bit
+  ' Therefore a UCS2 encoded file cannot always be converted to ANSI
+  
+  Dim byts() As Byte
+  Dim i As Long
+  
+  canConvUCS2ToANSI = False ' initially set to false
+  
+  If IsUCS2(strFilename) Then
+    ' load the file into the bytsFile array
+    If ReadFromFile(strFilename, byts) Then
+      For i = 3 To UBound(byts) Step 2
+        If byts(i) <> 0 Then
+          Exit Function ' Exit returning False
+        End If
+      Next i
+      canConvUCS2ToANSI = True
+    End If
+  End If
+    
+End Function
+Function IsANSI(strFilename As String) As Boolean
+  ' Returns true if the file specified is in ANSI (1 byte per character) format
+  ' NB this works by checking that the file is neither UCS2 nor UTF8 so is not a universal test
+  ' but is sufficient in the context of this project
+  
+  IsANSI = False ' intially set to false
+  
+  If Not IsUCS2(strFilename) Then
+    IsANSI = Not IsUTF8(strFilename)
+  End If
+End Function
+
 Function IsUCS2(strFilename As String) As Boolean
   ' Returns true if the file specified is in UCS2 little endian format
   Dim f As Long
@@ -39,6 +74,105 @@ Function IsUTF8(strFilename As String) As Boolean
     End If
     Close #f
   End If
+End Function
+
+Function ConvFile_to_UCS2(strFilename As String, Optional strNewFilename As String) As Boolean
+  ' Converts the supplied file from any of ANSI, UTF-8 or UCS2 into UCS2 format
+  
+  ConvFile_to_UCS2 = False ' initially set to false
+
+  If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
+
+  ' deal with case where no conversino is required
+  If IsUCS2(strFilename) Then
+    If strFilename = strNewFilename Then
+      ' do nothing the file is already in UCS2 format
+      ConvFile_to_UCS2 = True
+    Else
+      ' copy file to new location without conversion
+      If FileExists(strNewFilename) Then Kill strNewFilename
+      FileCopy strFilename, strNewFilename
+      ConvFile_to_UCS2 = True
+    End If
+    Exit Function
+  End If
+  
+  ' we need to do a conversion
+  If IsUTF8(strFilename) Then
+    ConvFile_to_UCS2 = ConvFileUTF8_to_UCS2(strFilename, strNewFilename)
+  ElseIf IsANSI(strFilename) Then
+    ConvFile_to_UCS2 = ConvFileANSI_to_UCS2(strFilename, strNewFilename)
+  End If
+  
+End Function
+
+Function ConvFileANSI_to_UCS2(strFilename As String, Optional strNewFilename As String) As Boolean
+  ' Converts the supplied file from ANSI (8 bit) to UCS2 format
+  
+  Dim byts() As Byte
+  Dim bytsOut() As Byte
+  Dim lngLen As Long
+  Dim lngOutLen As Long
+  Dim i As Long
+  Dim j As Long
+    
+  ConvFileANSI_to_UCS2 = False ' initially set to false
+
+  If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
+
+  If ReadFromFile(strFilename, byts) Then
+    lngLen = UBound(byts) + 1
+    lngOutLen = lngLen * 2 + 2 ' 2 bytes for every ANSI byte plus 2 Byte BOM
+    ReDim bytsOut(lngOutLen - 1)
+    ' Insert BOM
+    bytsOut(0) = 255 ' &HFF
+    bytsOut(1) = 254 ' &HFE
+    ' j is the position in the output array
+    j = 2
+    For i = 0 To UBound(byts)
+      bytsOut(j) = byts(i)
+      j = j + 1
+      bytsOut(j) = 0
+      j = j + 1
+    Next i
+    ConvFileANSI_to_UCS2 = WriteToFile(bytsOut, strNewFilename)
+  End If
+  
+End Function
+
+Function ConvFileUCS2_to_ANSI(strFilename As String, Optional strNewFilename As String) As Boolean
+  ' Converts the supplied file from UCS2 to ANSI format - IF IT CAN!
+  ' NB Depending on the file contents it may or may not be possible to actually do this conversion
+  
+  Dim byts() As Byte
+  Dim bytsOut() As Byte
+  Dim lngOutLen As Long
+  Dim i As Long
+  Dim j As Long
+  
+  ConvFileUCS2_to_ANSI = False ' initially set to false
+  
+  If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
+  
+  ' load the file into the bytsFile array
+  If ReadFromFile(strFilename, byts) Then
+    If byts(LBound(byts)) = 255 And byts(LBound(byts) + 1) = 254 Then  ' 255 = &HFF, 254 = &HFE (the BOM)
+      For i = 3 To UBound(byts) Step 2
+        If byts(i) <> 0 Then
+          Exit Function ' Exit returning False
+        End If
+      Next i
+      lngOutLen = (UBound(byts) - 1) / 2 ' allows for BOM (Byte Order Mark)
+      ReDim bytsOut(lngOutLen - 1)
+      j = 0
+      For i = 2 To UBound(byts) Step 2
+        bytsOut(j) = byts(i)
+        j = j + 1
+      Next i
+      ConvFileUCS2_to_ANSI = WriteToFile(bytsOut, strNewFilename)
+    End If
+  End If
+    
 End Function
 
 Function ConvFileUTF8_to_UCS2(strFilename As String, Optional strNewFilename As String) As Boolean

@@ -48,6 +48,8 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Desti
 Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String)
   Dim Ignores(7) As Ignore
   Dim blnSaveAsUTF8 As Boolean
+  Dim blnUCS2 As Boolean
+  Dim blnFail As Boolean
 
   Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
   Ignores(0).bytsEnd = "End" & vbCrLf
@@ -85,28 +87,39 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      If IsUCS2(strFilename & ".tmp") Then
-        If Forms("Access SVN - Options").ReplaceCodeOnly Then
-          If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then
-            MsgBox "Insertion of Code section only into '" & strFilename & "' failed."
-          End If
-        Else
-          If CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then
-            If blnSaveAsUTF8 And IsUCS2(strFilename) Then
-              If Not ConvFileUCS2_to_UTF8(strFilename) Then 'convert file to UTF8
-                MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-              End If
-            End If
-          Else
-            MsgBox "Something went wrong cleaning the file for " & objName & "."
-          End If
+      blnUCS2 = IsUCS2(strFilename & ".tmp") ' indicates whether Application.SaveAsText produced UCS2 or ANSI output
+      If Not blnUCS2 Then
+        If Not ConvFileANSI_to_UCS2(strFilename & ".tmp") Then
+          blnFail = True
+          GoTo End_Processing
         End If
-      Else
-        ' This version of Access doesn't produce UCS2 output
-        If FileExists(strFilename) Then Kill strFilename
-        Name strFilename & ".tmp" As strFilename
       End If
+      ' now we have a UCS2 file stored with .tmp suffix
+      
+      If Forms("Access SVN - Options").ReplaceCodeOnly Then
+        ' Replacing code only so there is no requirement to Clean the Form/Report Layout section
+        ' we need to use the existing file as well - ensure it is in UCS2 format
+        If Not ConvFile_to_UCS2(strFilename) Then blnFail = True: GoTo End_Processing
+        
+        ' now both files are in UCS2 we can replace the code section
+        If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
+      Else
+        If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
+      End If
+          
+      ' we now have the file but it is in UCS2 format
+      ' we may want to convert this to UTF-8
+      If blnSaveAsUTF8 Then
+        If Not ConvFileUCS2_to_UTF8(strFilename) Then 'convert file to UTF8
+          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
+        End If
+      End If
+      
+End_Processing:
+      If blnFail Then MsgBox "Processing of '" & objName & "' failed."
+          
       If FileExists(strFilename & ".tmp") Then Kill strFilename & ".tmp"
+    
     Case asObjectType.acQuery, asObjectType.acMacro
       Application.SaveAsText objType, objName, strFilename
       If blnSaveAsUTF8 And IsUCS2(strFilename) Then
