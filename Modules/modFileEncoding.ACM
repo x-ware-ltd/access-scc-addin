@@ -3,29 +3,6 @@ Option Explicit
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
-Function canConvUCS2ToANSI(strFilename As String) As Boolean
-  ' Returns true if this file (which must be UCS2) can be converted to ANSI
-  ' The UCS2 encoding supports a full 16 bit character set, whereas ANSI only supports 8 bit
-  ' Therefore a UCS2 encoded file cannot always be converted to ANSI
-  
-  Dim byts() As Byte
-  Dim i As Long
-  
-  canConvUCS2ToANSI = False ' initially set to false
-  
-  If IsUCS2(strFilename) Then
-    ' load the file into the bytsFile array
-    If ReadFromFile(strFilename, byts) Then
-      For i = 3 To UBound(byts) Step 2
-        If byts(i) <> 0 Then
-          Exit Function ' Exit returning False
-        End If
-      Next i
-      canConvUCS2ToANSI = True
-    End If
-  End If
-    
-End Function
 Function IsANSI(strFilename As String) As Boolean
   ' Returns true if the file specified is in ANSI (1 byte per character) format
   ' NB this works by checking that the file is neither UCS2 nor UTF8 so is not a universal test
@@ -83,7 +60,7 @@ Function ConvFile_to_UCS2(strFilename As String, Optional strNewFilename As Stri
 
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
 
-  ' deal with case where no conversino is required
+  ' deal with case where no conversion is required
   If IsUCS2(strFilename) Then
     If strFilename = strNewFilename Then
       ' do nothing the file is already in UCS2 format
@@ -130,10 +107,8 @@ Function ConvFileANSI_to_UCS2(strFilename As String, Optional strNewFilename As 
     ' j is the position in the output array
     j = 2
     For i = 0 To UBound(byts)
-      bytsOut(j) = byts(i)
-      j = j + 1
-      bytsOut(j) = 0
-      j = j + 1
+      If Not ANSICP_to_UnicodeCP(byts(i), bytsOut(j + 1), bytsOut(j)) Then Exit Function
+      j = j + 2
     Next i
     ConvFileANSI_to_UCS2 = WriteToFile(bytsOut, strNewFilename)
   End If
@@ -157,16 +132,11 @@ Function ConvFileUCS2_to_ANSI(strFilename As String, Optional strNewFilename As 
   ' load the file into the bytsFile array
   If ReadFromFile(strFilename, byts) Then
     If byts(LBound(byts)) = 255 And byts(LBound(byts) + 1) = 254 Then  ' 255 = &HFF, 254 = &HFE (the BOM)
-      For i = 3 To UBound(byts) Step 2
-        If byts(i) <> 0 Then
-          Exit Function ' Exit returning False
-        End If
-      Next i
       lngOutLen = (UBound(byts) - 1) / 2 ' allows for BOM (Byte Order Mark)
       ReDim bytsOut(lngOutLen - 1)
       j = 0
-      For i = 2 To UBound(byts) Step 2
-        bytsOut(j) = byts(i)
+      For i = LBound(byts) + 2 To UBound(byts) Step 2
+        If Not UnicodeCP_to_ANSICP(byts(i + 1), byts(i), bytsOut(j)) Then Exit Function
         j = j + 1
       Next i
       ConvFileUCS2_to_ANSI = WriteToFile(bytsOut, strNewFilename)
@@ -312,6 +282,85 @@ Function UTF8_to_UCS2(bytsUTF8() As Byte, ByRef bytsUCS2() As Byte) As Boolean
   ReDim Preserve bytsUCS2(b - 1)
   UTF8_to_UCS2 = True
   
+End Function
+
+Function PopulateANSI_Unicode_BestFit(ByRef lngsMap() As Long)
+  ' returns a byte array containing a Best Fit map of ANSI (Windows-1252) to Unicode
+  ' NB if the array passed in has already been dim'd then it will be unchanged by this function
+  ' We store these as longs (32 bit) and each value is a maximum of 14 bits so we don't need to worry about any issues with MS Access not having unsigned ints
+  
+  If Not lngsMap Then
+    ' The array has not been populated yet
+    ReDim lngsMap(128 To 159)
+    ' unused codes &H81 (129), &H8D (141), &H8F (143), &H90 (144) and &H9D (157) are mapped to '?' &H003F
+    lngsMap(128) = &H20AC: lngsMap(129) = &H3F:   lngsMap(130) = &H201A: lngsMap(131) = &H192
+    lngsMap(132) = &H201E: lngsMap(133) = &H2026: lngsMap(134) = &H2020: lngsMap(135) = &H2021
+    lngsMap(136) = &H2C6:  lngsMap(137) = &H2030: lngsMap(138) = &H160:  lngsMap(139) = &H2039
+    lngsMap(140) = &H152:  lngsMap(141) = &H3F:   lngsMap(142) = &H17D:  lngsMap(143) = &H3F
+    lngsMap(144) = &H3F:   lngsMap(145) = &H2018: lngsMap(146) = &H2019: lngsMap(147) = &H201C
+    lngsMap(148) = &H201D: lngsMap(149) = &H2022: lngsMap(150) = &H2013: lngsMap(151) = &H2014
+    lngsMap(152) = &H2DC:  lngsMap(153) = &H2122: lngsMap(154) = &H161:  lngsMap(155) = &H203A
+    lngsMap(156) = &H153:  lngsMap(157) = &H3F:   lngsMap(158) = &H17E:  lngsMap(159) = &H178
+  End If
+  
+End Function
+
+Function ANSICP_to_UnicodeCP(bytANSI As Byte, ByRef bytUnicodeMSB As Byte, ByRef bytUnicodeLSB As Byte) As Boolean
+  ' Takes a single byte ANSI codepoint (character) and converts it to 16 bit Unicode placing the answer
+  ' in 2 separate Bytes representing the MSB (Most Significant Byte) and LSB (Least Significant Byte)
+  Static bytsUnicodeBestFit() As Long
+  Const lngLSBMask = 255 ' constant with Least Significant 8 bits set to 1
+  
+  ANSICP_to_UnicodeCP = False ' initially set to False
+  
+  If bytANSI < 128 Or bytANSI >= 160 Then
+    bytUnicodeMSB = 0
+    bytUnicodeLSB = bytANSI
+  Else
+    ' in this range we neede to use the best  fit lookup table
+    Call PopulateANSI_Unicode_BestFit(bytsUnicodeBestFit)
+    bytUnicodeMSB = Fix(bytsUnicodeBestFit(bytANSI) / 256)
+    bytUnicodeLSB = bytsUnicodeBestFit(bytANSI) And lngLSBMask
+  End If
+        
+  ANSICP_to_UnicodeCP = True
+  
+End Function
+
+Function UnicodeCP_to_ANSICP(bytUnicodeMSB As Byte, bytUnicodeLSB As Byte, ByRef bytANSI As Byte) As Boolean
+  ' Take a 2 byte ANSI codepoint and converts it to 8 bit ANSI placing the answer in the byt provided
+  ' MSB = Most Significant Byte, LSB = Least Significant Byte
+  ' Returns False if the character cannot be mapped
+  
+  Static bytsUnicodeBestFit() As Long
+  Dim lngUnicode As Long
+  Dim i As Long
+  
+  UnicodeCP_to_ANSICP = False ' intially set to False
+  
+  If bytUnicodeMSB = 0 Then
+    ' we have a single byte value
+    If bytUnicodeLSB < 128 Then
+      bytANSI = bytUnicodeLSB
+      UnicodeCP_to_ANSICP = True
+    ElseIf bytUnicodeLSB >= 160 Then
+      bytANSI = lngUnicode
+      UnicodeCP_to_ANSICP = True
+    'Else
+      ' we have a value in the range 128 (&H80) to 9F (159) which shouldn't be possible so do nothing to return a fail
+    End If
+  Else
+    ' we have a codepoint taking 2 bytes so see if it appears in our bestfit table
+    Call PopulateANSI_Unicode_BestFit(bytsUnicodeBestFit) ' populate the best fit table (if not already done)
+    lngUnicode = bytUnicodeMSB * 256 + bytUnicodeLSB ' calculate the full Unicode value
+    For i = 128 To 159
+      If bytsUnicodeBestFit(i) = lngUnicode Then
+        bytANSI = i
+        UnicodeCP_to_ANSICP = True
+        Exit For
+      End If
+    Next i
+  End If
 End Function
 
 ' The 2 Functions UTF8CP_to_UCS2CP and UCS2CP_to_UTF8CP convert individual Codepoints (characters) to/from the 2 encodings

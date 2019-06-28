@@ -87,13 +87,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      blnUCS2 = IsUCS2(strFilename & ".tmp") ' indicates whether Application.SaveAsText produced UCS2 or ANSI output
-      If Not blnUCS2 Then
-        If Not ConvFileANSI_to_UCS2(strFilename & ".tmp") Then
-          blnFail = True
-          GoTo End_Processing
-        End If
-      End If
+      If Not ConvFile_to_UCS2(strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       ' now we have a UCS2 file stored with .tmp suffix
       
       If Forms("Access SVN - Options").chkReplaceCodeOnly Then
@@ -1230,7 +1224,7 @@ Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartP
   
 End Function
 
-Public Function ReplaceCodeSection(strFilename As String, strNewCodeFilename As String) As Boolean
+Public Function ReplaceCodeSection(strOrigFilename As String, strNewCodeFilename As String) As Boolean
   ' Takes 2 files and puts the code section from the second into the first
   ' Both file can contain both Form/Report design sections AND code sections
   ' This only works if both files are UCS2 (2-byte) encoded
@@ -1249,7 +1243,7 @@ Public Function ReplaceCodeSection(strFilename As String, strNewCodeFilename As 
   bytsCodeBehind = "CodeBehind" ' The text which indicates the start of the code section
   bytsCrLf() = vbCrLf
   
-  If Not IsUCS2(strFilename) Then Exit Function
+  If Not IsUCS2(strOrigFilename) Then Exit Function
   If Not IsUCS2(strNewCodeFilename) Then Exit Function
   
   ' Load file containing code into Byte Array
@@ -1269,7 +1263,7 @@ Public Function ReplaceCodeSection(strFilename As String, strNewCodeFilename As 
   
   ' Load original file into Byte Array
   f = FreeFile()
-  Open strFilename For Binary Access Read As #f
+  Open strOrigFilename For Binary Access Read As #f
   ReDim bytsFileOrig(LOF(f) - 1)
   Get #f, , bytsFileOrig()
   Close #f
@@ -1293,10 +1287,10 @@ Public Function ReplaceCodeSection(strFilename As String, strNewCodeFilename As 
   ' Copy the new code section into orig array
   If lngNewCodeLength <> 0 Then CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCodeFile(lngCodeStart)), lngNewCodeLength
   
-  Kill strFilename
+  Kill strOrigFilename
   
   f = FreeFile()
-  Open strFilename For Binary Access Write As #f
+  Open strOrigFilename For Binary Access Write As #f
   Put #f, 1, bytsFileOrig
   Close #f
   
