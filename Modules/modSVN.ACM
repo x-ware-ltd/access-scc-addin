@@ -424,13 +424,10 @@ Public Function SVN_GetLatestVersion(strPath As String) As String
   SVN_GetLatestVersion = strRev
   
 SVN_GetLatestVersion_Exit:
-  If LenB(SVN_GetLatestVersion) = 0 Then SVN_GetLatestVersion = "No SVN version found"
+  If LenB(SVN_GetLatestVersion) = 0 Then SVN_GetLatestVersion = "-"
   Exit Function
   
 SVN_GetLatestVersion_Err:
-  MsgBox "An error occured getting the HEAD repository version." & vbCrLf & vbCrLf & _
-         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
-         strRet, vbCritical, "Subversion Error"
   Resume SVN_GetLatestVersion_Exit
 
 End Function
@@ -479,13 +476,10 @@ Public Function SVN_GetWorkingFolderVersion(strPath As String) As String
   SVN_GetWorkingFolderVersion = strRev
   
 SVN_GetWorkingFolderVersion_Exit:
-  If LenB(SVN_GetWorkingFolderVersion) = 0 Then SVN_GetWorkingFolderVersion = "No SVN version found"
+  If LenB(SVN_GetWorkingFolderVersion) = 0 Then SVN_GetWorkingFolderVersion = "-"
   Exit Function
   
 SVN_GetWorkingFolderVersion_Err:
-  MsgBox "An error occured getting the latest working copy version." & vbCrLf & vbCrLf & _
-         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
-         strRet, vbCritical, "Subversion Error"
   Resume SVN_GetWorkingFolderVersion_Exit
   
 End Function
@@ -539,9 +533,6 @@ SVN_GetMappedUrl_Exit:
   Exit Function
   
 SVN_GetMappedUrl_Err:
-  MsgBox "An error occured getting the SVN mapped URL." & vbCrLf & vbCrLf & _
-         "Check that the local copy is set up correctly" & vbCrLf & vbCrLf & _
-         strRet, vbCritical, "Subversion Error"
   Resume SVN_GetMappedUrl_Exit
 
 End Function
