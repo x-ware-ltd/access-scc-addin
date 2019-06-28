@@ -2563,7 +2563,6 @@ Begin Form
                     Height =170
                     TabIndex =8
                     Name ="chkReplaceCodeOnly"
-                    ControlSource ="ReplaceCodeOnly"
                     DefaultValue ="=False"
                     GUID = Begin
                         0x0d1a81f53b48764586912f523dad3019
@@ -2725,7 +2724,7 @@ Private Sub Form_Load()
   Me.txtOutputLocation.SetFocus
 
   DoCmd.Hourglass True
-  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow, OutputUTF8, ReplaceCodeOnly FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
+  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow, OutputUTF8 FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
 
   Me.RecordSource = strRecordSource
 
