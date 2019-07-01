@@ -1216,7 +1216,7 @@ Begin Form
                     FontSize =16
                     FontWeight =600
                     Name ="lblTitle"
-                    Caption ="Subversion for Access XP"
+                    Caption ="Subversion for MS Access"
                     FontName ="Arial"
                     GUID = Begin
                         0x97b95f68532e0840b1ebb76e1bd03163
