@@ -2369,6 +2369,35 @@ Begin Form
                         End
                     End
                 End
+                Begin CheckBox
+                    OverlapFlags =215
+                    Left =3156
+                    Top =3252
+                    Width =171
+                    Height =170
+                    TabIndex =8
+                    Name ="chkReplaceCodeOnly"
+                    DefaultValue ="=False"
+                    LayoutCachedLeft =3156
+                    LayoutCachedTop =3252
+                    LayoutCachedWidth =3327
+                    LayoutCachedHeight =3422
+                    Begin
+                        Begin Label
+                            OverlapFlags =215
+                            Left =345
+                            Top =3195
+                            Width =2610
+                            Height =240
+                            Name ="Label93"
+                            Caption ="Replace Code only (Forms/Reports)"
+                            LayoutCachedLeft =345
+                            LayoutCachedTop =3195
+                            LayoutCachedWidth =2955
+                            LayoutCachedHeight =3435
+                        End
+                    End
+                End
             End
         End
     End

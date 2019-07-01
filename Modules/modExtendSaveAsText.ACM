@@ -48,6 +48,8 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Desti
 Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String)
   Dim Ignores(7) As Ignore
   Dim blnSaveAsUTF8 As Boolean
+  Dim blnSourceIsUCS2 As Boolean
+  Dim blnFail As Boolean
 
   Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
   Ignores(0).bytsEnd = "End" & vbCrLf
@@ -76,7 +78,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
     Case asObjectType.acForm, asObjectType.acReport, asObjectType.acQuery, asObjectType.acMacro
       If FileExists(strFilename) Then
         If IsUTF8(strFilename) Then
-          ' Fileis already in the repository and it's in UTF8 so save in that format now overriding user selection
+          ' File is already in the repository and it's in UTF8 so save in that format now overriding user selection
           blnSaveAsUTF8 = True
         End If
       End If
@@ -85,21 +87,42 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      If IsUCS2(strFilename & ".tmp") Then
-        If CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then
-          If blnSaveAsUTF8 And IsUCS2(strFilename) Then
-            If Not ConvFileUCS2_to_UTF8(strFilename) Then 'convert file to UTF8
-              MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-            End If
-          End If
-        Else
-          MsgBox "Something went wrong cleaning the file for " & objName & "."
-        End If
+      blnSourceIsUCS2 = IsUCS2(strFilename & ".tmp") ' so we know what format to ultimated output
+      If Not ConvFile_to_UCS2(strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
+      ' now we have a UCS2 file stored with .tmp suffix
+      
+      If Forms("Access SVN - Options").chkReplaceCodeOnly Then
+        ' Replacing code only so there is no requirement to Clean the Form/Report Layout section
+        ' we need to use the existing file as well - ensure it is in UCS2 format
+        If Not ConvFile_to_UCS2(strFilename) Then blnFail = True: GoTo End_Processing
+        
+        ' now both files are in UCS2 we can replace the code section
+        If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       Else
-        ' This version of Access doesn't produce UCS2 output
-        Name strFilename & ".tmp" As strFilename
+        If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
       End If
+          
+      ' we now have the file but it is in UCS2 format
+      ' we may want to convert this to UTF-8
+      If blnSaveAsUTF8 Then
+        If Not ConvFileUCS2_to_UTF8(strFilename) Then 'convert file to UTF8
+          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
+        End If
+      ElseIf Not blnSourceIsUCS2 Then
+        ' we don't want to output in UTF-8 encoding and MS Access originally produced a file which is not UCS2 encoded
+        ' so convert it back to ANSI
+        If ConvFileUCS2_to_ANSI(strFilename, strFilename & ".tmp") Then
+          ' conversion completed successfully so copy file over
+          Kill strFilename
+          Name strFilename & ".tmp" As strFilename
+        End If
+      End If
+      
+End_Processing:
+      If blnFail Then MsgBox "Processing of '" & objName & "' failed."
+          
       If FileExists(strFilename & ".tmp") Then Kill strFilename & ".tmp"
+    
     Case asObjectType.acQuery, asObjectType.acMacro
       Application.SaveAsText objType, objName, strFilename
       If blnSaveAsUTF8 And IsUCS2(strFilename) Then
@@ -1207,6 +1230,80 @@ Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartP
       End If
     End If
   Next i
+  
+End Function
+
+Public Function ReplaceCodeSection(strOrigFilename As String, strNewCodeFilename As String) As Boolean
+  ' Takes 2 files and puts the code section from the second into the first
+  ' Both file can contain both Form/Report design sections AND code sections
+  ' This only works if both files are UCS2 (2-byte) encoded
+  
+  Dim f As Long
+  Dim bytsFileOrig() As Byte
+  Dim bytsCodeFile() As Byte
+  Dim bytsCodeBehind() As Byte
+  Dim lngCodeStart As Long
+  Dim lngCodeStartOrig As Long
+  Dim lngNewCodeLength As Long
+  Dim bytsCrLf() As Byte
+    
+  ReplaceCodeSection = False ' initially set to indicate fail
+  
+  bytsCodeBehind = "CodeBehind" ' The text which indicates the start of the code section
+  bytsCrLf() = vbCrLf
+  
+  If Not IsUCS2(strOrigFilename) Then Exit Function
+  If Not IsUCS2(strNewCodeFilename) Then Exit Function
+  
+  ' Load file containing code into Byte Array
+  f = FreeFile()
+  Open strNewCodeFilename For Binary Access Read As #f
+  ReDim bytsCodeFile(LOF(f) - 1)
+  Get #f, , bytsCodeFile()
+  Close #f
+  
+  lngCodeStart = InBytArr(0, bytsCodeFile, bytsCodeBehind)
+  If lngCodeStart = clngNOTFOUND Then
+    ' there is no code section in the code file supplied
+    lngNewCodeLength = 0
+  Else
+    lngNewCodeLength = UBound(bytsCodeFile) - lngCodeStart + 1
+  End If
+  
+  ' Load original file into Byte Array
+  f = FreeFile()
+  Open strOrigFilename For Binary Access Read As #f
+  ReDim bytsFileOrig(LOF(f) - 1)
+  Get #f, , bytsFileOrig()
+  Close #f
+  
+  lngCodeStartOrig = InBytArr(0, bytsFileOrig, bytsCodeBehind)
+  
+  If lngCodeStartOrig = clngNOTFOUND Then
+    ' There is no new code section in the source file at present so add one
+    If lngNewCodeLength <> 0 Then
+      lngCodeStartOrig = UBound(bytsFileOrig) + 1
+      ReDim Preserve bytsFileOrig(UBound(bytsFileOrig) + lngNewCodeLength + 4)
+      ' Copy in a CrLf before adding the new code section
+      CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCrLf(0)), 4
+      lngCodeStartOrig = lngCodeStartOrig + 4 ' to allow for CrLf added
+    End If
+  Else
+    ' There is a code section in the source file so we will overwrite it
+    ReDim Preserve bytsFileOrig(lngCodeStartOrig + lngNewCodeLength - 1)
+  End If
+  
+  ' Copy the new code section into orig array
+  If lngNewCodeLength <> 0 Then CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCodeFile(lngCodeStart)), lngNewCodeLength
+  
+  Kill strOrigFilename
+  
+  f = FreeFile()
+  Open strOrigFilename For Binary Access Write As #f
+  Put #f, 1, bytsFileOrig
+  Close #f
+  
+  ReplaceCodeSection = True
   
 End Function
 
