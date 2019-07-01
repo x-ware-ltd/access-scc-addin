@@ -48,7 +48,7 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Desti
 Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String)
   Dim Ignores(7) As Ignore
   Dim blnSaveAsUTF8 As Boolean
-  Dim blnUCS2 As Boolean
+  Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
 
   Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
@@ -87,7 +87,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      blnUCS2 = IsUCS2(strFilename & ".tmp") ' so we know what format to ultimated output
+      blnSourceIsUCS2 = IsUCS2(strFilename & ".tmp") ' so we know what format to ultimated output
       If Not ConvFile_to_UCS2(strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       ' now we have a UCS2 file stored with .tmp suffix
       
@@ -108,7 +108,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
         If Not ConvFileUCS2_to_UTF8(strFilename) Then 'convert file to UTF8
           MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
         End If
-      ElseIf Not blnUCS2 Then
+      ElseIf Not blnSourceIsUCS2 Then
         ' we don't want to output in UTF-8 encoding and MS Access originally produced a file which is not UCS2 encoded
         ' so convert it back to ANSI
         If ConvFileUCS2_to_ANSI(strFilename, strFilename & ".tmp") Then

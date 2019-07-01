@@ -328,7 +328,7 @@ Function ANSICP_to_UnicodeCP(bytANSI As Byte, ByRef bytUnicodeMSB As Byte, ByRef
 End Function
 
 Function UnicodeCP_to_ANSICP(bytUnicodeMSB As Byte, bytUnicodeLSB As Byte, ByRef bytANSI As Byte) As Boolean
-  ' Take a 2 byte ANSI codepoint and converts it to 8 bit ANSI placing the answer in the byt provided
+  ' Take a 2 byte Unicode codepoint and converts it to 8 bit ANSI placing the answer in the byt provided
   ' MSB = Most Significant Byte, LSB = Least Significant Byte
   ' Returns False if the character cannot be mapped
   
@@ -346,8 +346,9 @@ Function UnicodeCP_to_ANSICP(bytUnicodeMSB As Byte, bytUnicodeLSB As Byte, ByRef
     ElseIf bytUnicodeLSB >= 160 Then
       bytANSI = lngUnicode
       UnicodeCP_to_ANSICP = True
-    'Else
-      ' we have a value in the range 128 (&H80) to 9F (159) which shouldn't be possible so do nothing to return a fail
+    Else
+      ' we have a value in the range 128 (&H80) to 159 (&H9F) which shouldn't be possible so do nothing to return a fail
+      Exit Function
     End If
   Else
     ' we have a codepoint taking 2 bytes so see if it appears in our bestfit table
