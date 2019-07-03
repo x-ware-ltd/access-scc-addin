@@ -2539,9 +2539,9 @@ Private Sub Form_Load()
 
   Call SCC_IsSupportedClient  ' Throw any warnings before doing anything
 
+  UpdateVersionDetails
   If Me.chkRepository = True And Me.txtLastVersion.Value <> "" And Me.txtLastVersion.Value <> -1 Then
     ' This is not first use of this DB, and startup check is enabled
-    UpdateVersionDetails
     pvt_CheckVersionWarnings
   Else
     Me.txtLatestVersion.Value = ""

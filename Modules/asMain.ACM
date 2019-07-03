@@ -1410,20 +1410,31 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
   Set rst1 = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects", dbOpenDynaset)
   
   SCC_GetAllVersionsSubFolder strImportPath, arrSVNItems
-  For j = LBound(arrSVNItems) To UBound(arrSVNItems)
-    If arrSVNItems(j).svName <> "" Then
-      strObjName = winPathSpecialCharsDecode(Left$(arrSVNItems(j).svName, Len(arrSVNItems(j).svName) - 4))
-      rst1.AddNew
-      rst1!objName = strObjName
-      rst1!objType = objType
-      strStatus = getObjectSVNStatus(objType, strObjName, arrSVNItems(j))
-      rst1!objStatus = strStatus
-      If strStatus = "Unchanged" Then
-        rst1!selected = False
+  If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
+    For j = LBound(arrSVNItems) To UBound(arrSVNItems)
+      If arrSVNItems(j).svName <> "" Then
+        strObjName = winPathSpecialCharsDecode(Left$(arrSVNItems(j).svName, Len(arrSVNItems(j).svName) - 4))
+        rst1.AddNew
+        rst1!objName = strObjName
+        rst1!objType = objType
+        strStatus = getObjectSVNStatus(objType, strObjName, arrSVNItems(j))
+        rst1!objStatus = strStatus
+        If strStatus = "Unchanged" Then
+          rst1!selected = False
+        End If
+        On Error Resume Next
+        rst1.Update
+        If Err = 3022 Then 'duplicate record
+          ' This is most likely caused by the directory selected containing more than one version/branch of the repository
+          rst1.CancelUpdate
+          asPurgeTmpObjectsTables
+          Erase arrSVNItems()
+          Exit For
+        End If
+        On Error GoTo 0
       End If
-      rst1.Update
-    End If
-  Next j
+    Next j
+  End If
   
   ' Get a list of all objects that are in the status table (found in SVN repo) but are not in the list from Access
   ' which means they have been deleted from the latest repository.

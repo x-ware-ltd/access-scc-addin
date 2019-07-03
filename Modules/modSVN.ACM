@@ -321,13 +321,16 @@ Public Function SVN_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() A
   Dim i As Long, j As Long
   Dim mySvnItem As SVNITEM
   Dim intArrSize As Integer
+  Dim strFolder As String
   
   i = 0: j = 0
   intArrSize = 100
   
   On Error GoTo SVN_GetAllVersionsSubFolder_Err
   
-  strCmd = GetSVNPath() & " info -R """ & stripSlash(strPath) & """"
+  strFolder = stripSlash(strPath)
+  If Not FileExists(strFolder) Then Exit Function
+  strCmd = GetSVNPath() & " info -R """ & strFolder & """"
   strRet = ExecAndCapture(strCmd, TempDir()) ' run in a temp folder, to ensure the path output is absolute, not relative
   If LenB(strRet) = 0 Then Exit Function
     
