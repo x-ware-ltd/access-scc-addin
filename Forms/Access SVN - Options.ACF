@@ -1,4 +1,4 @@
-Version =20
+﻿Version =20
 VersionRequired =20
 Checksum =-1959006273
 Begin Form
@@ -20,10 +20,10 @@ Begin Form
     Width =6236
     DatasheetFontHeight =10
     ItemSuffix =92
-    Left =7140
-    Top =3105
-    Right =13470
-    Bottom =11040
+    Left =11175
+    Top =2655
+    Right =26175
+    Bottom =15600
     DatasheetGridlinesColor =12632256
     RecSrcDt = Begin
         0xb319a669b144e340
@@ -221,7 +221,7 @@ Begin Form
                     Top =3240
                     Width =1520
                     Height =340
-                    TabIndex =10
+                    TabIndex =8
                     Name ="cmdRun"
                     Caption ="Export Objects"
                     OnClick ="[Event Procedure]"
@@ -242,7 +242,7 @@ Begin Form
                     Top =2764
                     Width =113
                     Height =170
-                    TabIndex =9
+                    TabIndex =14
                     Name ="chkQueries"
                     ControlSource ="QueriesFlag"
                     DefaultValue ="True"
@@ -265,7 +265,7 @@ Begin Form
                     Top =3047
                     Width =113
                     Height =170
-                    TabIndex =11
+                    TabIndex =15
                     Name ="chkForms"
                     ControlSource ="FormsFlag"
                     DefaultValue ="True"
@@ -288,7 +288,7 @@ Begin Form
                     Top =3331
                     Width =113
                     Height =170
-                    TabIndex =12
+                    TabIndex =16
                     Name ="chkReports"
                     ControlSource ="ReportsFlag"
                     DefaultValue ="True"
@@ -311,7 +311,7 @@ Begin Form
                     Top =3614
                     Width =113
                     Height =170
-                    TabIndex =14
+                    TabIndex =17
                     Name ="chkMacros"
                     ControlSource ="MacrosFlag"
                     DefaultValue ="True"
@@ -334,7 +334,7 @@ Begin Form
                     Top =3898
                     Width =113
                     Height =170
-                    TabIndex =16
+                    TabIndex =18
                     Name ="chkModules"
                     ControlSource ="ModulesFlag"
                     DefaultValue ="True"
@@ -357,7 +357,7 @@ Begin Form
                     Top =4515
                     Width =1520
                     Height =340
-                    TabIndex =17
+                    TabIndex =11
                     Name ="btnImport"
                     Caption ="Import Objects"
                     OnClick ="[Event Procedure]"
@@ -454,7 +454,7 @@ Begin Form
                     Top =4002
                     Width =171
                     Height =170
-                    TabIndex =13
+                    TabIndex =9
                     Name ="chkImport"
                     ControlSource ="UpdateBeforeImport"
                     AfterUpdate ="[Event Procedure]"
@@ -524,7 +524,7 @@ Begin Form
                     Top =2193
                     Width =113
                     Height =170
-                    TabIndex =5
+                    TabIndex =12
                     Name ="chkSelectAllObjects"
                     DefaultValue ="True"
                     OnClick ="[Event Procedure]"
@@ -578,7 +578,7 @@ Begin Form
                     Width =2021
                     Height =238
                     FontWeight =600
-                    TabIndex =21
+                    TabIndex =24
                     BorderColor =8421504
                     Name ="txtLastImported"
                     ControlSource ="LastImportDate"
@@ -615,7 +615,7 @@ Begin Form
                     Width =926
                     Height =238
                     FontWeight =600
-                    TabIndex =23
+                    TabIndex =25
                     BorderColor =8421504
                     Name ="txtLastVersion"
                     ControlSource ="LastCheckoutVersion"
@@ -651,7 +651,7 @@ Begin Form
                     Width =926
                     Height =238
                     FontWeight =600
-                    TabIndex =26
+                    TabIndex =27
                     BorderColor =8421504
                     Name ="txtLatestVersion"
 
@@ -681,7 +681,7 @@ Begin Form
                     Top =2483
                     Width =113
                     Height =170
-                    TabIndex =7
+                    TabIndex =13
                     Name ="chkTables"
                     ControlSource ="TablesFlag"
                     DefaultValue ="True"
@@ -704,7 +704,7 @@ Begin Form
                     Top =4189
                     Width =113
                     Height =170
-                    TabIndex =18
+                    TabIndex =19
                     Name ="chkCmdBars"
                     ControlSource ="ToolbarsFlag"
                     DefaultValue ="True"
@@ -754,7 +754,7 @@ Begin Form
                     Top =5323
                     Width =113
                     Height =170
-                    TabIndex =24
+                    TabIndex =23
                     Name ="chkRelationships"
                     ControlSource ="RelationshipsFlag"
 
@@ -777,7 +777,7 @@ Begin Form
                     Top =6618
                     Width =170
                     Height =170
-                    TabIndex =27
+                    TabIndex =28
                     Name ="chkRepository"
                     ControlSource ="CheckRepoOnSartup"
                     AfterUpdate ="[Event Procedure]"
@@ -809,7 +809,7 @@ Begin Form
                     Top =4472
                     Width =113
                     Height =170
-                    TabIndex =19
+                    TabIndex =20
                     Name ="chkExtras"
                     ControlSource ="ExtrasFlag"
                     DefaultValue ="True"
@@ -832,7 +832,7 @@ Begin Form
                     Top =4756
                     Width =113
                     Height =170
-                    TabIndex =20
+                    TabIndex =21
                     Name ="chkReferences"
                     ControlSource ="ReferencesFlag"
                     DefaultValue ="True"
@@ -856,7 +856,7 @@ Begin Form
                     Top =7172
                     Width =340
                     Height =328
-                    TabIndex =28
+                    TabIndex =29
                     Name ="cmdCompactDatabase"
                     Caption ="Compact Database"
                     OnClick ="[Event Procedure]"
@@ -933,7 +933,7 @@ Begin Form
                     Top =7172
                     Width =2324
                     Height =227
-                    TabIndex =29
+                    TabIndex =30
                     BorderColor =8421504
                     Name ="txtDBFile"
 
@@ -963,7 +963,7 @@ Begin Form
                     Top =7530
                     Width =340
                     Height =328
-                    TabIndex =30
+                    TabIndex =31
                     Name ="cmdRepairPrinter"
                     Caption ="Repair Printer Names"
                     OnClick ="[Event Procedure]"
@@ -1015,7 +1015,7 @@ Begin Form
                     Width =926
                     Height =238
                     FontWeight =600
-                    TabIndex =25
+                    TabIndex =26
                     BorderColor =8421504
                     Name ="txtFolderVersion"
 
@@ -2205,7 +2205,7 @@ Begin Form
                     Top =7654
                     Width =170
                     Height =170
-                    TabIndex =31
+                    TabIndex =32
                     Name ="chkAllowDebug"
                     DefaultValue ="False"
                     GUID = Begin
@@ -2241,7 +2241,7 @@ Begin Form
                     Top =2622
                     Width =171
                     Height =170
-                    TabIndex =8
+                    TabIndex =6
                     Name ="chkNoImportExternalChanges"
                     DefaultValue ="=False"
                     OnClick ="[Event Procedure]"
@@ -2272,7 +2272,7 @@ Begin Form
                     Top =4242
                     Width =171
                     Height =170
-                    TabIndex =15
+                    TabIndex =10
                     Name ="chkShowUpdates"
                     ControlSource ="ShowUpdateWindow"
                     DefaultValue ="=True"
@@ -2309,7 +2309,7 @@ Begin Form
                     Top =2382
                     Width =171
                     Height =170
-                    TabIndex =6
+                    TabIndex =5
                     Name ="chkShowCommit"
                     ControlSource ="ShowCommitWindow"
                     DefaultValue ="=True"
@@ -2335,66 +2335,29 @@ Begin Form
                 Begin CheckBox
                     OverlapFlags =215
                     Left =3156
-                    Top =2952
+                    Top =2937
                     Width =171
                     Height =170
-                    TabIndex =32
-                    Name ="chkOutputUTF8"
-                    ControlSource ="OutputUTF8"
-                    DefaultValue ="=True"
-                    GUID = Begin
-                        0x2043d428c314ff47adc10df8533562ab
-                    End
-
-                    LayoutCachedLeft =3156
-                    LayoutCachedTop =2952
-                    LayoutCachedWidth =3327
-                    LayoutCachedHeight =3122
-                    Begin
-                        Begin Label
-                            OverlapFlags =215
-                            Left =345
-                            Top =2895
-                            Width =2565
-                            Height =240
-                            Name ="Label94"
-                            Caption ="UTF8 Encoding (rather than UCS2)"
-                            GUID = Begin
-                                0x2c7198c27e35ad48aaef82670f582a94
-                            End
-                            LayoutCachedLeft =345
-                            LayoutCachedTop =2895
-                            LayoutCachedWidth =2910
-                            LayoutCachedHeight =3135
-                        End
-                    End
-                End
-                Begin CheckBox
-                    OverlapFlags =215
-                    Left =3156
-                    Top =3252
-                    Width =171
-                    Height =170
-                    TabIndex =8
+                    TabIndex =7
                     Name ="chkReplaceCodeOnly"
                     DefaultValue ="=False"
                     LayoutCachedLeft =3156
-                    LayoutCachedTop =3252
+                    LayoutCachedTop =2937
                     LayoutCachedWidth =3327
-                    LayoutCachedHeight =3422
+                    LayoutCachedHeight =3107
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =345
-                            Top =3195
+                            Top =2880
                             Width =2610
                             Height =240
                             Name ="Label93"
                             Caption ="Replace Code only (Forms/Reports)"
                             LayoutCachedLeft =345
-                            LayoutCachedTop =3195
+                            LayoutCachedTop =2880
                             LayoutCachedWidth =2955
-                            LayoutCachedHeight =3435
+                            LayoutCachedHeight =3120
                         End
                     End
                 End
@@ -2531,7 +2494,7 @@ Private Sub Form_Load()
   Me.txtOutputLocation.SetFocus
 
   DoCmd.Hourglass True
-  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow, OutputUTF8 FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
+  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
 
   Me.RecordSource = strRecordSource
 

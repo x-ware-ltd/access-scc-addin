@@ -69,8 +69,8 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Ignores(7).bytsEnd = "End" & vbCrLf
   
   ' work out whether we need to convert the file to UTF8
-  ' initially set to the user selection
-  blnSaveAsUTF8 = Forms("Access SVN - Options").chkOutputUTF8
+  ' initially set to the value in the config file
+  blnSaveAsUTF8 = False 'TODO pick up value from config file
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
   ' If we already have this file in the repository and it is in UTF-8 we should save it as UTF-8 anyway
@@ -78,7 +78,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
     Case asObjectType.acForm, asObjectType.acReport, asObjectType.acQuery, asObjectType.acMacro
       If FileExists(strFilename) Then
         If IsUTF8(strFilename) Then
-          ' File is already in the repository and it's in UTF8 so save in that format now overriding user selection
+          ' File is already in the repository and it's in UTF8 so force save in that format irrespective of repository setting
           blnSaveAsUTF8 = True
         End If
       End If
