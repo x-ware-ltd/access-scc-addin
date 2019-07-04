@@ -1,0 +1,179 @@
+Option Compare Database
+Option Explicit
+
+' Windows API declaration to get a  profile string from INI  file
+Declare Function GetPrivateProfileString Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationName As String, ByVal lpKeyName As Any, ByVal lpDefault As String, ByVal lpReturnedString As String, ByVal nSize As Long, ByVal lpFileName As String) As Long
+
+' Windows API declaration to set a profile string to an INI  file
+Declare Function WritePrivateProfileString Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationName As String, ByVal lpKeyName As Any, ByVal lpString As Any, ByVal lpFileName As String) As Long
+
+Private Const APPNAME As String = "MSAccess SCC Add-in"
+
+Private Type ConfigItem
+  Key As String
+  DefaultVal As Variant
+  VarType As Integer
+End Type
+
+Private marrDefaults() As ConfigItem
+
+' GetConfigValue and SetConfigValue are currently only coded to allow True/False Value - see ToString and FromString functions below
+Public Function GetConfigValue(strItem As String, strFilename As String) As Variant
+  Dim strValue As String
+  
+  If FileExists(strFilename) Then
+    strValue = ProfileGetItem(APPNAME, strItem, "", strFilename)
+    If strValue = "" Then
+      GetConfigValue = GetDefaultValue(strItem)
+    Else
+      GetConfigValue = FromString(strValue, GetDefaultValueType(strItem))
+    End If
+  Else
+    ' The file doesn't exist yet - don't create one, but do return the default value
+    GetConfigValue = GetDefaultValue(strItem)
+  End If
+End Function
+
+Public Function SetConfigValue(strItem As String, varValue As Variant, strFilename As String) As Boolean
+  ' Returns true if the vcalue is set
+  
+  SetConfigValue = False ' Initially set to false
+  
+  If GetDefaultValueType(strItem) = vbNull Then Exit Function ' do nothing if strItem is not a recognised Item
+  If GetDefaultValueType(strItem) <> VarType(varValue) Then Exit Function ' do nothing if varValue is not the right type
+  
+  If Not FileExists(strFilename) Then
+    ' Create a file containing the default values
+    CreateDefaultConfigFile (strFilename)
+  End If
+  SetConfigValue = (WritePrivateProfileString(APPNAME, strItem, ToString(varValue), strFilename) <> 0)
+End Function
+
+Private Sub InitiateDefaults()
+  ' populate the module level marrDefaults with the default values
+  If Not marrDefaults Then
+    ' The array hasn't been populated yet
+    ReDim marrDefaults(1)
+    With marrDefaults(0): .Key = "Remove GUIDs": .DefaultVal = False: .VarType = vbBoolean: End With
+    With marrDefaults(1): .Key = "UTF-8 Encoding": .DefaultVal = False: .VarType = vbBoolean: End With
+  End If
+End Sub
+
+' This function is extracted from xwOSFunctions
+Private Function ProfileGetItem(strSection As String, strKey As String, strDefault As String, strIniFile As String, Optional blnExcludeComments As Boolean = False) As String
+  Dim dwSize As Long
+  Dim lngBuff As Long
+  Dim strBuff As String
+  Dim lngCommentIdx As Long
+
+  strBuff = Space$(4098)
+  lngBuff = Len(strBuff)
+  dwSize = GetPrivateProfileString(strSection, strKey, strDefault, strBuff, lngBuff, strIniFile)
+  If dwSize > 0 Then
+    ProfileGetItem = Left$(strBuff, dwSize)
+    If blnExcludeComments Then
+      lngCommentIdx = InStr(ProfileGetItem, ";")
+      If lngCommentIdx > 0 Then ProfileGetItem = Trim$(Left$(ProfileGetItem, lngCommentIdx - 1))
+    End If
+  End If
+End Function
+
+Private Function GetDefaultValueType(strItem As String) As Integer
+  ' Returns the type of the key which is passed in (VarType)
+  Dim i As Long
+  
+  Call InitiateDefaults ' to ensure they are populated
+  
+  For i = LBound(marrDefaults) To UBound(marrDefaults)
+    If marrDefaults(i).Key = strItem Then
+      GetDefaultValueType = marrDefaults(i).VarType
+      Exit Function
+    End If
+  Next
+  GetDefaultValueType = vbNull
+  
+End Function
+
+Private Function GetDefaultValue(strItem As String) As Variant
+  ' Returns the default value for the strItem passed
+  Dim i As Long
+  
+  Call InitiateDefaults ' to ensure they are populated
+  
+  For i = LBound(marrDefaults) To UBound(marrDefaults)
+    If marrDefaults(i).Key = strItem Then
+      GetDefaultValue = marrDefaults(i).DefaultVal
+      Exit Function
+    End If
+  Next
+  GetDefaultValue = Null
+  
+End Function
+
+Private Sub CreateDefaultConfigFile(strFilename As String)
+  ' creates a default Config File which contains all the default values
+  Dim i As Long
+  
+  If FileExists(strFilename) Then Kill strFilename
+  InitiateDefaults
+  For i = LBound(marrDefaults) To UBound(marrDefaults)
+    WritePrivateProfileString APPNAME, marrDefaults(i).Key, ToString(marrDefaults(i).DefaultVal), strFilename
+  Next
+    
+End Sub
+
+
+' Currently FromString and ToString only implement vbBoolean as that is all that is required
+Private Function ToString(var As Variant) As String
+  ' Takes a variant and converts it to a string
+  Select Case VarType(var)
+    Case vbEmpty:
+    Case vbNull:
+    Case vbInteger:
+    Case vbLong:
+    Case vbSingle:
+    Case vbDouble:
+    Case vbCurrency:
+    Case vbDate:
+    Case vbString:
+    Case vbObject:
+    Case vbError:
+    Case vbBoolean:     ToString = var
+    Case vbVariant:
+    Case vbDataObject:
+    Case vbDecimal:
+    Case vbByte:
+    'Case vbLongLong
+    Case vbUserDefinedType:
+    Case vbArray:
+  End Select
+End Function
+
+Private Function FromString(str As String, typ As Integer) As Variant
+  ' Takes a string and a desired type and converets the string to a variant of that type
+  
+  FromString = Null ' initially set default
+  
+  Select Case typ
+    Case vbEmpty:
+    Case vbNull:
+    Case vbInteger:
+    Case vbLong:
+    Case vbSingle:
+    Case vbDouble:
+    Case vbCurrency:
+    Case vbDate:
+    Case vbString:
+    Case vbObject:
+    Case vbError:
+    Case vbBoolean:     FromString = IIf(str = "True", True, IIf(str = "False", False, Null))
+    Case vbVariant:
+    Case vbDataObject:
+    Case vbDecimal:
+    Case vbByte:
+    'Case vbLongLong
+    Case vbUserDefinedType:
+    Case vbArray:
+  End Select
+  
+End Function
