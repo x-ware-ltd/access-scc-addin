@@ -34,7 +34,7 @@ Private Const asFileFormatAccess2000 As Integer = 9
 Private Const asFileFormatAccess2002 As Integer = 10
 Private Const asFileFormatAccess2007 As Integer = 12
 
-Public Const gstrConfigFilename As String = gstrConfigFilename
+Public Const gstrConfigFilename As String = "MSAccess.config"
 
 Public Function Init()
   If asSupportedFileFormat() Then

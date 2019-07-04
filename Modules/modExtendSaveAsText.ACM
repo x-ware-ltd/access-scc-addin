@@ -104,6 +104,9 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
       Else
         If blnRemoveGUIDs Then
           If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
+        Else
+          Kill strFilename
+          Name strFilename & ".tmp" As strFilename
         End If
       End If
           
