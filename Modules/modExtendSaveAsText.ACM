@@ -45,9 +45,8 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Desti
 ' @version 1.0
 '************************************************
 
-Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String)
+Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, blnSaveAsUTF8 As Boolean, blnRemoveGUIDs As Boolean)
   Dim Ignores(7) As Ignore
-  Dim blnSaveAsUTF8 As Boolean
   Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
 
@@ -68,9 +67,6 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
   Ignores(7).bytsEnd = "End" & vbCrLf
   
-  ' work out whether we need to convert the file to UTF8
-  ' initially set to the value in the config file
-  blnSaveAsUTF8 = False 'TODO pick up value from config file
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
   ' If we already have this file in the repository and it is in UTF-8 we should save it as UTF-8 anyway
@@ -99,7 +95,9 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
         ' now both files are in UCS2 we can replace the code section
         If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       Else
-        If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
+        If blnRemoveGUIDs Then
+          If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
+        End If
       End If
           
       ' we now have the file but it is in UCS2 format
