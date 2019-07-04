@@ -34,9 +34,6 @@ Private Const asFileFormatAccess2000 As Integer = 9
 Private Const asFileFormatAccess2002 As Integer = 10
 Private Const asFileFormatAccess2007 As Integer = 12
 
-
-
-
 Public Function Init()
   If asSupportedFileFormat() Then
     CreateLocalSCCTables
@@ -1639,7 +1636,7 @@ Public Function asInStrRev(str1 As String, str2 As String, Optional lngStart As 
         x = lngStart
     End If
     
-    For i = x - 1 To 0 Step -1
+    For i = x - 1 To 1 Step -1
         iTmp = InStr(i, str1, str2)
         If iTmp > 0 Then
             asInStrRev = iTmp
