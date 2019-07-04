@@ -1,4 +1,4 @@
-﻿Version =20
+Version =20
 VersionRequired =20
 Checksum =-1959006273
 Begin Form
@@ -163,7 +163,7 @@ Begin Form
             LabelX =-1701
         End
         Begin Section
-            Height =7972
+            Height =9150
             Name ="Detail"
             Begin
                 Begin Rectangle
@@ -853,7 +853,7 @@ Begin Form
                     Enabled = NotDefault
                     OverlapFlags =93
                     Left =2095
-                    Top =7172
+                    Top =8297
                     Width =340
                     Height =328
                     TabIndex =29
@@ -875,9 +875,9 @@ Begin Form
                     End
 
                     LayoutCachedLeft =2095
-                    LayoutCachedTop =7172
+                    LayoutCachedTop =8297
                     LayoutCachedWidth =2435
-                    LayoutCachedHeight =7500
+                    LayoutCachedHeight =8625
                     WebImagePaddingLeft =2
                     WebImagePaddingTop =2
                     WebImagePaddingRight =1
@@ -887,42 +887,42 @@ Begin Form
                 Begin Label
                     OverlapFlags =93
                     Left =395
-                    Top =7229
+                    Top =8354
                     Width =1635
                     Height =210
                     Name ="lblCompact"
                     Caption ="Compact Database?"
                     LayoutCachedLeft =395
-                    LayoutCachedTop =7229
+                    LayoutCachedTop =8354
                     LayoutCachedWidth =2030
-                    LayoutCachedHeight =7439
+                    LayoutCachedHeight =8564
                 End
                 Begin Rectangle
                     OverlapFlags =223
                     Left =225
-                    Top =7072
+                    Top =8197
                     Width =5840
                     Height =870
                     Name ="Box62"
                     LayoutCachedLeft =225
-                    LayoutCachedTop =7072
+                    LayoutCachedTop =8197
                     LayoutCachedWidth =6065
-                    LayoutCachedHeight =7942
+                    LayoutCachedHeight =9067
                 End
                 Begin Label
                     BackStyle =1
                     OverlapFlags =215
                     Left =395
-                    Top =6945
+                    Top =8070
                     Width =1140
                     Height =210
                     FontWeight =700
                     Name ="lblTool"
                     Caption ="Other Tools"
                     LayoutCachedLeft =395
-                    LayoutCachedTop =6945
+                    LayoutCachedTop =8070
                     LayoutCachedWidth =1535
-                    LayoutCachedHeight =7155
+                    LayoutCachedHeight =8280
                 End
                 Begin TextBox
                     SpecialEffect =0
@@ -930,7 +930,7 @@ Begin Form
                     OverlapFlags =215
                     BackStyle =0
                     Left =3627
-                    Top =7172
+                    Top =8297
                     Width =2324
                     Height =227
                     TabIndex =30
@@ -938,29 +938,29 @@ Begin Form
                     Name ="txtDBFile"
 
                     LayoutCachedLeft =3627
-                    LayoutCachedTop =7172
+                    LayoutCachedTop =8297
                     LayoutCachedWidth =5951
-                    LayoutCachedHeight =7399
+                    LayoutCachedHeight =8524
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =2890
-                            Top =7172
+                            Top =8297
                             Width =615
                             Height =240
                             Name ="Label65"
                             Caption ="DB Size:"
                             LayoutCachedLeft =2890
-                            LayoutCachedTop =7172
+                            LayoutCachedTop =8297
                             LayoutCachedWidth =3505
-                            LayoutCachedHeight =7412
+                            LayoutCachedHeight =8537
                         End
                     End
                 End
                 Begin CommandButton
                     OverlapFlags =215
                     Left =2090
-                    Top =7530
+                    Top =8655
                     Width =340
                     Height =328
                     TabIndex =31
@@ -982,9 +982,9 @@ Begin Form
                     End
 
                     LayoutCachedLeft =2090
-                    LayoutCachedTop =7530
+                    LayoutCachedTop =8655
                     LayoutCachedWidth =2430
-                    LayoutCachedHeight =7858
+                    LayoutCachedHeight =8983
                     WebImagePaddingLeft =2
                     WebImagePaddingTop =2
                     WebImagePaddingRight =1
@@ -994,15 +994,15 @@ Begin Form
                 Begin Label
                     OverlapFlags =215
                     Left =390
-                    Top =7587
+                    Top =8712
                     Width =1635
                     Height =210
                     Name ="Label69"
                     Caption ="Repair Printer Names"
                     LayoutCachedLeft =390
-                    LayoutCachedTop =7587
+                    LayoutCachedTop =8712
                     LayoutCachedWidth =2025
-                    LayoutCachedHeight =7797
+                    LayoutCachedHeight =8922
                 End
                 Begin TextBox
                     Enabled = NotDefault
@@ -2197,12 +2197,12 @@ Begin Form
                         0xa961e7550492d74686ac48ae557e5070
                     End
 
-                    TabIndex =33
+                    TabIndex =35
                 End
                 Begin CheckBox
                     OverlapFlags =215
                     Left =5751
-                    Top =7654
+                    Top =8779
                     Width =170
                     Height =170
                     TabIndex =32
@@ -2213,14 +2213,14 @@ Begin Form
                     End
 
                     LayoutCachedLeft =5751
-                    LayoutCachedTop =7654
+                    LayoutCachedTop =8779
                     LayoutCachedWidth =5921
-                    LayoutCachedHeight =7824
+                    LayoutCachedHeight =8949
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =4050
-                            Top =7598
+                            Top =8723
                             Width =1590
                             Height =240
                             Name ="Label81"
@@ -2229,9 +2229,9 @@ Begin Form
                                 0xe43a4967611bae4ca68f44ed904d1fc2
                             End
                             LayoutCachedLeft =4050
-                            LayoutCachedTop =7598
+                            LayoutCachedTop =8723
                             LayoutCachedWidth =5640
-                            LayoutCachedHeight =7838
+                            LayoutCachedHeight =8963
                         End
                     End
                 End
@@ -2361,6 +2361,127 @@ Begin Form
                         End
                     End
                 End
+                Begin CommandButton
+                    Enabled = NotDefault
+                    OverlapFlags =93
+                    Left =2435
+                    Top =7200
+                    Width =340
+                    Height =328
+                    TabIndex =33
+                    Name ="cmdUTF8Encoding"
+                    Caption ="Compact Database"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadaddadadadadadadadaadadadadada4adaddadadadadad44ada ,
+                        0xadadadadada444adda4444444444444aadadadadada444addadadadadad44ada ,
+                        0xadadadadada4adaddadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    LayoutCachedLeft =2435
+                    LayoutCachedTop =7200
+                    LayoutCachedWidth =2775
+                    LayoutCachedHeight =7528
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
+                End
+                Begin Label
+                    OverlapFlags =93
+                    Left =375
+                    Top =7260
+                    Width =2025
+                    Height =210
+                    Name ="lblUTF8"
+                    Caption ="Convert Encoding to UTF-8"
+                    LayoutCachedLeft =375
+                    LayoutCachedTop =7260
+                    LayoutCachedWidth =2400
+                    LayoutCachedHeight =7470
+                End
+                Begin Rectangle
+                    OverlapFlags =223
+                    Left =210
+                    Top =7102
+                    Width =5840
+                    Height =870
+                    Name ="Box95"
+                    LayoutCachedLeft =210
+                    LayoutCachedTop =7102
+                    LayoutCachedWidth =6050
+                    LayoutCachedHeight =7972
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =215
+                    Left =380
+                    Top =6975
+                    Width =1140
+                    Height =210
+                    FontWeight =700
+                    Name ="lblConversions"
+                    Caption ="Conversions"
+                    LayoutCachedLeft =380
+                    LayoutCachedTop =6975
+                    LayoutCachedWidth =1520
+                    LayoutCachedHeight =7185
+                End
+                Begin Label
+                    OverlapFlags =215
+                    Left =375
+                    Top =7620
+                    Width =1785
+                    Height =210
+                    Name ="lblRemoveGUIDs"
+                    Caption ="Remove GUID Sections"
+                    LayoutCachedLeft =375
+                    LayoutCachedTop =7620
+                    LayoutCachedWidth =2160
+                    LayoutCachedHeight =7830
+                End
+                Begin CommandButton
+                    Enabled = NotDefault
+                    OverlapFlags =215
+                    Left =2430
+                    Top =7558
+                    Width =340
+                    Height =328
+                    TabIndex =34
+                    Name ="cmdRemoveGUIDs"
+                    Caption ="Compact Database"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadaddadadadadadadadaadadadadada4adaddadadadadad44ada ,
+                        0xadadadadada444adda4444444444444aadadadadada444addadadadadad44ada ,
+                        0xadadadadada4adaddadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    LayoutCachedLeft =2430
+                    LayoutCachedTop =7558
+                    LayoutCachedWidth =2770
+                    LayoutCachedHeight =7886
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
+                End
             End
         End
     End
@@ -2459,6 +2580,15 @@ Private Sub cmdFolderDialog_Click()
   Call txtOutputLocation_AfterUpdate
 End Sub
 
+Private Sub cmdRemoveGUIDs_Click()
+  
+  If CleanFormsReports(Me.txtOutputLocation.Value) Then
+    SetConfigValue "Remove GUIDs", True, appendSlash(Me.txtOutputLocation.Value) & "MSAccess.config"
+  End If
+  Me.cmdRun.SetFocus
+  Me.cmdRemoveGUIDs.Enabled = False
+End Sub
+
 Private Sub cmdRepairPrinter_Click()
   Call FindFormPrinterExports(Me.txtOutputLocation)
   Call FindReportPrinterExports(Me.txtOutputLocation)
@@ -2473,6 +2603,34 @@ Private Sub cmdRun_Click()
   DoCmd.OpenForm "asSelectObjects", acNormal, , , , acWindowNormal, "export"
   UpdateVersionDetails
   Application.RunCommand acCmdSaveRecord
+End Sub
+
+Private Sub cmdUTF8Encoding_Click()
+  Dim i As Long
+  Dim j As Long
+  Dim strFoldername As String
+  Dim strFilename As String
+  Dim arrSVNItems() As SVNITEM
+  
+  For i = 0 To 1
+    strFoldername = appendSlash(Me.txtOutputLocation.Value) & IIf(i = 0, "Forms", "Reports")
+      
+    SCC_GetAllVersionsSubFolder strFoldername, arrSVNItems
+    
+    If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
+      For j = LBound(arrSVNItems) To UBound(arrSVNItems)
+        If arrSVNItems(j).svName <> "" Then
+          strFilename = appendSlash(strFoldername) & arrSVNItems(j).svName
+          ConvFile_to_UCS2 (strFilename)
+        End If
+      Next
+    End If
+  Next
+  
+  SetConfigValue "Remove GUIDs", True, appendSlash(Me.txtOutputLocation.Value) & "MSAccess.config"
+    
+  Me.cmdRun.SetFocus
+  Me.cmdUTF8Encoding.Enabled = False
 End Sub
 
 Private Sub Form_GotFocus()

@@ -27,7 +27,7 @@ Private Type AccObject
   blnAppended As Boolean 'Indicating whether or not ithe object has been appended to its parent yet
 End Type
 
-Private Type Ignore
+Private Type IGNORE
   bytsStart() As Byte
   bytsEnd() As Byte
 End Type
@@ -36,20 +36,9 @@ Private Const clngNOTFOUND = -2147483648#
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
-'************************************************
-' This module extends out the saveAsText, loadFromText functionality of Access
-' to also be able to save tables, references, extras as well
-' This allows an entire Access Database to be exported into an SVN repository.
-'
-' @author Barry Pitfield (barry.pitfield@talkjcs.com)
-' @version 1.0
-'************************************************
-
-Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, blnSaveAsUTF8 As Boolean, blnRemoveGUIDs As Boolean)
-  Dim Ignores(7) As Ignore
-  Dim blnSourceIsUCS2 As Boolean
-  Dim blnFail As Boolean
-
+Private Sub PopIgnoreArr(ByRef Ignores() As IGNORE)
+  ReDim Ignores(7) As IGNORE
+  
   Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
   Ignores(0).bytsEnd = "End" & vbCrLf
   Ignores(1).bytsStart = "PrtMip = Begin" & vbCrLf
@@ -66,6 +55,24 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Ignores(6).bytsEnd = vbCrLf
   Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
   Ignores(7).bytsEnd = "End" & vbCrLf
+End Sub
+
+
+'************************************************
+' This module extends out the saveAsText, loadFromText functionality of Access
+' to also be able to save tables, references, extras as well
+' This allows an entire Access Database to be exported into an SVN repository.
+'
+' @author Barry Pitfield (barry.pitfield@talkjcs.com)
+' @version 1.0
+'************************************************
+
+Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, blnSaveAsUTF8 As Boolean, blnRemoveGUIDs As Boolean)
+  Dim Ignores() As IGNORE
+  Dim blnSourceIsUCS2 As Boolean
+  Dim blnFail As Boolean
+
+  PopIgnoreArr Ignores
   
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
@@ -1124,7 +1131,67 @@ Private Sub AppendParent(AccObj() As AccObject)
   End With
 End Sub
 
-Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
+Public Function CleanFormsReports(strImportPath As String) As Boolean
+  ' cleans out the lines (Sections) specified in the Ignores Array from every Form and Report in the Path Sepcified
+  Dim Ignores() As IGNORE
+  Dim arrSVNItems() As SVNITEM
+  Dim strFoldername As String
+  Dim strFilename As String
+  Dim i As Long
+  Dim j As Long
+  
+  PopIgnoreArr Ignores
+  
+  For i = 0 To 1
+    strFoldername = appendSlash(strImportPath) & IIf(i = 0, "Forms", "Reports")
+      
+    SCC_GetAllVersionsSubFolder strFoldername, arrSVNItems
+    
+    If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
+      For j = LBound(arrSVNItems) To UBound(arrSVNItems)
+        If arrSVNItems(j).svName <> "" Then
+          strFilename = appendSlash(strFoldername) & arrSVNItems(j).svName
+          If Not CleanFormReportFileEx(strFilename, strFilename, Ignores) Then Exit Function
+        End If
+      Next
+    End If
+  Next
+  
+  CleanFormsReports = True
+
+End Function
+
+Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As String, Ignores() As IGNORE) As Boolean
+  ' As CleanFormReportFile but accepts any form encoding
+  
+  Dim strEncoding As String
+  
+  CleanFormReportFileEx = False ' intially set to indicate failure
+  
+  If IsUTF8(strFilename) Then
+    strEncoding = "UTF8"
+  ElseIf IsUCS2(strFilename) Then
+    strEncoding = "UCS2"
+  ElseIf IsANSI(strFilename) Then
+    strEncoding = "ANSI"
+  Else
+    Exit Function
+  End If
+  
+  If Not ConvFile_to_UCS2(strFilename, strFilenameNew) Then Exit Function
+  If Not CleanFormReportFile(strFilenameNew, strFilenameNew, Ignores) Then Exit Function
+  
+  Select Case strEncoding
+    Case "UTF8":
+      CleanFormReportFileEx = ConvFileUCS2_to_UTF8(strFilenameNew)
+    Case "UCS2"
+      CleanFormReportFileEx = True
+    Case "ANSI":
+      CleanFormReportFileEx = ConvFileUCS2_to_ANSI(strFilenameNew)
+  End Select
+  
+End Function
+Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As IGNORE) As Boolean
   ' This function takes a file and cleans out the lines (Sections) specified in the Ignores Array
   
   Dim bytsFile() As Byte
@@ -1200,7 +1267,7 @@ Private Function CleanFormReportFile(strFilename As String, strFilenameNew As St
   CleanFormReportFile = True
 End Function
 
-Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartPos As Long, ByRef lngNextStartPos As Long, Ignores() As Ignore) As Boolean
+Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartPos As Long, ByRef lngNextStartPos As Long, Ignores() As IGNORE) As Boolean
   ' This function looks in the bytsFile array with start point of lngStartPos to see if we need to ignore this section
   ' If we have to ignore this section it returns true and adjusts lngNextStartPos to the beginning of the next line after the section to ignore
   ' Otherwise it returns false

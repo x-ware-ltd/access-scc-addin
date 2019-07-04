@@ -44,7 +44,8 @@ Public Function SetConfigValue(strItem As String, varValue As Variant, strFilena
   
   If Not FileExists(strFilename) Then
     ' Create a file containing the default values
-    CreateDefaultConfigFile (strFilename)
+    CreateDefaultConfigFile strFilename
+    SCC_Add_File strFilename ' add the new file to SVN
   End If
   SetConfigValue = (WritePrivateProfileString(APPNAME, strItem, ToString(varValue), strFilename) <> 0)
 End Function
