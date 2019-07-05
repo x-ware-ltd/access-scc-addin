@@ -2630,7 +2630,7 @@ Private Sub cmdUTF8Encoding_Click()
     End If
   Next
   
-  SetConfigValue "Remove GUIDs", True, appendSlash(Me.txtOutputLocation.Value) & gstrConfigFilename
+  SetConfigValue "UTF-8 Encoding", True, appendSlash(Me.txtOutputLocation.Value) & gstrConfigFilename
     
   Me.cmdRun.SetFocus
   Me.cmdUTF8Encoding.Enabled = False
