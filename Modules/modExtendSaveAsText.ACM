@@ -1239,6 +1239,7 @@ Private Function CleanFormReportFile(strFilename As String, strFilenameNew As St
       blnEOF = True
     Else
       lngNextStartPos = x + 4 'to allow for the CrLf we found (2 bytes per character)
+      If lngNextStartPos = UBound(bytsFile) + 1 Then blnEOF = True ' File ends with CrLf
     End If
     
     ' extract the line we are looking at into bytsLine
