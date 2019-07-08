@@ -15,7 +15,7 @@ Private Type ConfigItem
   VarType As Integer
 End Type
 
-Private marrDefaults() As ConfigItem
+Private mudtsDefaults() As ConfigItem
 
 ' GetConfigValue and SetConfigValue are currently only coded to allow True/False Value - see ToString and FromString functions below
 Public Function GetConfigValue(strItem As String, strFilename As String) As Variant
@@ -51,12 +51,12 @@ Public Function SetConfigValue(strItem As String, varValue As Variant, strFilena
 End Function
 
 Private Sub InitiateDefaults()
-  ' populate the module level marrDefaults with the default values
-  If Not marrDefaults Then
+  ' populate the module level mudtsDefaults with the default values
+  If Not mudtsDefaults Then
     ' The array hasn't been populated yet
-    ReDim marrDefaults(1)
-    With marrDefaults(0): .Key = "Remove GUIDs": .DefaultVal = False: .VarType = vbBoolean: End With
-    With marrDefaults(1): .Key = "UTF-8 Encoding": .DefaultVal = False: .VarType = vbBoolean: End With
+    ReDim mudtsDefaults(1)
+    With mudtsDefaults(0): .Key = "Remove GUIDs": .DefaultVal = False: .VarType = vbBoolean: End With
+    With mudtsDefaults(1): .Key = "UTF-8 Encoding": .DefaultVal = False: .VarType = vbBoolean: End With
   End If
 End Sub
 
@@ -85,9 +85,9 @@ Private Function GetDefaultValueType(strItem As String) As Integer
   
   Call InitiateDefaults ' to ensure they are populated
   
-  For i = LBound(marrDefaults) To UBound(marrDefaults)
-    If marrDefaults(i).Key = strItem Then
-      GetDefaultValueType = marrDefaults(i).VarType
+  For i = LBound(mudtsDefaults) To UBound(mudtsDefaults)
+    If mudtsDefaults(i).Key = strItem Then
+      GetDefaultValueType = mudtsDefaults(i).VarType
       Exit Function
     End If
   Next
@@ -101,9 +101,9 @@ Private Function GetDefaultValue(strItem As String) As Variant
   
   Call InitiateDefaults ' to ensure they are populated
   
-  For i = LBound(marrDefaults) To UBound(marrDefaults)
-    If marrDefaults(i).Key = strItem Then
-      GetDefaultValue = marrDefaults(i).DefaultVal
+  For i = LBound(mudtsDefaults) To UBound(mudtsDefaults)
+    If mudtsDefaults(i).Key = strItem Then
+      GetDefaultValue = mudtsDefaults(i).DefaultVal
       Exit Function
     End If
   Next
@@ -117,8 +117,8 @@ Private Sub CreateDefaultConfigFile(strFilename As String)
   
   If FileExists(strFilename) Then Kill strFilename
   InitiateDefaults
-  For i = LBound(marrDefaults) To UBound(marrDefaults)
-    WritePrivateProfileString APPNAME, marrDefaults(i).Key, ToString(marrDefaults(i).DefaultVal), strFilename
+  For i = LBound(mudtsDefaults) To UBound(mudtsDefaults)
+    WritePrivateProfileString APPNAME, mudtsDefaults(i).Key, ToString(mudtsDefaults(i).DefaultVal), strFilename
   Next
     
 End Sub

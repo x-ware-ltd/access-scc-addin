@@ -2585,10 +2585,12 @@ Private Sub cmdRemoveGUIDs_Click()
   DoCmd.Hourglass True
   If CleanFormsReports(Me.txtOutputLocation.Value) Then
     SetConfigValue "Remove GUIDs", True, appendSlash(Me.txtOutputLocation.Value) & gstrConfigFilename
+    DoCommit ' bring up SCC Commit window
+    Me.cmdRun.SetFocus
+    Me.cmdRemoveGUIDs.Enabled = False
+  Else
+    MsgBox "Removing GUIDs from Forms and Reports has failed."
   End If
-  DoCommit ' bring up SCC Commit window
-  Me.cmdRun.SetFocus
-  Me.cmdRemoveGUIDs.Enabled = False
   DoCmd.Hourglass False
 End Sub
 
