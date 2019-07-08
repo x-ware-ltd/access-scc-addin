@@ -34,8 +34,7 @@ Private Const asFileFormatAccess2000 As Integer = 9
 Private Const asFileFormatAccess2002 As Integer = 10
 Private Const asFileFormatAccess2007 As Integer = 12
 
-
-
+Public Const gstrConfigFilename As String = "MSAccessSCC.config"
 
 Public Function Init()
   If asSupportedFileFormat() Then
@@ -138,6 +137,10 @@ Public Function asRunExport()
   asExportAllObjects appendSlash(strSVNPath)
 
   Echo True
+  DoCommit
+End Function
+
+Sub DoCommit()
   If Application.Forms![Access SVN - Options].chkCommit.Value = True Then
     SCC_Commit Application.Forms![Access SVN - Options].txtOutputLocation.Value, Application.Forms![Access SVN - Options].chkShowCommit.Value
     
@@ -147,8 +150,7 @@ Public Function asRunExport()
       Echo True
     End If
   End If
-
-End Function
+End Sub
 
 Public Function asRunImport()
     Dim strSVNPath As String
@@ -509,7 +511,7 @@ Private Function asGetAccessType(objType As asObjectDBType) As Integer
   End Select
 End Function
 
-Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As String)
+Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As String, blnSaveAsUTF8 As Boolean, blnRemoveGUIDs As Boolean)
   On Error GoTo Err_asExportObjects
   
   Dim db As DAO.Database
@@ -547,7 +549,7 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
           UpdateStatusEntry asExport, rst!objType, rst!objName, asDelete
           
         Case "New"
-          SaveAsText asGetAccessType(objExportType), rst!objName, appendSlash(strExportPath) & strObjectFileName
+          SaveAsText asGetAccessType(objExportType), rst!objName, appendSlash(strExportPath) & strObjectFileName, blnSaveAsUTF8, blnRemoveGUIDs
           If objExportType = objForm Or objExportType = objReport Then
             If isFaultyPrinterDeviceExport(appendSlash(strExportPath) & strObjectFileName) Then
               FixPrinterExport (appendSlash(strExportPath) & strObjectFileName)
@@ -557,7 +559,7 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
           UpdateStatusEntry asExport, rst!objType, rst!objName, asAdd
         
         Case Else
-          SaveAsText asGetAccessType(objExportType), rst!objName, appendSlash(strExportPath) & strObjectFileName
+          SaveAsText asGetAccessType(objExportType), rst!objName, appendSlash(strExportPath) & strObjectFileName, blnSaveAsUTF8, blnRemoveGUIDs
           If objExportType = objForm Or objExportType = objReport Then
             If isFaultyPrinterDeviceExport(appendSlash(strExportPath) & strObjectFileName) Then
               FixPrinterExport (appendSlash(strExportPath) & strObjectFileName)
@@ -588,6 +590,9 @@ Err_asExportObjects:
 End Sub
 
 Private Sub asExportAllObjects(strExportPath As String)
+    Dim blnSaveAsUTF8 As Boolean
+    Dim blnRemoveGUIDs As Boolean
+    
     On Error GoTo Err_OutputToText
     
     asMkDir (strExportPath & "Tables")
@@ -601,16 +606,19 @@ Private Sub asExportAllObjects(strExportPath As String)
     asMkDir (strExportPath & "References")
     asMkDir (strExportPath & "IMEXSpecs")
     
-    If Application.Forms![Access SVN - Options].chkTables.Value = True Then asExportObjects objTable, strExportPath & "Tables"
-    If Application.Forms![Access SVN - Options].chkQueries.Value = True Then asExportObjects objQuery, strExportPath & "Queries"
-    If Application.Forms![Access SVN - Options].chkForms.Value = True Then asExportObjects objForm, strExportPath & "Forms"
-    If Application.Forms![Access SVN - Options].chkReports.Value = True Then asExportObjects objReport, strExportPath & "Reports"
-    If Application.Forms![Access SVN - Options].chkMacros.Value = True Then asExportObjects objMacro, strExportPath & "Macros"
-    If Application.Forms![Access SVN - Options].chkModules.Value = True Then asExportObjects objModule, strExportPath & "Modules"
-    If Application.Forms![Access SVN - Options].chkCmdBars.Value = True Then asExportObjects objToolbar, strExportPath & "Toolbars"
-    If Application.Forms![Access SVN - Options].chkExtras.Value = True Then asExportObjects objExtra, strExportPath & "Extras"
-    If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asExportObjects objReference, strExportPath & "References"
-    If Application.Forms![Access SVN - Options].chkImportExport.Value = True Then asExportObjects objIMEXSpecs, strExportPath & "IMEXSpecs"
+    blnSaveAsUTF8 = GetConfigValue("UTF-8 Encoding", strExportPath & gstrConfigFilename)
+    blnRemoveGUIDs = GetConfigValue("Remove GUIDs", strExportPath & gstrConfigFilename)
+          
+    If Application.Forms![Access SVN - Options].chkTables.Value = True Then asExportObjects objTable, strExportPath & "Tables", blnSaveAsUTF8, blnRemoveGUIDs
+    If Application.Forms![Access SVN - Options].chkQueries.Value = True Then asExportObjects objQuery, strExportPath & "Queries", blnSaveAsUTF8, blnRemoveGUIDs
+    If Application.Forms![Access SVN - Options].chkForms.Value = True Then asExportObjects objForm, strExportPath & "Forms", blnSaveAsUTF8, blnRemoveGUIDs
+    If Application.Forms![Access SVN - Options].chkReports.Value = True Then asExportObjects objReport, strExportPath & "Reports", blnSaveAsUTF8, blnRemoveGUIDs
+    If Application.Forms![Access SVN - Options].chkMacros.Value = True Then asExportObjects objMacro, strExportPath & "Macros", blnSaveAsUTF8, blnRemoveGUIDs
+    If Application.Forms![Access SVN - Options].chkModules.Value = True Then asExportObjects objModule, strExportPath & "Modules", blnSaveAsUTF8, blnRemoveGUIDs
+    If Application.Forms![Access SVN - Options].chkCmdBars.Value = True Then asExportObjects objToolbar, strExportPath & "Toolbars", blnSaveAsUTF8, blnRemoveGUIDs
+    If Application.Forms![Access SVN - Options].chkExtras.Value = True Then asExportObjects objExtra, strExportPath & "Extras", blnSaveAsUTF8, blnRemoveGUIDs
+    If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asExportObjects objReference, strExportPath & "References", blnSaveAsUTF8, blnRemoveGUIDs
+    If Application.Forms![Access SVN - Options].chkImportExport.Value = True Then asExportObjects objIMEXSpecs, strExportPath & "IMEXSpecs", blnSaveAsUTF8, blnRemoveGUIDs
 
 Exit_OutputToText:
     asPurgeTmpObjectsTables
@@ -1633,7 +1641,7 @@ Public Function asInStrRev(str1 As String, str2 As String, Optional lngStart As 
         x = lngStart
     End If
     
-    For i = x - 1 To 0 Step -1
+    For i = x - 1 To 1 Step -1
         iTmp = InStr(i, str1, str2)
         If iTmp > 0 Then
             asInStrRev = iTmp

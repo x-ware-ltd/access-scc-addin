@@ -101,15 +101,22 @@ End Sub
 ' @param      String the base path to perform an SVN add against
 '************************************************
 Public Function SVN_Add_File(strPath As String)
-  Dim strCmd As String, strFilename As String, strRet As String
+  Dim strCmd As String, strFilename As String, strRet As String, str As String
 
   ' Only perform an SVN add if the .svn folder actually exists (we are using a working svn folder)
-  If Not FileExists(asParentFolder(strPath) & "\.svn\entries") Then Exit Function
+  ' the .svn\entries can be anywhere up the directory tree
+  str = asParentFolder(strPath)
+  Do While str <> ""
+    If FileExists(str & "\.svn\entries") Then Exit Do
+    str = asParentFolder(str)
+  Loop
+  If str = "" Then Exit Function ' the .svn\entries was not found
 
   On Error GoTo SVN_Add_File_Err
   
   strCmd = GetSVNPath() & " add """ & stripSlash(strPath) & """"
   strRet = ExecAndCapture(strCmd)
+  If Left$(strRet, 22) = "svn: warning: W150002:" Then Exit Function ' exit without error - the file has previously been added
   If Left$(strRet, 2) <> "A " Then Err.Raise vbObjectError + 1000
   
 SVN_Add_File_Exit:

@@ -53,6 +53,38 @@ Function IsUTF8(strFilename As String) As Boolean
   End If
 End Function
 
+Function ConvFile_to_UTF8(strFilename As String, Optional strNewFilename As String) As Boolean
+  ' Converts the supplied file from any of ANSI, UTF-8 or UCS2 into UTF-8 format
+  
+  ConvFile_to_UTF8 = False ' initially set to false
+
+  If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
+
+  ' deal with case where no conversion is required
+  If IsUTF8(strFilename) Then
+    If strFilename = strNewFilename Then
+      ' do nothing the file is already in UCS2 format
+      ConvFile_to_UTF8 = True
+    Else
+      ' copy file to new location without conversion
+      If FileExists(strNewFilename) Then Kill strNewFilename
+      FileCopy strFilename, strNewFilename
+      ConvFile_to_UTF8 = True
+    End If
+    Exit Function
+  End If
+  
+  ' we need to do a conversion
+  If IsUCS2(strFilename) Then
+    ConvFile_to_UTF8 = ConvFileUCS2_to_UTF8(strFilename, strNewFilename)
+  ElseIf IsANSI(strFilename) Then
+    ' a bit clunky by convert via UCS2
+    If Not ConvFileANSI_to_UCS2(strFilename, strNewFilename) Then Exit Function
+    ConvFile_to_UTF8 = ConvFileUCS2_to_UTF8(strNewFilename)
+  End If
+  
+End Function
+
 Function ConvFile_to_UCS2(strFilename As String, Optional strNewFilename As String) As Boolean
   ' Converts the supplied file from any of ANSI, UTF-8 or UCS2 into UCS2 format
   

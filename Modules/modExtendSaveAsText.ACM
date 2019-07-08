@@ -36,21 +36,9 @@ Private Const clngNOTFOUND = -2147483648#
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
-'************************************************
-' This module extends out the saveAsText, loadFromText functionality of Access
-' to also be able to save tables, references, extras as well
-' This allows an entire Access Database to be exported into an SVN repository.
-'
-' @author Barry Pitfield (barry.pitfield@talkjcs.com)
-' @version 1.0
-'************************************************
-
-Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String)
-  Dim Ignores(7) As Ignore
-  Dim blnSaveAsUTF8 As Boolean
-  Dim blnSourceIsUCS2 As Boolean
-  Dim blnFail As Boolean
-
+Private Sub PopulateIgnoreArr(ByRef Ignores() As Ignore)
+  ReDim Ignores(7) As Ignore
+  
   Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
   Ignores(0).bytsEnd = "End" & vbCrLf
   Ignores(1).bytsStart = "PrtMip = Begin" & vbCrLf
@@ -67,10 +55,25 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Ignores(6).bytsEnd = vbCrLf
   Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
   Ignores(7).bytsEnd = "End" & vbCrLf
+End Sub
+
+
+'************************************************
+' This module extends out the saveAsText, loadFromText functionality of Access
+' to also be able to save tables, references, extras as well
+' This allows an entire Access Database to be exported into an SVN repository.
+'
+' @author Barry Pitfield (barry.pitfield@talkjcs.com)
+' @version 1.0
+'************************************************
+
+Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, blnSaveAsUTF8 As Boolean, blnRemoveGUIDs As Boolean)
+  Dim Ignores() As Ignore
+  Dim blnSourceIsUCS2 As Boolean
+  Dim blnFail As Boolean
+
+  PopulateIgnoreArr Ignores
   
-  ' work out whether we need to convert the file to UTF8
-  ' initially set to the user selection
-  blnSaveAsUTF8 = Forms("Access SVN - Options").chkOutputUTF8
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
   ' If we already have this file in the repository and it is in UTF-8 we should save it as UTF-8 anyway
@@ -78,7 +81,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
     Case asObjectType.acForm, asObjectType.acReport, asObjectType.acQuery, asObjectType.acMacro
       If FileExists(strFilename) Then
         If IsUTF8(strFilename) Then
-          ' File is already in the repository and it's in UTF8 so save in that format now overriding user selection
+          ' File is already in the repository and it's in UTF8 so force save in that format irrespective of repository setting
           blnSaveAsUTF8 = True
         End If
       End If
@@ -87,7 +90,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      blnSourceIsUCS2 = IsUCS2(strFilename & ".tmp") ' so we know what format to ultimated output
+      blnSourceIsUCS2 = IsUCS2(strFilename & ".tmp") ' so we know what format to ultimate output
       If Not ConvFile_to_UCS2(strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       ' now we have a UCS2 file stored with .tmp suffix
       
@@ -99,7 +102,12 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
         ' now both files are in UCS2 we can replace the code section
         If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       Else
-        If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
+        If blnRemoveGUIDs Then
+          If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
+        Else
+          Kill strFilename
+          Name strFilename & ".tmp" As strFilename
+        End If
       End If
           
       ' we now have the file but it is in UCS2 format
@@ -1126,8 +1134,68 @@ Private Sub AppendParent(AccObj() As AccObject)
   End With
 End Sub
 
+Public Function CleanFormsReports(strImportPath As String) As Boolean
+  ' cleans out the lines (Sections) specified in the Ignores Array from every Form and Report in the Path Sepcified
+  Dim Ignores() As Ignore
+  Dim arrSVNItems() As SVNITEM
+  Dim strFoldername As String
+  Dim strFilename As String
+  Dim i As Long
+  Dim j As Long
+  
+  PopulateIgnoreArr Ignores
+  
+  For i = 0 To 1
+    strFoldername = appendSlash(strImportPath) & IIf(i = 0, "Forms", "Reports")
+      
+    SCC_GetAllVersionsSubFolder strFoldername, arrSVNItems
+    
+    If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
+      For j = LBound(arrSVNItems) To UBound(arrSVNItems)
+        If arrSVNItems(j).svName <> "" Then
+          strFilename = appendSlash(strFoldername) & arrSVNItems(j).svName
+          If Not CleanFormReportFileEx(strFilename, strFilename, Ignores) Then Exit Function
+        End If
+      Next
+    End If
+  Next
+  
+  CleanFormsReports = True
+
+End Function
+
+Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
+  ' As CleanFormReportFile but accepts any form encoding
+  
+  Dim strEncoding As String
+  
+  CleanFormReportFileEx = False ' intially set to indicate failure
+  
+  If IsUTF8(strFilename) Then
+    strEncoding = "UTF8"
+  ElseIf IsUCS2(strFilename) Then
+    strEncoding = "UCS2"
+  ElseIf IsANSI(strFilename) Then
+    strEncoding = "ANSI"
+  Else
+    Exit Function
+  End If
+  
+  If Not ConvFile_to_UCS2(strFilename, strFilenameNew) Then Exit Function
+  If Not CleanFormReportFile(strFilenameNew, strFilenameNew, Ignores) Then Exit Function
+  
+  Select Case strEncoding
+    Case "UTF8":
+      CleanFormReportFileEx = ConvFileUCS2_to_UTF8(strFilenameNew)
+    Case "UCS2"
+      CleanFormReportFileEx = True
+    Case "ANSI":
+      CleanFormReportFileEx = ConvFileUCS2_to_ANSI(strFilenameNew)
+  End Select
+  
+End Function
 Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
-  ' This function takes a file and cleans out the lines (Sections) specified in the Ignores Array
+  ' This function takes a UCS2 encoded file and cleans out the lines (Sections) specified in the Ignores Array
   
   Dim bytsFile() As Byte
   Dim bytsLine() As Byte
@@ -1171,6 +1239,7 @@ Private Function CleanFormReportFile(strFilename As String, strFilenameNew As St
       blnEOF = True
     Else
       lngNextStartPos = x + 4 'to allow for the CrLf we found (2 bytes per character)
+      If lngNextStartPos = UBound(bytsFile) + 1 Then blnEOF = True ' File ends with CrLf
     End If
     
     ' extract the line we are looking at into bytsLine

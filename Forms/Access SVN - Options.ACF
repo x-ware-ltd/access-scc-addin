@@ -20,10 +20,10 @@ Begin Form
     Width =6236
     DatasheetFontHeight =10
     ItemSuffix =92
-    Left =7140
-    Top =3105
-    Right =13470
-    Bottom =11040
+    Left =11175
+    Top =2655
+    Right =26175
+    Bottom =15600
     DatasheetGridlinesColor =12632256
     RecSrcDt = Begin
         0xb319a669b144e340
@@ -163,7 +163,7 @@ Begin Form
             LabelX =-1701
         End
         Begin Section
-            Height =7972
+            Height =9150
             Name ="Detail"
             Begin
                 Begin Rectangle
@@ -221,7 +221,7 @@ Begin Form
                     Top =3240
                     Width =1520
                     Height =340
-                    TabIndex =10
+                    TabIndex =8
                     Name ="cmdRun"
                     Caption ="Export Objects"
                     OnClick ="[Event Procedure]"
@@ -242,7 +242,7 @@ Begin Form
                     Top =2764
                     Width =113
                     Height =170
-                    TabIndex =9
+                    TabIndex =14
                     Name ="chkQueries"
                     ControlSource ="QueriesFlag"
                     DefaultValue ="True"
@@ -265,7 +265,7 @@ Begin Form
                     Top =3047
                     Width =113
                     Height =170
-                    TabIndex =11
+                    TabIndex =15
                     Name ="chkForms"
                     ControlSource ="FormsFlag"
                     DefaultValue ="True"
@@ -288,7 +288,7 @@ Begin Form
                     Top =3331
                     Width =113
                     Height =170
-                    TabIndex =12
+                    TabIndex =16
                     Name ="chkReports"
                     ControlSource ="ReportsFlag"
                     DefaultValue ="True"
@@ -311,7 +311,7 @@ Begin Form
                     Top =3614
                     Width =113
                     Height =170
-                    TabIndex =14
+                    TabIndex =17
                     Name ="chkMacros"
                     ControlSource ="MacrosFlag"
                     DefaultValue ="True"
@@ -334,7 +334,7 @@ Begin Form
                     Top =3898
                     Width =113
                     Height =170
-                    TabIndex =16
+                    TabIndex =18
                     Name ="chkModules"
                     ControlSource ="ModulesFlag"
                     DefaultValue ="True"
@@ -357,7 +357,7 @@ Begin Form
                     Top =4515
                     Width =1520
                     Height =340
-                    TabIndex =17
+                    TabIndex =11
                     Name ="btnImport"
                     Caption ="Import Objects"
                     OnClick ="[Event Procedure]"
@@ -454,7 +454,7 @@ Begin Form
                     Top =4002
                     Width =171
                     Height =170
-                    TabIndex =13
+                    TabIndex =9
                     Name ="chkImport"
                     ControlSource ="UpdateBeforeImport"
                     AfterUpdate ="[Event Procedure]"
@@ -524,7 +524,7 @@ Begin Form
                     Top =2193
                     Width =113
                     Height =170
-                    TabIndex =5
+                    TabIndex =12
                     Name ="chkSelectAllObjects"
                     DefaultValue ="True"
                     OnClick ="[Event Procedure]"
@@ -578,7 +578,7 @@ Begin Form
                     Width =2021
                     Height =238
                     FontWeight =600
-                    TabIndex =21
+                    TabIndex =24
                     BorderColor =8421504
                     Name ="txtLastImported"
                     ControlSource ="LastImportDate"
@@ -615,7 +615,7 @@ Begin Form
                     Width =926
                     Height =238
                     FontWeight =600
-                    TabIndex =23
+                    TabIndex =25
                     BorderColor =8421504
                     Name ="txtLastVersion"
                     ControlSource ="LastCheckoutVersion"
@@ -651,7 +651,7 @@ Begin Form
                     Width =926
                     Height =238
                     FontWeight =600
-                    TabIndex =26
+                    TabIndex =27
                     BorderColor =8421504
                     Name ="txtLatestVersion"
 
@@ -681,7 +681,7 @@ Begin Form
                     Top =2483
                     Width =113
                     Height =170
-                    TabIndex =7
+                    TabIndex =13
                     Name ="chkTables"
                     ControlSource ="TablesFlag"
                     DefaultValue ="True"
@@ -704,7 +704,7 @@ Begin Form
                     Top =4189
                     Width =113
                     Height =170
-                    TabIndex =18
+                    TabIndex =19
                     Name ="chkCmdBars"
                     ControlSource ="ToolbarsFlag"
                     DefaultValue ="True"
@@ -754,7 +754,7 @@ Begin Form
                     Top =5323
                     Width =113
                     Height =170
-                    TabIndex =24
+                    TabIndex =23
                     Name ="chkRelationships"
                     ControlSource ="RelationshipsFlag"
 
@@ -777,7 +777,7 @@ Begin Form
                     Top =6618
                     Width =170
                     Height =170
-                    TabIndex =27
+                    TabIndex =28
                     Name ="chkRepository"
                     ControlSource ="CheckRepoOnSartup"
                     AfterUpdate ="[Event Procedure]"
@@ -809,7 +809,7 @@ Begin Form
                     Top =4472
                     Width =113
                     Height =170
-                    TabIndex =19
+                    TabIndex =20
                     Name ="chkExtras"
                     ControlSource ="ExtrasFlag"
                     DefaultValue ="True"
@@ -832,7 +832,7 @@ Begin Form
                     Top =4756
                     Width =113
                     Height =170
-                    TabIndex =20
+                    TabIndex =21
                     Name ="chkReferences"
                     ControlSource ="ReferencesFlag"
                     DefaultValue ="True"
@@ -853,10 +853,10 @@ Begin Form
                     Enabled = NotDefault
                     OverlapFlags =93
                     Left =2095
-                    Top =7172
+                    Top =8297
                     Width =340
                     Height =328
-                    TabIndex =28
+                    TabIndex =29
                     Name ="cmdCompactDatabase"
                     Caption ="Compact Database"
                     OnClick ="[Event Procedure]"
@@ -875,9 +875,9 @@ Begin Form
                     End
 
                     LayoutCachedLeft =2095
-                    LayoutCachedTop =7172
+                    LayoutCachedTop =8297
                     LayoutCachedWidth =2435
-                    LayoutCachedHeight =7500
+                    LayoutCachedHeight =8625
                     WebImagePaddingLeft =2
                     WebImagePaddingTop =2
                     WebImagePaddingRight =1
@@ -887,42 +887,42 @@ Begin Form
                 Begin Label
                     OverlapFlags =93
                     Left =395
-                    Top =7229
+                    Top =8354
                     Width =1635
                     Height =210
                     Name ="lblCompact"
                     Caption ="Compact Database?"
                     LayoutCachedLeft =395
-                    LayoutCachedTop =7229
+                    LayoutCachedTop =8354
                     LayoutCachedWidth =2030
-                    LayoutCachedHeight =7439
+                    LayoutCachedHeight =8564
                 End
                 Begin Rectangle
                     OverlapFlags =223
                     Left =225
-                    Top =7072
+                    Top =8197
                     Width =5840
                     Height =870
                     Name ="Box62"
                     LayoutCachedLeft =225
-                    LayoutCachedTop =7072
+                    LayoutCachedTop =8197
                     LayoutCachedWidth =6065
-                    LayoutCachedHeight =7942
+                    LayoutCachedHeight =9067
                 End
                 Begin Label
                     BackStyle =1
                     OverlapFlags =215
                     Left =395
-                    Top =6945
+                    Top =8070
                     Width =1140
                     Height =210
                     FontWeight =700
                     Name ="lblTool"
                     Caption ="Other Tools"
                     LayoutCachedLeft =395
-                    LayoutCachedTop =6945
+                    LayoutCachedTop =8070
                     LayoutCachedWidth =1535
-                    LayoutCachedHeight =7155
+                    LayoutCachedHeight =8280
                 End
                 Begin TextBox
                     SpecialEffect =0
@@ -930,40 +930,40 @@ Begin Form
                     OverlapFlags =215
                     BackStyle =0
                     Left =3627
-                    Top =7172
+                    Top =8297
                     Width =2324
                     Height =227
-                    TabIndex =29
+                    TabIndex =30
                     BorderColor =8421504
                     Name ="txtDBFile"
 
                     LayoutCachedLeft =3627
-                    LayoutCachedTop =7172
+                    LayoutCachedTop =8297
                     LayoutCachedWidth =5951
-                    LayoutCachedHeight =7399
+                    LayoutCachedHeight =8524
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =2890
-                            Top =7172
+                            Top =8297
                             Width =615
                             Height =240
                             Name ="Label65"
                             Caption ="DB Size:"
                             LayoutCachedLeft =2890
-                            LayoutCachedTop =7172
+                            LayoutCachedTop =8297
                             LayoutCachedWidth =3505
-                            LayoutCachedHeight =7412
+                            LayoutCachedHeight =8537
                         End
                     End
                 End
                 Begin CommandButton
                     OverlapFlags =215
                     Left =2090
-                    Top =7530
+                    Top =8655
                     Width =340
                     Height =328
-                    TabIndex =30
+                    TabIndex =31
                     Name ="cmdRepairPrinter"
                     Caption ="Repair Printer Names"
                     OnClick ="[Event Procedure]"
@@ -982,9 +982,9 @@ Begin Form
                     End
 
                     LayoutCachedLeft =2090
-                    LayoutCachedTop =7530
+                    LayoutCachedTop =8655
                     LayoutCachedWidth =2430
-                    LayoutCachedHeight =7858
+                    LayoutCachedHeight =8983
                     WebImagePaddingLeft =2
                     WebImagePaddingTop =2
                     WebImagePaddingRight =1
@@ -994,15 +994,15 @@ Begin Form
                 Begin Label
                     OverlapFlags =215
                     Left =390
-                    Top =7587
+                    Top =8712
                     Width =1635
                     Height =210
                     Name ="Label69"
                     Caption ="Repair Printer Names"
                     LayoutCachedLeft =390
-                    LayoutCachedTop =7587
+                    LayoutCachedTop =8712
                     LayoutCachedWidth =2025
-                    LayoutCachedHeight =7797
+                    LayoutCachedHeight =8922
                 End
                 Begin TextBox
                     Enabled = NotDefault
@@ -1015,7 +1015,7 @@ Begin Form
                     Width =926
                     Height =238
                     FontWeight =600
-                    TabIndex =25
+                    TabIndex =26
                     BorderColor =8421504
                     Name ="txtFolderVersion"
 
@@ -2197,15 +2197,15 @@ Begin Form
                         0xa961e7550492d74686ac48ae557e5070
                     End
 
-                    TabIndex =33
+                    TabIndex =35
                 End
                 Begin CheckBox
                     OverlapFlags =215
                     Left =5751
-                    Top =7654
+                    Top =8779
                     Width =170
                     Height =170
-                    TabIndex =31
+                    TabIndex =32
                     Name ="chkAllowDebug"
                     DefaultValue ="False"
                     GUID = Begin
@@ -2213,14 +2213,14 @@ Begin Form
                     End
 
                     LayoutCachedLeft =5751
-                    LayoutCachedTop =7654
+                    LayoutCachedTop =8779
                     LayoutCachedWidth =5921
-                    LayoutCachedHeight =7824
+                    LayoutCachedHeight =8949
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =4050
-                            Top =7598
+                            Top =8723
                             Width =1590
                             Height =240
                             Name ="Label81"
@@ -2229,9 +2229,9 @@ Begin Form
                                 0xe43a4967611bae4ca68f44ed904d1fc2
                             End
                             LayoutCachedLeft =4050
-                            LayoutCachedTop =7598
+                            LayoutCachedTop =8723
                             LayoutCachedWidth =5640
-                            LayoutCachedHeight =7838
+                            LayoutCachedHeight =8963
                         End
                     End
                 End
@@ -2241,7 +2241,7 @@ Begin Form
                     Top =2622
                     Width =171
                     Height =170
-                    TabIndex =8
+                    TabIndex =6
                     Name ="chkNoImportExternalChanges"
                     DefaultValue ="=False"
                     OnClick ="[Event Procedure]"
@@ -2272,7 +2272,7 @@ Begin Form
                     Top =4242
                     Width =171
                     Height =170
-                    TabIndex =15
+                    TabIndex =10
                     Name ="chkShowUpdates"
                     ControlSource ="ShowUpdateWindow"
                     DefaultValue ="=True"
@@ -2309,7 +2309,7 @@ Begin Form
                     Top =2382
                     Width =171
                     Height =170
-                    TabIndex =6
+                    TabIndex =5
                     Name ="chkShowCommit"
                     ControlSource ="ShowCommitWindow"
                     DefaultValue ="=True"
@@ -2335,68 +2335,152 @@ Begin Form
                 Begin CheckBox
                     OverlapFlags =215
                     Left =3156
-                    Top =2952
+                    Top =2937
                     Width =171
                     Height =170
-                    TabIndex =32
-                    Name ="chkOutputUTF8"
-                    ControlSource ="OutputUTF8"
-                    DefaultValue ="=True"
-                    GUID = Begin
-                        0x2043d428c314ff47adc10df8533562ab
-                    End
-
-                    LayoutCachedLeft =3156
-                    LayoutCachedTop =2952
-                    LayoutCachedWidth =3327
-                    LayoutCachedHeight =3122
-                    Begin
-                        Begin Label
-                            OverlapFlags =215
-                            Left =345
-                            Top =2895
-                            Width =2565
-                            Height =240
-                            Name ="Label94"
-                            Caption ="UTF8 Encoding (rather than UCS2)"
-                            GUID = Begin
-                                0x2c7198c27e35ad48aaef82670f582a94
-                            End
-                            LayoutCachedLeft =345
-                            LayoutCachedTop =2895
-                            LayoutCachedWidth =2910
-                            LayoutCachedHeight =3135
-                        End
-                    End
-                End
-                Begin CheckBox
-                    OverlapFlags =215
-                    Left =3156
-                    Top =3252
-                    Width =171
-                    Height =170
-                    TabIndex =8
+                    TabIndex =7
                     Name ="chkReplaceCodeOnly"
                     DefaultValue ="=False"
                     LayoutCachedLeft =3156
-                    LayoutCachedTop =3252
+                    LayoutCachedTop =2937
                     LayoutCachedWidth =3327
-                    LayoutCachedHeight =3422
+                    LayoutCachedHeight =3107
                     Begin
                         Begin Label
                             OverlapFlags =215
                             Left =345
-                            Top =3195
+                            Top =2880
                             Width =2610
                             Height =240
                             Name ="Label93"
                             Caption ="Replace Code only (Forms/Reports)"
                             LayoutCachedLeft =345
-                            LayoutCachedTop =3195
+                            LayoutCachedTop =2880
                             LayoutCachedWidth =2955
-                            LayoutCachedHeight =3435
+                            LayoutCachedHeight =3120
                         End
                     End
+                End
+                Begin CommandButton
+                    Enabled = NotDefault
+                    OverlapFlags =93
+                    Left =2435
+                    Top =7200
+                    Width =340
+                    Height =328
+                    TabIndex =33
+                    Name ="cmdUTF8Encoding"
+                    Caption ="Compact Database"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadaddadadadadadadadaadadadadada4adaddadadadadad44ada ,
+                        0xadadadadada444adda4444444444444aadadadadada444addadadadadad44ada ,
+                        0xadadadadada4adaddadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    LayoutCachedLeft =2435
+                    LayoutCachedTop =7200
+                    LayoutCachedWidth =2775
+                    LayoutCachedHeight =7528
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
+                End
+                Begin Label
+                    OverlapFlags =93
+                    Left =375
+                    Top =7260
+                    Width =2025
+                    Height =210
+                    Name ="lblUTF8"
+                    Caption ="Convert Encoding to UTF-8"
+                    LayoutCachedLeft =375
+                    LayoutCachedTop =7260
+                    LayoutCachedWidth =2400
+                    LayoutCachedHeight =7470
+                End
+                Begin Rectangle
+                    OverlapFlags =223
+                    Left =210
+                    Top =7102
+                    Width =5840
+                    Height =870
+                    Name ="Box95"
+                    LayoutCachedLeft =210
+                    LayoutCachedTop =7102
+                    LayoutCachedWidth =6050
+                    LayoutCachedHeight =7972
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =215
+                    Left =380
+                    Top =6975
+                    Width =1140
+                    Height =210
+                    FontWeight =700
+                    Name ="lblConversions"
+                    Caption ="Conversions"
+                    LayoutCachedLeft =380
+                    LayoutCachedTop =6975
+                    LayoutCachedWidth =1520
+                    LayoutCachedHeight =7185
+                End
+                Begin Label
+                    OverlapFlags =215
+                    Left =375
+                    Top =7620
+                    Width =1785
+                    Height =210
+                    Name ="lblRemoveGUIDs"
+                    Caption ="Remove GUID Sections"
+                    LayoutCachedLeft =375
+                    LayoutCachedTop =7620
+                    LayoutCachedWidth =2160
+                    LayoutCachedHeight =7830
+                End
+                Begin CommandButton
+                    Enabled = NotDefault
+                    OverlapFlags =215
+                    Left =2430
+                    Top =7558
+                    Width =340
+                    Height =328
+                    TabIndex =34
+                    Name ="cmdRemoveGUIDs"
+                    Caption ="Compact Database"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadaddadadadadadadadaadadadadada4adaddadadadadad44ada ,
+                        0xadadadadada444adda4444444444444aadadadadada444addadadadadad44ada ,
+                        0xadadadadada4adaddadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    LayoutCachedLeft =2430
+                    LayoutCachedTop =7558
+                    LayoutCachedWidth =2770
+                    LayoutCachedHeight =7886
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
                 End
             End
         End
@@ -2496,6 +2580,20 @@ Private Sub cmdFolderDialog_Click()
   Call txtOutputLocation_AfterUpdate
 End Sub
 
+Private Sub cmdRemoveGUIDs_Click()
+  
+  DoCmd.Hourglass True
+  If CleanFormsReports(Me.txtOutputLocation.Value) Then
+    SetConfigValue "Remove GUIDs", True, appendSlash(Me.txtOutputLocation.Value) & gstrConfigFilename
+    DoCommit ' bring up SCC Commit window
+    Me.cmdRun.SetFocus
+    Me.cmdRemoveGUIDs.Enabled = False
+  Else
+    MsgBox "Removing GUIDs from Forms and Reports has failed."
+  End If
+  DoCmd.Hourglass False
+End Sub
+
 Private Sub cmdRepairPrinter_Click()
   Call FindFormPrinterExports(Me.txtOutputLocation)
   Call FindReportPrinterExports(Me.txtOutputLocation)
@@ -2510,6 +2608,49 @@ Private Sub cmdRun_Click()
   DoCmd.OpenForm "asSelectObjects", acNormal, , , , acWindowNormal, "export"
   UpdateVersionDetails
   Application.RunCommand acCmdSaveRecord
+End Sub
+
+Private Sub cmdUTF8Encoding_Click()
+  Dim i As Long
+  Dim j As Long
+  Dim strFoldername As String
+  Dim strFilename As String
+  Dim arrSVNItems() As SVNITEM
+  Dim strType As String
+  
+  DoCmd.Hourglass True
+  For i = 0 To 3
+    Select Case i
+      Case 0: strType = "Forms"
+      Case 1: strType = "Reports"
+      Case 2: strType = "Macros"
+      Case 3: strType = "Queries"
+    End Select
+    strFoldername = appendSlash(Me.txtOutputLocation.Value) & strType
+      
+    SCC_GetAllVersionsSubFolder strFoldername, arrSVNItems
+    
+    If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
+      For j = LBound(arrSVNItems) To UBound(arrSVNItems)
+        If arrSVNItems(j).svName <> "" Then
+          strFilename = appendSlash(strFoldername) & arrSVNItems(j).svName
+          If Not ConvFile_to_UTF8(strFilename) Then
+            MsgBox "Conversion of '" & strFilename & "' to UTF-8 has failed."
+            DoCmd.Hourglass False
+            Exit Sub
+          End If
+        End If
+      Next
+    End If
+  Next
+  
+  SetConfigValue "UTF-8 Encoding", True, appendSlash(Me.txtOutputLocation.Value) & gstrConfigFilename
+  
+  DoCommit ' bring up SCC Commit window
+    
+  Me.cmdRun.SetFocus
+  Me.cmdUTF8Encoding.Enabled = False
+  DoCmd.Hourglass False
 End Sub
 
 Private Sub Form_GotFocus()
@@ -2531,7 +2672,7 @@ Private Sub Form_Load()
   Me.txtOutputLocation.SetFocus
 
   DoCmd.Hourglass True
-  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow, OutputUTF8 FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
+  strRecordSource = "SELECT ExportPath, CommitAfterExport, UpdateBeforeImport, QueriesFlag, FormsFlag, ReportsFlag, MacrosFlag, ModulesFlag, TablesFlag, ToolbarsFlag, ExtrasFlag, ReferencesFlag, ImExSpecsFlag, RelationshipsFlag, LastImportDate, LastCheckoutVersion, CheckRepoOnSartup, ShowCommitWindow, ShowUpdateWindow FROM MSysSCCPrefs IN '" & CurrentDb().Name & "'"
 
   Me.RecordSource = strRecordSource
 
@@ -2581,11 +2722,13 @@ End Sub
 Public Sub UpdateVersionDetails()
   Me.txtLastImported = asGetLatestImportDate()
   Me.txtSvnUrl = SCC_GetMappedUrl(Me.txtOutputLocation.Value)
-If LenB(Nz(Me.txtSvnUrl.Value, vbNullString)) = 0 Or Left$(Me.txtSvnUrl.Value, 10) = "No mapped " Then ' No mapped url, cannot import, but allow export for original export
+  If LenB(Nz(Me.txtSvnUrl.Value, vbNullString)) = 0 Or Left$(Me.txtSvnUrl.Value, 10) = "No mapped " Then ' No mapped url, cannot import, but allow export for original export
     Me.btnImport.Enabled = False ' should probably trap for when the button has focus but cannot see how user could get to that point
   Else
     Me.btnImport.Enabled = True
   End If
+  Me.cmdUTF8Encoding.Enabled = Not GetConfigValue("UTF-8 Encoding", appendSlash(Me.txtOutputLocation.Value) & gstrConfigFilename)
+  Me.cmdRemoveGUIDs.Enabled = Not GetConfigValue("Remove GUIDs", appendSlash(Me.txtOutputLocation.Value) & gstrConfigFilename)
   Me.txtLastVersion = asGetLatestImportVersion()
   Me.txtLatestVersion = SCC_GetLatestVersion(Me.txtOutputLocation.Value)
   Me.txtFolderVersion = SCC_GetWorkingFolderVersion(Me.txtOutputLocation.Value)
