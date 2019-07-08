@@ -2586,6 +2586,7 @@ Private Sub cmdRemoveGUIDs_Click()
   If CleanFormsReports(Me.txtOutputLocation.Value) Then
     SetConfigValue "Remove GUIDs", True, appendSlash(Me.txtOutputLocation.Value) & gstrConfigFilename
   End If
+  DoCommit ' bring up SCC Commit window
   Me.cmdRun.SetFocus
   Me.cmdRemoveGUIDs.Enabled = False
   DoCmd.Hourglass False
@@ -2613,10 +2614,17 @@ Private Sub cmdUTF8Encoding_Click()
   Dim strFoldername As String
   Dim strFilename As String
   Dim arrSVNItems() As SVNITEM
+  Dim strType As String
   
   DoCmd.Hourglass True
-  For i = 0 To 1
-    strFoldername = appendSlash(Me.txtOutputLocation.Value) & IIf(i = 0, "Forms", "Reports")
+  For i = 0 To 3
+    Select Case i
+      Case 0: strType = "Forms"
+      Case 1: strType = "Reports"
+      Case 2: strType = "Macros"
+      Case 3: strType = "Queries"
+    End Select
+    strFoldername = appendSlash(Me.txtOutputLocation.Value) & strType
       
     SCC_GetAllVersionsSubFolder strFoldername, arrSVNItems
     
@@ -2631,6 +2639,8 @@ Private Sub cmdUTF8Encoding_Click()
   Next
   
   SetConfigValue "UTF-8 Encoding", True, appendSlash(Me.txtOutputLocation.Value) & gstrConfigFilename
+  
+  DoCommit ' bring up SCC Commit window
     
   Me.cmdRun.SetFocus
   Me.cmdUTF8Encoding.Enabled = False
