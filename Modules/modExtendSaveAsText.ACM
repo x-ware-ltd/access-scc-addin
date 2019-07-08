@@ -27,7 +27,7 @@ Private Type AccObject
   blnAppended As Boolean 'Indicating whether or not ithe object has been appended to its parent yet
 End Type
 
-Private Type IGNORE
+Private Type Ignore
   bytsStart() As Byte
   bytsEnd() As Byte
 End Type
@@ -36,8 +36,8 @@ Private Const clngNOTFOUND = -2147483648#
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
-Private Sub PopIgnoreArr(ByRef Ignores() As IGNORE)
-  ReDim Ignores(7) As IGNORE
+Private Sub PopulateIgnoreArr(ByRef Ignores() As Ignore)
+  ReDim Ignores(7) As Ignore
   
   Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
   Ignores(0).bytsEnd = "End" & vbCrLf
@@ -68,11 +68,11 @@ End Sub
 '************************************************
 
 Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, blnSaveAsUTF8 As Boolean, blnRemoveGUIDs As Boolean)
-  Dim Ignores() As IGNORE
+  Dim Ignores() As Ignore
   Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
 
-  PopIgnoreArr Ignores
+  PopulateIgnoreArr Ignores
   
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
@@ -90,7 +90,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      blnSourceIsUCS2 = IsUCS2(strFilename & ".tmp") ' so we know what format to ultimated output
+      blnSourceIsUCS2 = IsUCS2(strFilename & ".tmp") ' so we know what format to ultimate output
       If Not ConvFile_to_UCS2(strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       ' now we have a UCS2 file stored with .tmp suffix
       
@@ -1136,14 +1136,14 @@ End Sub
 
 Public Function CleanFormsReports(strImportPath As String) As Boolean
   ' cleans out the lines (Sections) specified in the Ignores Array from every Form and Report in the Path Sepcified
-  Dim Ignores() As IGNORE
+  Dim Ignores() As Ignore
   Dim arrSVNItems() As SVNITEM
   Dim strFoldername As String
   Dim strFilename As String
   Dim i As Long
   Dim j As Long
   
-  PopIgnoreArr Ignores
+  PopulateIgnoreArr Ignores
   
   For i = 0 To 1
     strFoldername = appendSlash(strImportPath) & IIf(i = 0, "Forms", "Reports")
@@ -1164,7 +1164,7 @@ Public Function CleanFormsReports(strImportPath As String) As Boolean
 
 End Function
 
-Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As String, Ignores() As IGNORE) As Boolean
+Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
   ' As CleanFormReportFile but accepts any form encoding
   
   Dim strEncoding As String
@@ -1194,8 +1194,8 @@ Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As 
   End Select
   
 End Function
-Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As IGNORE) As Boolean
-  ' This function takes a file and cleans out the lines (Sections) specified in the Ignores Array
+Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
+  ' This function takes a UCS2 encoded file and cleans out the lines (Sections) specified in the Ignores Array
   
   Dim bytsFile() As Byte
   Dim bytsLine() As Byte
@@ -1271,7 +1271,7 @@ Private Function CleanFormReportFile(strFilename As String, strFilenameNew As St
   CleanFormReportFile = True
 End Function
 
-Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartPos As Long, ByRef lngNextStartPos As Long, Ignores() As IGNORE) As Boolean
+Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartPos As Long, ByRef lngNextStartPos As Long, Ignores() As Ignore) As Boolean
   ' This function looks in the bytsFile array with start point of lngStartPos to see if we need to ignore this section
   ' If we have to ignore this section it returns true and adjusts lngNextStartPos to the beginning of the next line after the section to ignore
   ' Otherwise it returns false

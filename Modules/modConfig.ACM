@@ -151,7 +151,7 @@ Private Function ToString(var As Variant) As String
 End Function
 
 Private Function FromString(str As String, typ As Integer) As Variant
-  ' Takes a string and a desired type and converets the string to a variant of that type
+  ' Takes a string and a desired type and converts the string to a variant of that type
   
   FromString = Null ' initially set default
   

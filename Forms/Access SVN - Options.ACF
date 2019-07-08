@@ -2632,7 +2632,11 @@ Private Sub cmdUTF8Encoding_Click()
       For j = LBound(arrSVNItems) To UBound(arrSVNItems)
         If arrSVNItems(j).svName <> "" Then
           strFilename = appendSlash(strFoldername) & arrSVNItems(j).svName
-          ConvFile_to_UTF8 strFilename
+          If Not ConvFile_to_UTF8(strFilename) Then
+            MsgBox "Conversion of '" & strFilename & "' to UTF-8 has failed."
+            DoCmd.Hourglass False
+            Exit Sub
+          End If
         End If
       Next
     End If
