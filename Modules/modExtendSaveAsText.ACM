@@ -37,24 +37,24 @@ Private Const clngNOTFOUND = -2147483648#
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
 Private Sub PopulateIgnoreArr(ByRef Ignores() As Ignore)
-  ReDim Ignores(7) As Ignore
+  ReDim Ignores(1) As Ignore
   
   Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
   Ignores(0).bytsEnd = "End" & vbCrLf
-  Ignores(1).bytsStart = "PrtMip = Begin" & vbCrLf
-  Ignores(1).bytsEnd = "End" & vbCrLf
-  Ignores(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
-  Ignores(2).bytsEnd = "End" & vbCrLf
-  Ignores(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
-  Ignores(3).bytsEnd = "End" & vbCrLf
-  Ignores(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
-  Ignores(4).bytsEnd = "End" & vbCrLf
-  Ignores(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
-  Ignores(5).bytsEnd = "End" & vbCrLf
-  Ignores(6).bytsStart = "Checksum ="
-  Ignores(6).bytsEnd = vbCrLf
-  Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
-  Ignores(7).bytsEnd = "End" & vbCrLf
+  Ignores(1).bytsStart = "Checksum ="
+  Ignores(1).bytsEnd = vbCrLf
+  'Ignores(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
+  'Ignores(2).bytsEnd = "End" & vbCrLf
+  'Ignores(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
+  'Ignores(3).bytsEnd = "End" & vbCrLf
+  'Ignores(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
+  'Ignores(4).bytsEnd = "End" & vbCrLf
+  'Ignores(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
+  'Ignores(5).bytsEnd = "End" & vbCrLf
+  'Ignores(6).bytsStart = "PrtMip = Begin" & vbCrLf
+  'Ignores(6).bytsEnd = "End" & vbCrLf
+  'Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
+  'Ignores(7).bytsEnd = "End" & vbCrLf
 End Sub
 
 
