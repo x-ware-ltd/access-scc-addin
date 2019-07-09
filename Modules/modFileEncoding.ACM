@@ -47,7 +47,7 @@ Function IsUTF8(strFilename As String) As Boolean
     If LOF(f) >= 3 Then
       ReDim byts(2)
       Get #f, 1, byts()
-      IsUTF8 = ((byts(0) = 239) And (byts(1) = 187) And (byts(1) = 191)) '&HEF, &HBB, &HBF
+      IsUTF8 = ((byts(0) = 239) And (byts(1) = 187) And (byts(2) = 191)) '&HEF, &HBB, &HBF
     End If
     Close #f
   End If
