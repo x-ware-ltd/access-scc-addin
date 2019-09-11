@@ -1,0 +1,240 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' TEXT Module
+'
+' This is a collection of procedures to allow VBA
+' to talk to and initiate Text/File functionality.
+'
+' @author       Gilbert Bishop-White <gilbert.bishopwhite@talkjcs.com>
+' @Version      1.00
+'************************************************
+
+'************************************************
+' Triggers a repository update
+'
+' Not applicable for text files
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to perform an SVN update against
+'************************************************
+Public Sub TEXT_Update(strPath As String, blnShowUpdates As Boolean)
+
+End Sub
+
+'************************************************
+' Triggers a repository commit
+'
+' Not applicable for text files
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to perform a commit against
+'************************************************
+Public Sub TEXT_Commit(strPath As String, blnShowCommit As Boolean)
+  
+End Sub
+
+'************************************************
+' Triggers a repository add
+'
+' Not applicable for text files
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to perform an SVN add against
+'************************************************
+Public Function TEXT_Add_File(strPath As String)
+
+End Function
+
+'************************************************
+' Deletes a file from the file system
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to perform an SVN delete against
+'************************************************
+Public Function TEXT_Delete_File(strPath As String)
+  On Error GoTo Proc_Err
+  
+  If FileExists(strPath) Then
+    Kill strPath
+  End If
+
+Proc_Exit:
+  Exit Function
+  
+Proc_Err:
+  MsgBox "An error occured whilst deleting a file.", vbCritical, "Text/File Error"
+  Resume Proc_Exit
+
+End Function
+
+'************************************************
+' Gets the version of the SVN client
+'
+' Not applicable for text files
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      Boolean optional param to restrict the value to the minor version only eg. 1.5 rather than 1.5.4
+' @return     String the current version of the SVN client
+'************************************************
+Public Function TEXT_ClientVersion(Optional minorVersionOnly As Boolean = False) As String
+    TEXT_ClientVersion = "N/A"
+End Function
+
+'************************************************
+' Gets the currently checked out version of an SVN repository
+'
+' Not applicable for text files
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path to use when getting the SVN version
+' @return     String the current SVN version of the code
+'************************************************
+Public Function TEXT_GetVersion(strPath As String) As String
+  TEXT_GetVersion = "N/A"
+End Function
+
+'************************************************
+' SVN Get Info
+'
+' Gathers information about a working copy file
+'
+' Version history:
+'  - 1.00 initial version
+'  - 1.01 updated to eliminate dependency on WSH and to support version 1.7 of SVN [SF] 22/05/2012
+'
+' @version    1.01
+' @param      String the path of the checked out file
+' @return     SVNITEM details of the checked out file
+'************************************************
+Public Function TEXT_GetInfo(strPath As String) As SVNITEM
+  Dim i As Long
+  i = InStrRev(strPath, "\")
+  
+  TEXT_GetInfo.svPath = strPath
+  TEXT_GetInfo.svName = Mid(strPath, i)
+  TEXT_GetInfo.svRevision = 0
+  TEXT_GetInfo.svCheckSum = xwHashFile(strPath)
+End Function
+
+'************************************************
+' TEXT Get Status
+'
+' Not applicable for text files
+'
+' Version history:
+'  - 1.00 initial version
+'
+' @version    1.00
+' @param      String the path of the checked out file
+' @return     String status of the working copy file
+'************************************************
+Public Function TEXT_GetStatus(strPath As String) As String
+  TEXT_GetStatus = "N/A"
+End Function
+
+Public Function TEXT_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() As SVNITEM)
+  Dim intArrSize As Integer
+  Dim strFolder As String
+  Dim strFilePath As String
+  Dim i As Long
+  
+  i = 0
+  intArrSize = 100
+  
+  On Error GoTo Proc_Err
+  
+  strFolder = stripSlash(strPath)
+  If Not FileExists(strFolder) Then Exit Function
+  Dir strFolder & "\*"
+    
+  ReDim arrFill(intArrSize)
+  Do Until strFilePath = ""
+    arrFill(i) = TEXT_GetInfo(strFilePath)
+    i = i + 1
+    If i > intArrSize Then
+      intArrSize = intArrSize + 100
+      ReDim Preserve arrFill(intArrSize)
+    End If
+    strFilePath = Dir()
+  Loop
+  
+Proc_Exit:
+  If i > 0 Then
+    ReDim Preserve arrFill(i - 1)
+  Else
+    ReDim Preserve arrFill(0)
+  End If
+  Exit Function
+  
+Proc_Err:
+  MsgBox "An error occured getting folder information.", vbCritical, "Text/File Error"
+  Resume Proc_Exit
+End Function
+
+'************************************************
+' Gets the latest version identifier stored in a repository
+'
+' Not applicable for text files
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.02
+' @param      String the base path of a checked out SVN module to use when getting the SVN version
+' @return     String the latest SVN version of the code in the repository
+'************************************************
+Public Function TEXT_GetLatestVersion(strPath As String) As String
+  TEXT_GetLatestVersion = "N/A"
+End Function
+
+'************************************************
+' Gets the latest revision for the working folder
+'
+' Not applicable for text files
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path of a checked out SVN module
+' @return     String the latest working copy revision
+'************************************************
+Public Function TEXT_GetWorkingFolderVersion(strPath As String) As String
+  TEXT_GetWorkingFolderVersion = "N/A"
+End Function
+
+'************************************************
+' Gets the Mapped url for a working copy folder
+'
+' Not applicable for text files
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version    1.00
+' @param      String the base path of a checked out SVN module
+' @return     String the SVN URL mapped to the folder
+'************************************************
+Public Function TEXT_GetMappedUrl(strPath As String) As String
+  TEXT_GetMappedUrl = "N/A"
+End Function
