@@ -1244,10 +1244,10 @@ Public Function getObjectSVNStatus(intType As asObjectDBType, strName As String,
     getObjectSVNStatus = "New"
   ElseIf oSVNItem.svStatus = "M" Then
     getObjectSVNStatus = "Modified"
-  ElseIf oSVNItem.svRevision = strImportedVersion Then
-    getObjectSVNStatus = "Unchanged"
-  ElseIf CDbl(strImportedVersion) <> CDbl(oSVNItem.svRevision) Then ' This detects historic versions as well
+  ElseIf oSVNItem.svRevision <> strImportedVersion Then
     getObjectSVNStatus = "Modified"
+  Else
+    getObjectSVNStatus = "Unchanged"
   End If
 End Function
 
