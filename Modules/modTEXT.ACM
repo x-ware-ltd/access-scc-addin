@@ -165,11 +165,11 @@ Public Function TEXT_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() 
   
   strFolder = stripSlash(strPath)
   If Not FileExists(strFolder) Then Exit Function
-  Dir strFolder & "\*"
+  strFilePath = Dir(strFolder & "\*")
     
   ReDim arrFill(intArrSize)
   Do Until strFilePath = ""
-    arrFill(i) = TEXT_GetInfo(strFilePath)
+    arrFill(i) = TEXT_GetInfo(appendSlash(strFolder) & strFilePath)
     i = i + 1
     If i > intArrSize Then
       intArrSize = intArrSize + 100
