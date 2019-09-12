@@ -131,8 +131,8 @@ Public Function TEXT_GetInfo(strPath As String) As SVNITEM
   i = InStrRev(strPath, "\")
   
   TEXT_GetInfo.svPath = strPath
-  TEXT_GetInfo.svName = Mid(strPath, i)
-  TEXT_GetInfo.svRevision = 0
+  TEXT_GetInfo.svName = Mid(strPath, i + 1)
+  TEXT_GetInfo.svRevision = xwHashFile(strPath)
   TEXT_GetInfo.svCheckSum = xwHashFile(strPath)
 End Function
 
