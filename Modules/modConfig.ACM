@@ -57,6 +57,7 @@ Private Sub InitiateDefaults()
     ReDim mudtsDefaults(1)
     With mudtsDefaults(0): .Key = "Remove GUIDs": .DefaultVal = False: .VarType = vbBoolean: End With
     With mudtsDefaults(1): .Key = "UTF-8 Encoding": .DefaultVal = False: .VarType = vbBoolean: End With
+    With mudtsDefaults(2): .Key = "Serialize Printers": .DefaultVal = False: .VarType = vbBoolean: End With
   End If
 End Sub
 

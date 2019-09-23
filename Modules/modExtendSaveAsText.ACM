@@ -57,7 +57,7 @@ End Sub
 ' @version 1.0
 '************************************************
 
-Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, blnSaveAsUTF8 As Boolean, blnRemoveGUIDs As Boolean)
+Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, blnSaveAsUTF8 As Boolean, blnRemoveGUIDs As Boolean, blnSerializePrinter As Boolean)
   Dim Ignores() As Ignore
   Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
@@ -85,7 +85,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
       ' now we have a UCS2 file stored with .tmp suffix
       
       If Forms("Access SVN - Options").chkReplaceCodeOnly Then
-        ' Replacing code only so there is no requirement to Clean the Form/Report Layout section
+        ' Replacing code only so there is no requirement to Clean/Serialize the Form/Report Layout section
         ' we need to use the existing file as well - ensure it is in UCS2 format
         If Not ConvFile_to_UCS2(strFilename) Then blnFail = True: GoTo End_Processing
         
@@ -93,11 +93,15 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
         If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       Else
         If blnRemoveGUIDs Then
-          If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
-        Else
-          Kill strFilename
-          Name strFilename & ".tmp" As strFilename
+          If Not CleanFormReportFile(strFilename & ".tmp", strFilename & ".tmp", Ignores) Then blnFail = True: GoTo End_Processing
         End If
+        
+        If blnSerializePrinter Then
+          If Not SerializePrinterFormReportFile(strFilename & ".tmp", strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
+        End If
+        
+        Kill strFilename
+        Name strFilename & ".tmp" As strFilename
       End If
           
       ' we now have the file but it is in UCS2 format
@@ -144,65 +148,69 @@ End Sub
 
 Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFilename As String, Optional strErr As String)
   Dim strCatchErr As String
+  Dim strImportFileName As String
+  Dim blnSuccess As Boolean
   
   ' Forms, Reports, Queries and Reports are produced and read by Access from UCS2 ( 2 byte ) encoded files
   ' These are re-encoded to UTF-8 on saving so that all SVN tools work
   ' Due to the historic files not having been converted we need to check whether these files are in UTF8 or UCS2 format and convert if required
   
+  ' Make a copy of the file being imported. This copy may be transformed by the code below.
+  strImportFileName = strFilename & ".tmp"
+  FileCopy strFilename, strImportFileName
+  
+  
+  If (objType = acForm) Or (objType = acMacro) Or (objType = acReport) Or (objType = asObjectType.acQuery) Then
+    ' These objects may be UTF8 encoded.
+    If IsUTF8(strImportFileName) Then
+      blnSuccess = ConvFileUTF8_to_UCS2(strImportFileName, strImportFileName)
+      If Not blnSuccess Then
+        strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
+        Exit Sub
+      End If
+    End If
+  End If
+  
+  If (objType = acForm) Or (objType = acReport) Then
+    'These objects may have serialized printer blocks that need to be deserialized
+    
+    'Use the Ex version as we may have an ANSI version of the file.
+    blnSuccess = DeserializePrinterFormReportFileEx(strImportFileName, strImportFileName)
+    If Not blnSuccess Then
+      strErr = "Unable to Deserialize printers in '" & strFilename & "' so it has not imported. Please review after import."
+      Exit Sub
+    End If
+  End If
+  
+  If objType = asObjectType.acForm Then
+    ' This is needed for when importing the SVN Tool from SVN using the SVN Tool!!!!!????
+    If FormIsLoaded(objName) Then
+      strErr = "The Form '" & objName & "' is already open. Inserted as " & objName & "-svntmp. Please rename after import"
+      objName = objName & "-svntmp"
+    End If
+  End If
+  
+  
   Select Case objType
-    Case asObjectType.acForm
-      ' This is needed for when importing the SVN Tool from SVN using the SVN Tool!!!!!????
-      If FormIsLoaded(objName) Then
-        strErr = "The Form '" & objName & "' is already open. Inserted as " & objName & "-svntmp. Please rename after import"
-        objName = objName & "-svntmp"
-      End If
-      If IsUTF8(strFilename) Then
-        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
-          Application.LoadFromText objType, objName, strFilename & ".tmp"
-          Kill strFilename & ".tmp"
-        Else
-          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
-        End If
-      Else
-        Application.LoadFromText objType, objName, strFilename
-      End If
-    Case asObjectType.acReport, asObjectType.acMacro
-      If IsUTF8(strFilename) Then
-        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
-          Application.LoadFromText objType, objName, strFilename & ".tmp"
-          Kill strFilename & ".tmp"
-        Else
-          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
-        End If
-      Else
-        Application.LoadFromText objType, objName, strFilename
-      End If
-    Case asObjectType.acModule
-      Application.LoadFromText objType, objName, strFilename
+    Case asObjectType.acReport, asObjectType.acMacro, asObjectType.acModule, asObjectType.acForm
+      Application.LoadFromText objType, objName, strImportFileName
     Case asObjectType.acTable, asObjectType.acIMEXSpecs
-      LoadTableFromText objName, strFilename
+      LoadTableFromText objName, strImportFileName
     Case asObjectType.acQuery
-      If IsUTF8(strFilename) Then
-        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
-          LoadQueryFromText objName, strFilename & ".tmp"
-          Kill strFilename & ".tmp"
-        Else
-          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
-        End If
-      Else
-        LoadQueryFromText objName, strFilename
-      End If
+      LoadQueryFromText objName, strImportFileName
     Case asObjectType.acToolbar
-      strCatchErr = LoadCommandBarFromText(objName, strFilename)
+      strCatchErr = LoadCommandBarFromText(objName, strImportFileName)
       If strCatchErr <> "" Then
         strErr = strCatchErr
       End If
     Case asObjectType.acExtra
-      LoadExtraFromText strFilename
+      LoadExtraFromText strImportFileName
     Case asObjectType.acReference
-      LoadReferencesFromText strFilename
+      LoadReferencesFromText strImportFileName
   End Select
-
+  
+  
+  Kill strImportFileName
 End Sub
 
 '************************************************
