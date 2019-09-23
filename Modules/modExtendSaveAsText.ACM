@@ -43,18 +43,8 @@ Private Sub PopulateIgnoreArr(ByRef Ignores() As Ignore)
   Ignores(0).bytsEnd = "End" & vbCrLf
   Ignores(1).bytsStart = "Checksum ="
   Ignores(1).bytsEnd = vbCrLf
-  'Ignores(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
-  'Ignores(2).bytsEnd = "End" & vbCrLf
-  'Ignores(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
-  'Ignores(3).bytsEnd = "End" & vbCrLf
-  'Ignores(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
-  'Ignores(4).bytsEnd = "End" & vbCrLf
-  'Ignores(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
-  'Ignores(5).bytsEnd = "End" & vbCrLf
-  'Ignores(6).bytsStart = "PrtMip = Begin" & vbCrLf
-  'Ignores(6).bytsEnd = "End" & vbCrLf
-  'Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
-  'Ignores(7).bytsEnd = "End" & vbCrLf
+
+
 End Sub
 
 
@@ -1164,6 +1154,81 @@ Public Function CleanFormsReports(strImportPath As String) As Boolean
 
 End Function
 
+Public Function SerializePrinterFormsReports(strImportPath As String, Optional strToPath As String) As Boolean
+  ' Serializes printers from every Form and Report in the Path Sepcified
+  Dim arrSVNItems() As SVNITEM
+  
+  Dim strFromFoldername As String
+  Dim strToFoldername As String
+  
+  Dim strFromFilename As String
+  Dim strToFilename As String
+  
+  Dim i As Long
+  Dim j As Long
+  
+  If strToPath = "" Then strToPath = strImportPath
+  
+  
+  For i = 0 To 1
+    strFromFoldername = appendSlash(strImportPath) & IIf(i = 0, "Forms", "Reports")
+    strToFoldername = appendSlash(strToPath) & IIf(i = 0, "Forms", "Reports")
+      
+    SCC_GetAllVersionsSubFolder strFromFoldername, arrSVNItems
+    
+    If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
+      For j = LBound(arrSVNItems) To UBound(arrSVNItems)
+        If arrSVNItems(j).svName <> "" Then
+          strFromFilename = appendSlash(strFromFoldername) & arrSVNItems(j).svName
+          strToFilename = appendSlash(strToFoldername) & arrSVNItems(j).svName
+          If Not SerializePrinterFormReportFileEx(strFromFilename, strToFilename) Then Exit Function
+        End If
+      Next
+    End If
+  Next
+  
+  SerializePrinterFormsReports = True
+
+End Function
+
+
+ Public Function DeserializePrinterFormsReports(strImportPath As String, Optional strToPath As String) As Boolean
+  ' deserializes printers from every Form and Report in the Path Sepcified
+  Dim arrSVNItems() As SVNITEM
+  
+  Dim strFromFoldername As String
+  Dim strToFoldername As String
+  
+  Dim strFromFilename As String
+  Dim strToFilename As String
+  
+  Dim i As Long
+  Dim j As Long
+  
+  If strToPath = "" Then strToPath = strImportPath
+  
+  
+  For i = 0 To 1
+    strFromFoldername = appendSlash(strImportPath) & IIf(i = 0, "Forms", "Reports")
+    strToFoldername = appendSlash(strToPath) & IIf(i = 0, "Forms", "Reports")
+      
+    SCC_GetAllVersionsSubFolder strFromFoldername, arrSVNItems
+    
+    If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
+      For j = LBound(arrSVNItems) To UBound(arrSVNItems)
+        If arrSVNItems(j).svName <> "" Then
+          strFromFilename = appendSlash(strFromFoldername) & arrSVNItems(j).svName
+          strToFilename = appendSlash(strToFoldername) & arrSVNItems(j).svName
+          If Not DeserializePrinterFormReportFileEx(strFromFilename, strToFilename) Then Exit Function
+        End If
+      Next
+    End If
+  Next
+  
+  DeserializePrinterFormsReports = True
+
+End Function
+
 Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
   ' As CleanFormReportFile but accepts any form encoding
   
@@ -1194,6 +1259,69 @@ Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As 
   End Select
   
 End Function
+
+Function SerializePrinterFormReportFileEx(strFilename As String, strFilenameNew As String) As Boolean
+  ' As CleanFormReportFile but accepts any form encoding
+  
+  Dim strEncoding As String
+  
+  SerializePrinterFormReportFileEx = False ' intially set to indicate failure
+  
+  If IsUTF8(strFilename) Then
+    strEncoding = "UTF8"
+  ElseIf IsUCS2(strFilename) Then
+    strEncoding = "UCS2"
+  ElseIf IsANSI(strFilename) Then
+    strEncoding = "ANSI"
+  Else
+    Exit Function
+  End If
+  
+  If Not ConvFile_to_UCS2(strFilename, strFilenameNew) Then Exit Function
+  If Not SerializePrinterFormReportFile(strFilenameNew, strFilenameNew) Then Exit Function
+  
+  Select Case strEncoding
+    Case "UTF8":
+      SerializePrinterFormReportFileEx = ConvFileUCS2_to_UTF8(strFilenameNew)
+    Case "UCS2"
+      SerializePrinterFormReportFileEx = True
+    Case "ANSI":
+      SerializePrinterFormReportFileEx = ConvFileUCS2_to_ANSI(strFilenameNew)
+  End Select
+  
+End Function
+
+Function DeserializePrinterFormReportFileEx(strFilename As String, strFilenameNew As String) As Boolean
+  ' As CleanFormReportFile but accepts any form encoding
+  
+  Dim strEncoding As String
+  
+  DeserializePrinterFormReportFileEx = False ' intially set to indicate failure
+  
+  If IsUTF8(strFilename) Then
+    strEncoding = "UTF8"
+  ElseIf IsUCS2(strFilename) Then
+    strEncoding = "UCS2"
+  ElseIf IsANSI(strFilename) Then
+    strEncoding = "ANSI"
+  Else
+    Exit Function
+  End If
+  
+  If Not ConvFile_to_UCS2(strFilename, strFilenameNew) Then Exit Function
+  If Not DeserializePrinterFormReportFile(strFilenameNew, strFilenameNew) Then Exit Function
+  
+  Select Case strEncoding
+    Case "UTF8":
+      DeserializePrinterFormReportFileEx = ConvFileUCS2_to_UTF8(strFilenameNew)
+    Case "UCS2"
+      DeserializePrinterFormReportFileEx = True
+    Case "ANSI":
+      DeserializePrinterFormReportFileEx = ConvFileUCS2_to_ANSI(strFilenameNew)
+  End Select
+  
+End Function
+
 Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
   ' This function takes a UCS2 encoded file and cleans out the lines (Sections) specified in the Ignores Array
   
@@ -1269,6 +1397,305 @@ Private Function CleanFormReportFile(strFilename As String, strFilenameNew As St
   Close #f
   
   CleanFormReportFile = True
+End Function
+ 
+Function SerializePrinterFormReportFile(strFilename As String, strFilenameNew As String) As Boolean
+  ' This function takes a UCS2 encoded file and cleans out/serializes the printer Sections
+  
+  Dim bytsFile() As Byte
+  Dim bytsLine() As Byte
+  Dim f As Long
+  Dim lngStartPos As Long ' the start position of the line we are looking at
+  Dim lngNextStartPos As Long ' the start position of the next line we need to look at
+  Dim lngWritePos As Long ' the byte position in the output file for the write
+  Dim lngLineLen As Long
+  Dim x As Long
+  Dim bytsCrLf() As Byte
+  Dim blnEOF As Boolean
+  Dim blnCodeBehind As Boolean ' indicates that we are in the CodeBehind section of the file
+  
+  Dim bytsCodeBehind() As Byte
+  Dim bytsPrtMip() As Byte
+  Dim bytsPrtDevMode() As Byte
+  Dim bytsEnd() As Byte
+  
+  Dim blnInSectionPrtMip As Boolean
+  Dim blnInSectionPrtDevMode As Boolean
+  Dim lngIndent As Long
+  Dim strLine As String
+  
+  Dim lngSectionPos As Long
+  Dim bytsSection() As Byte
+  
+  Dim str As String
+  Dim byts() As Byte
+  
+  Dim Ignores() As Ignore
+  
+  ReDim Ignores(2) As Ignore
+  
+  Ignores(0).bytsStart = "PrtDevNames = Begin" & vbCrLf
+  Ignores(0).bytsEnd = "End" & vbCrLf
+  Ignores(1).bytsStart = "PrtDevModeW = Begin" & vbCrLf
+  Ignores(1).bytsEnd = "End" & vbCrLf
+  Ignores(2).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
+  Ignores(2).bytsEnd = "End" & vbCrLf
+  
+  ' The text which indicates the start of the section
+  bytsCodeBehind = "CodeBehind"
+  bytsPrtDevMode = "PrtDevMode = Begin"
+  bytsPrtMip = "PrtMip = Begin"
+  bytsEnd = "End"
+  
+  blnCodeBehind = False
+  bytsCrLf() = vbCrLf
+  
+  ' load the file into the bytsFile array
+  f = FreeFile()
+  Open strFilename For Binary Access Read As #f
+  ReDim bytsFile(LOF(f) - 1)
+  Get #f, , bytsFile()
+  Close #f
+    
+  lngWritePos = 1 ' The next location to write into the output file (starts at 1 ie not zero based)
+  lngStartPos = 0 ' The initial start location (0 based)
+  blnEOF = False
+  
+  ' Open file ready for output
+  f = FreeFile()
+  If FileExists(strFilenameNew) Then Kill strFilenameNew
+  Open strFilenameNew For Binary Access Write As #f
+  
+  ' Loop through line by line
+  Do
+    x = InBytArr(lngStartPos, bytsFile, bytsCrLf) ' look for end of line (CrLf)
+    If x = clngNOTFOUND Then
+      ' we did not find an end of line so we must now be at the end of the file
+      lngNextStartPos = UBound(bytsFile) + 1
+      blnEOF = True
+    Else
+      lngNextStartPos = x + 4 'to allow for the CrLf we found (2 bytes per character)
+      If lngNextStartPos = UBound(bytsFile) + 1 Then blnEOF = True ' File ends with CrLf
+    End If
+    
+    ' extract the line we are looking at into bytsLine
+    lngLineLen = lngNextStartPos - lngStartPos
+    ReDim bytsLine(lngLineLen - 1)
+    CopyMemory VarPtr(bytsLine(0)), VarPtr(bytsFile(lngStartPos)), lngLineLen
+    
+    If Not blnCodeBehind Then
+      'look to see if we are at the codebehind line
+      If InBytArr(0, bytsLine, bytsCodeBehind) = 0 Then blnCodeBehind = True
+    End If
+    
+    If blnCodeBehind Then 'NB we need to do this in 2 sections of the IF because we dont want IgnoreSection to run if blnCodeBehind is true
+      ' Always write line if we are in the code section
+      Put #f, lngWritePos, bytsLine
+      lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
+    Else
+      If blnInSectionPrtDevMode Or blnInSectionPrtMip Then
+        'We are in a Prt section
+        If InBytArr(0, bytsLine, bytsEnd) <> clngNOTFOUND Then
+          'This is the end of the section, write out the serialised section
+          If blnInSectionPrtDevMode Then
+            str = BytesToSerializedDevMode(bytsSection)
+          ElseIf blnInSectionPrtMip Then
+            str = BytesToSerializedMip(bytsSection)
+          End If
+          str = Indent(str, lngIndent)
+          
+          byts = str
+          Put #f, lngWritePos, byts
+          lngWritePos = lngWritePos + (UBound(byts) - LBound(byts)) + 1
+          
+          blnInSectionPrtDevMode = False
+          blnInSectionPrtMip = False
+        Else
+          'We are in the middle of the section, append it
+          strLine = bytsLine
+          If Not HexLineToBytes(strLine, byts) Then
+            MsgBox "The following line could not be converted to bytes:" & vbCrLf & _
+                    strLine
+            Exit Function
+          End If
+          
+          bytsAppend bytsSection, lngSectionPos, byts
+        End If
+        
+      ElseIf InBytArr(0, bytsLine, bytsPrtDevMode) <> clngNOTFOUND Then
+        blnInSectionPrtDevMode = True
+        strLine = bytsLine
+        lngIndent = GetIndent(strLine)
+        
+        lngSectionPos = 0
+        ReDim bytsSection(100)
+      ElseIf InBytArr(0, bytsLine, bytsPrtMip) <> clngNOTFOUND Then
+        blnInSectionPrtMip = True
+        strLine = bytsLine
+        lngIndent = GetIndent(strLine)
+        
+        lngSectionPos = 0
+        ReDim bytsSection(100)
+      ElseIf Not IgnoreSection(bytsFile, bytsLine, lngStartPos, lngNextStartPos, Ignores) Then
+      ' Write the line if it is not part of a section we need to ignore
+        If UBound(bytsLine) > 3 Then ' only write the line if it is not blank
+          Put #f, lngWritePos, bytsLine
+          lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
+        End If
+      End If
+    End If
+    
+    lngStartPos = lngNextStartPos ' move on to the next line
+  Loop While Not blnEOF
+  Close #f
+  
+  SerializePrinterFormReportFile = True
+End Function
+
+Function DeserializePrinterFormReportFile(strFilename As String, strFilenameNew As String) As Boolean
+  ' This function takes a UCS2 encoded file and cleans out/serializes the printer Sections
+  
+  Dim bytsFile() As Byte
+  Dim bytsLine() As Byte
+  Dim f As Long
+  Dim lngStartPos As Long ' the start position of the line we are looking at
+  Dim lngNextStartPos As Long ' the start position of the next line we need to look at
+  Dim lngWritePos As Long ' the byte position in the output file for the write
+  Dim lngLineLen As Long
+  Dim x As Long
+  Dim bytsCrLf() As Byte
+  Dim blnEOF As Boolean
+  Dim blnCodeBehind As Boolean ' indicates that we are in the CodeBehind section of the file
+  
+  Dim bytsCodeBehind() As Byte
+  Dim bytsPrtMip() As Byte
+  Dim bytsPrtDevMode() As Byte
+  Dim bytsEnd() As Byte
+  
+  Dim blnInSectionPrtMip As Boolean
+  Dim blnInSectionPrtDevMode As Boolean
+  Dim lngIndent As Long
+  Dim strLine As String
+  
+  Dim strSection As String
+  
+  Dim str As String
+  Dim byts() As Byte
+  Dim bytsOut() As Byte
+  
+  ' The text which indicates the start of the section
+  bytsCodeBehind = "CodeBehind"
+  bytsPrtDevMode = "SerializedPrtDevMode = Begin"
+  bytsPrtMip = "SerializedPrtMip = Begin"
+  bytsEnd = "End"
+  
+  blnCodeBehind = False
+  bytsCrLf() = vbCrLf
+  
+  ' load the file into the bytsFile array
+  f = FreeFile()
+  Open strFilename For Binary Access Read As #f
+  ReDim bytsFile(LOF(f) - 1)
+  Get #f, , bytsFile()
+  Close #f
+    
+  lngWritePos = 1 ' The next location to write into the output file (starts at 1 ie not zero based)
+  lngStartPos = 0 ' The initial start location (0 based)
+  blnEOF = False
+  
+  ' Open file ready for output
+  f = FreeFile()
+  If FileExists(strFilenameNew) Then Kill strFilenameNew
+  Open strFilenameNew For Binary Access Write As #f
+  
+  ' Loop through line by line
+  Do
+    x = InBytArr(lngStartPos, bytsFile, bytsCrLf) ' look for end of line (CrLf)
+    If x = clngNOTFOUND Then
+      ' we did not find an end of line so we must now be at the end of the file
+      lngNextStartPos = UBound(bytsFile) + 1
+      blnEOF = True
+    Else
+      lngNextStartPos = x + 4 'to allow for the CrLf we found (2 bytes per character)
+      If lngNextStartPos = UBound(bytsFile) + 1 Then blnEOF = True ' File ends with CrLf
+    End If
+    
+    ' extract the line we are looking at into bytsLine
+    lngLineLen = lngNextStartPos - lngStartPos
+    ReDim bytsLine(lngLineLen - 1)
+    CopyMemory VarPtr(bytsLine(0)), VarPtr(bytsFile(lngStartPos)), lngLineLen
+    
+    If Not blnCodeBehind Then
+      'look to see if we are at the codebehind line
+      If InBytArr(0, bytsLine, bytsCodeBehind) = 0 Then blnCodeBehind = True
+    End If
+    
+    If blnCodeBehind Then 'NB we need to do this in 2 sections of the IF because we dont want IgnoreSection to run if blnCodeBehind is true
+      ' Always write line if we are in the code section
+      Put #f, lngWritePos, bytsLine
+      lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
+    Else
+      If blnInSectionPrtDevMode Or blnInSectionPrtMip Then
+        'We are in a Prt section
+        If InBytArr(0, bytsLine, bytsEnd) <> clngNOTFOUND Then
+          'This is the end of the section, write out the serialised section
+          If blnInSectionPrtDevMode Then
+            SerializedToBytesDevMode strSection, byts
+          ElseIf blnInSectionPrtMip Then
+            SerializedToBytesMip strSection, byts
+          End If
+          str = BytesToHexLine(byts)
+          str = Indent(str, 4)
+          
+          If blnInSectionPrtDevMode Then
+            str = "PrtDevMode = Begin" & vbCrLf & _
+              str & vbCrLf & _
+            "End" & vbCrLf
+          ElseIf blnInSectionPrtMip Then
+            str = "PrtMip = Begin" & vbCrLf & _
+              str & vbCrLf & _
+            "End" & vbCrLf
+          End If
+          str = Indent(str, 4)
+          
+          bytsOut = str
+          Put #f, lngWritePos, bytsOut
+          lngWritePos = lngWritePos + (UBound(bytsOut) - LBound(bytsOut)) + 1
+          
+          blnInSectionPrtDevMode = False
+          blnInSectionPrtMip = False
+        Else
+          'We are in the middle of the section, append it
+          strLine = bytsLine
+          strSection = strSection & strLine
+        End If
+        
+      ElseIf InBytArr(0, bytsLine, bytsPrtDevMode) <> clngNOTFOUND Then
+        blnInSectionPrtDevMode = True
+        strLine = bytsLine
+        lngIndent = GetIndent(strLine)
+        
+        strSection = ""
+      ElseIf InBytArr(0, bytsLine, bytsPrtMip) <> clngNOTFOUND Then
+        blnInSectionPrtMip = True
+        strLine = bytsLine
+        lngIndent = GetIndent(strLine)
+        
+        strSection = ""
+      Else
+      ' Write the line if it is not part of a section we need process
+        If UBound(bytsLine) > 3 Then ' only write the line if it is not blank
+          Put #f, lngWritePos, bytsLine
+          lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
+        End If
+      End If
+    End If
+    
+    lngStartPos = lngNextStartPos ' move on to the next line
+  Loop While Not blnEOF
+  Close #f
+  
+  DeserializePrinterFormReportFile = True
 End Function
 
 Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartPos As Long, ByRef lngNextStartPos As Long, Ignores() As Ignore) As Boolean
