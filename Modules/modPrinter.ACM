@@ -880,7 +880,7 @@ Private Function SerializeDevModeTrueType(Value As Integer) As String
     Case 4
       SerializeDevModeTrueType = "DOWNLOAD_OUTLINE"
     Case Else
-      xxxx = "*UNKNOWN*"
+      SerializeDevModeTrueType = "*UNKNOWN*"
       MsgBox "Could not serialize TrueType of " & Value
   End Select
 End Function
