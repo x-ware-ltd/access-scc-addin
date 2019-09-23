@@ -1436,7 +1436,7 @@ Private Function HexStringToVarByteArray2(str As String, ByRef byt() As Byte, Op
     Next
   End If
 End Function
-Private Function invHex(strHex As String) As Long
+Function invHex(strHex As String) As Long
   'Does the exact opposite to the built in Hex function
   Dim i As Long, lngLen As Long
   Dim byt As Byte, bytAsc As Byte
