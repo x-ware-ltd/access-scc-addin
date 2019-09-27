@@ -1659,6 +1659,37 @@ Function DeserializePrinterFormReportFile(strFilename As String, strFilenameNew 
             str = "PrtDevMode = Begin" & vbCrLf & _
               str & vbCrLf & _
             "End" & vbCrLf
+            
+            ' If PrtDevMode has been serialized then the PrtDevNames block
+            ' will have been removed. We need to add back a dummy PrtDevNames
+            ' otherwise the PrtDevMode and PrtMip blocks will not be used.
+            '
+            ' The block starts with 3 integers, these give the offsets from the
+            ' start of the structure to Null terminated strings.
+            '
+            ' Then there is another integer that specifies whether the printer
+            ' specified is the default (1) or not (0), If this is set to (0) and
+            ' the printer specified in the strings is not installed then a prompt
+            ' appears when importing asking if you want to change it to the default
+            ' printer.
+            '
+            '
+            '
+            ' The lowest offset is 8 (as the first 8 bytes are the header above).
+            ' We want to set all 3 strings to be zero lengh, consisting only of
+            ' a NULL (00), then the Default flag to True (1)
+            '
+            ' Name                  Type  Bytes Hex Value
+            ' Driver Name Offset    int   2     4   8
+            ' Device Name Offset    int   2     4   9
+            ' Port Name Offset      int   2     4   10
+            ' Default               int   2     4   1
+            ' Driver Name           byt   1     2   0
+            ' Device Name           byt   1     2   0
+            ' Port Name             byt   1     2   0
+            str = str & "PrtDevNames = Begin" & vbCrLf & _
+              "    0x080009000a000100000000" & vbCrLf & _
+              "End" & vbCrLf
           ElseIf blnInSectionPrtMip Then
             str = "PrtMip = Begin" & vbCrLf & _
               str & vbCrLf & _
