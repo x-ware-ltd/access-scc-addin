@@ -1,0 +1,1037 @@
+Option Compare Database
+Option Explicit
+
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
+
+Private Type DevMode
+    strDeviceName(1 To 32) As Byte
+    intSpecVersion As Integer
+    intDriverVersion As Integer
+    intSize As Integer
+    intDriverExtra As Integer
+    lngFields As Long
+    intOrientation As Integer
+    intPaperSize As Integer
+    intPaperLength As Integer
+    intPaperWidth As Integer
+    intScale As Integer
+    intCopies As Integer
+    intDefaultSource As Integer
+    intPrintQuality As Integer
+    intColor As Integer
+    intDuplex As Integer
+    intYResolution As Integer
+    intTTOption As Integer
+    intCollate As Integer
+    
+    strFormName(1 To 32) As Byte
+    intLogPixels As Integer
+    lngBitsPerPixel As Long
+    lngPelsWidth As Long
+    lngPelsHeight As Long
+    lngDisplayFlags As Long
+    lngDisplayFrequency As Long
+    lngICMMethod As Long
+    lngICMIntent As Long
+    lngMediaType As Long
+    lngDitherType As Long
+    lngReserved1 As Long
+    lngReserved2 As Long
+End Type
+
+Private Type Mip
+    lngLeftMargin As Long
+    lngTopMargin As Long
+    lngRightMargin As Long
+    lngBottomMargin As Long
+    lngDataOnly As Long
+    lngWidth As Long
+    lngHeight As Long
+    lngDefaultSize As Long
+    lngColumns As Long
+    lngColumnSpacing As Long
+    lngRowSpacing As Long
+    lngItemLayout As Long
+    lngFastPrint As Long
+    lngDatasheet As Long
+End Type
+
+Private Type DevModeStr
+    strDevMode As String * 148
+End Type
+
+Public Enum dmFields
+    DM_ORIENTATION = &H1
+    DM_PAPERSIZE = &H2
+    DM_PAPERLENGTH = &H4
+    DM_PAPERWIDTH = &H8
+    DM_SCALE = &H10
+    DM_COPIES = &H100
+    DM_DEFAULTSOURCE = &H200
+    DM_PRINTQUALITY = &H400
+    DM_COLOR = &H800
+    DM_DUPLEX = &H1000
+    DM_YRESOLUTION = &H2000
+    DM_TTOPTION = &H4000
+    DM_COLLATE = 32768 '&H8000
+End Enum
+
+Function BytesToSerializedDevMode(byts() As Byte) As String
+  Dim udtDevMode As DevMode
+  
+  CopyMemory VarPtr(udtDevMode), VarPtr(byts(0)), 148
+  BytesToSerializedDevMode = SerializeDevMode(udtDevMode)
+End Function
+
+Function SerializedToBytesDevMode(str As String, byts() As Byte)
+  Dim udtDevMode As DevMode
+  udtDevMode = DeserializeDevMode(str)
+  
+  ReDim byts(147)
+  CopyMemory VarPtr(byts(0)), VarPtr(udtDevMode), 148
+  
+End Function
+
+Function BytesToSerializedMip(byts() As Byte) As String
+  Dim udtMip As Mip
+  
+  CopyMemory VarPtr(udtMip), VarPtr(byts(0)), 56
+  
+  BytesToSerializedMip = SerializeMip(udtMip)
+End Function
+
+Function SerializedToBytesMip(str As String, byts() As Byte)
+  Dim udtMip As Mip
+  udtMip = DeserializeMip(str)
+  
+  ReDim byts(55)
+  CopyMemory VarPtr(byts(0)), VarPtr(udtMip), 56
+  
+End Function
+
+
+
+Sub bytsAppend(byts() As Byte, lngPos As Long, bytsAppend() As Byte)
+  Dim lngBytesAppend
+  Dim lngAppendPos
+  lngBytesAppend = UBound(bytsAppend) - LBound(bytsAppend)
+  
+  If UBound(byts) < (lngPos + lngBytesAppend) Then
+    ReDim Preserve byts((UBound(byts) - LBound(byts)) * 2)
+  End If
+  
+  Do While lngAppendPos < UBound(bytsAppend)
+    byts(lngPos) = bytsAppend(lngAppendPos)
+    
+    lngAppendPos = lngAppendPos + 1
+    lngPos = lngPos + 1
+  Loop
+End Sub
+
+Function DeserializeDevMode(strSection As String) As DevMode
+  Dim strTag As String
+  Dim strValue As String
+  Dim str As String
+  Dim strs() As String
+  Dim i As Long
+  Dim x As Long
+  Dim udtDevMode As DevMode
+  
+  udtDevMode.intSize = 148
+  
+  strs = Split(strSection, vbCrLf)
+  
+  For i = LBound(strs) To UBound(strs) - 1
+    str = strs(i)
+    x = InStr(str, "=")
+    strTag = Trim(Mid(str, 1, x - 1))
+    strValue = Trim(Mid(str, x + 1))
+    
+    Select Case strTag
+      Case "Collate"
+        udtDevMode.intCollate = DeserializeDevModeCollate(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_COLLATE
+      Case "Color"
+        udtDevMode.intColor = DeserializeDevModeColor(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_COLOR
+      Case "Copies"
+        udtDevMode.intCopies = CLng(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_COPIES
+      Case "DefaultSource"
+        udtDevMode.intDefaultSource = DeserializeDevModeDefaultSource(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_DEFAULTSOURCE
+      Case "Duplex"
+        udtDevMode.intDuplex = DeserializeDevModeDuplex(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_DUPLEX
+      Case "Orientation"
+        udtDevMode.intOrientation = DeserializeDevModeOrientation(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_ORIENTATION
+      Case "PaperSize"
+        udtDevMode.intPaperSize = DeserializeDevModePaperSize(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_PAPERSIZE
+      Case "PaperLength"
+        udtDevMode.intPaperLength = CLng(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_PAPERLENGTH
+      Case "PaperWidth"
+        udtDevMode.intPaperWidth = CLng(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_PAPERWIDTH
+      Case "PrintQuality"
+        udtDevMode.intPrintQuality = DeserializeDevModePrintQuality(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_PRINTQUALITY
+      Case "YResolution"
+        udtDevMode.intYResolution = CLng(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_YRESOLUTION
+      Case "Scale"
+        udtDevMode.intScale = strValue
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_SCALE
+      Case "TrueType"
+        udtDevMode.intTTOption = DeserializeDevModeTrueType(strValue)
+        udtDevMode.lngFields = udtDevMode.lngFields Or dmFields.DM_TTOPTION
+    End Select
+  Next i
+  
+  DeserializeDevMode = udtDevMode
+End Function
+
+Function GetIndent(strLine As String) As Long
+  GetIndent = Len(strLine) - Len(LTrim(strLine))
+End Function
+
+Private Function HexCharsToByte(strHex) As Byte
+  HexCharsToByte = invHex(UCase(strHex))
+End Function
+
+
+
+Function Indent(strLines As String, lngIndent As Long) As String
+  Dim strLine As String
+  Dim str As String
+  Dim strs() As String
+  Dim i As Long
+  Dim strPrefix As String
+  
+  For i = 1 To lngIndent
+    strPrefix = strPrefix & " "
+  Next i
+  
+  
+  strs = Split(strLines, vbCrLf)
+  
+  For i = LBound(strs) To UBound(strs)
+    strLine = strs(i)
+    
+    If LenB(strLine) <> 0 Then
+      str = str & strPrefix & strLine
+    End If
+    
+    str = str & vbCrLf
+  Next i
+  
+  If Len(str) <> 0 Then
+    Indent = Left(str, Len(str) - 2)
+  Else
+    Indent = ""
+  End If
+End Function
+
+Public Function HexLineToBytes(ByVal strLine As String, byts() As Byte) As Boolean
+  Dim lngHexCharacters As Long
+  Dim lngBytes As Long
+  Dim lngLineEnd As Long
+  
+  Dim lngLinePos As Long
+  Dim lngBytePos As Long
+
+  strLine = Trim(strLine)
+  
+  lngLinePos = 1
+  
+  If Mid(strLine, 1, 2) <> "0x" Then
+    MsgBox "badly formatted, line should start with '0x'"
+    GoTo Proc_Err
+  Else
+    lngLinePos = lngLinePos + 2
+  End If
+  
+  'Ignore the final 2 charecters when they are the hex block line ending
+  lngLineEnd = Len(strLine)
+  If Right(strLine, 4) = " ," & vbCrLf Then
+    lngLineEnd = lngLineEnd - 4
+  ElseIf Right(strLine, 2) = vbCrLf Then
+    lngLineEnd = lngLineEnd - 2
+  End If
+  
+  'Take the non hex start and end characters off to find the length of the hex
+  lngHexCharacters = lngLineEnd - lngLinePos + 1
+  
+  If lngHexCharacters Mod 2 Then
+    MsgBox "badly formatted, expected even number of hex characters"
+    GoTo Proc_Err
+  End If
+  
+  ' Each hex character encodes 4 bits, so 2 hex characters encode a byte
+  lngBytes = lngHexCharacters / 2
+  
+  ReDim byts(lngBytes)
+  lngBytePos = 0
+  Do While lngBytePos < lngBytes
+    byts(lngBytePos) = HexCharsToByte(Mid(strLine, lngLinePos, 2))
+    lngLinePos = lngLinePos + 2
+    lngBytePos = lngBytePos + 1
+  Loop
+  
+  HexLineToBytes = True
+
+Proc_Exit:
+  Exit Function
+  
+Proc_Err:
+  HexLineToBytes = False
+  GoTo Proc_Exit
+End Function
+
+Function BytesToHexLine(byts() As Byte) As String
+  Dim lngHexCharacters As Long
+  Dim lngBytes As Long
+  Dim lngBytePos As Long
+  
+  Dim str As String
+  Dim strLine As String
+  
+  lngBytes = (UBound(byts) - LBound(byts))
+  ' Each hex character encodes 4 bits, so 2 hex characters encode a byte
+  lngHexCharacters = lngBytes * 2
+  
+  If lngHexCharacters Mod 2 Then
+    MsgBox "bad input, expected even number of hex characters"
+    GoTo Proc_Err
+  End If
+  
+  'ReDim byts(lngBytes)
+  lngBytePos = 0
+  Do While lngBytePos < lngBytes
+    If lngBytePos <> 0 And lngBytePos Mod 32 = 0 Then
+      str = str & "0x" & strLine & " ," & vbCrLf
+      strLine = ""
+    End If
+    strLine = strLine & ByteToHexChars(byts(lngBytePos))
+    lngBytePos = lngBytePos + 1
+  Loop
+  
+  ' add the final partial line
+  str = str & "0x" & strLine
+  
+  BytesToHexLine = str
+
+Proc_Exit:
+  Exit Function
+  
+Proc_Err:
+  BytesToHexLine = ""
+  GoTo Proc_Exit
+End Function
+
+Function ByteToHexChars(byt As Byte) As String
+  Dim str As String
+  
+  str = LCase(Hex(byt))
+  If Len(str) = 1 Then
+    str = "0" & str
+  End If
+  ByteToHexChars = str
+End Function
+
+Private Function SerializeDevMode(udtDevMode As DevMode) As String
+  Dim str As String
+  
+  str = str & "SerializedPrtDevMode = Begin" & vbCrLf
+  If (udtDevMode.lngFields And DM_COLLATE) <> 0 Then
+    str = str & "    Collate = " & SerializeDevModeCollate(udtDevMode.intCollate) & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_COLOR) <> 0 Then
+    str = str & "    Color = " & SerializeDevModeColor(udtDevMode.intColor) & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_COPIES) <> 0 Then
+    str = str & "    Copies = " & udtDevMode.intCopies & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_DEFAULTSOURCE) <> 0 Then
+    str = str & "    DefaultSource = " & SerializeDevModeDefaultSource(udtDevMode.intDefaultSource) & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_DUPLEX) <> 0 Then
+    str = str & "    Duplex = " & SerializeDevModeDuplex(udtDevMode.intDuplex) & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_ORIENTATION) <> 0 Then
+    str = str & "    Orientation = " & SerializeDevModeOrientation(udtDevMode.intOrientation) & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_PAPERSIZE) <> 0 Then
+    str = str & "    PaperSize = " & SerializeDevModePaperSize(udtDevMode.intPaperSize) & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_PAPERLENGTH) <> 0 Then
+    str = str & "    PaperLength = " & udtDevMode.intPaperLength & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_PAPERWIDTH) <> 0 Then
+    str = str & "    PaperWidth = " & udtDevMode.intPaperWidth & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_PRINTQUALITY) <> 0 Then
+    str = str & "    PrintQuality = " & SerializeDevModePrintQuality(udtDevMode.intPrintQuality) & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_YRESOLUTION) <> 0 Then
+    str = str & "    YResolution = " & udtDevMode.intYResolution & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_SCALE) <> 0 Then
+    str = str & "    Scale = " & udtDevMode.intScale & vbCrLf
+  End If
+  If (udtDevMode.lngFields And DM_TTOPTION) <> 0 Then
+    str = str & "    TrueType = " & SerializeDevModeTrueType(udtDevMode.intTTOption) & vbCrLf
+  End If
+  str = str & "End" & vbCrLf
+  
+  SerializeDevMode = str
+End Function
+
+Private Function SerializeDevModeCollate(Value As Integer) As String
+  Select Case Value
+    Case 0
+      SerializeDevModeCollate = "FALSE"
+    Case 1
+      SerializeDevModeCollate = "TRUE"
+    Case Else
+      SerializeDevModeCollate = "*UNKNOWN*"
+      MsgBox "Could not serialize Collate of " & Value
+  End Select
+End Function
+
+Private Function DeserializeDevModeCollate(str As String) As Integer
+  Select Case str
+    Case "FALSE"
+      DeserializeDevModeCollate = 0
+    Case "TRUE"
+      DeserializeDevModeCollate = 1
+  End Select
+End Function
+
+Private Function SerializeDevModeColor(Value As Integer) As String
+  Select Case Value
+    Case 1
+      SerializeDevModeColor = "MONOCHROME"
+    Case 2
+      SerializeDevModeColor = "COLOR"
+    Case Else
+      SerializeDevModeColor = "*UNKNOWN*"
+      MsgBox "Could not serialize Color of " & Value
+  End Select
+End Function
+
+Private Function DeserializeDevModeColor(str As String) As Integer
+  Select Case str
+    Case "MONOCHROME"
+      DeserializeDevModeColor = 1
+    Case "COLOR"
+      DeserializeDevModeColor = 2
+  End Select
+End Function
+
+Private Function SerializeDevModeDefaultSource(Value As Integer) As String
+  If Value > 256 Then
+    'This is device specific so set default
+    Value = 1
+  End If
+  Select Case Value
+    Case 1
+      SerializeDevModeDefaultSource = "UPPER/ONLYONE"
+    Case 2
+      SerializeDevModeDefaultSource = "LOWER"
+    Case 3
+      SerializeDevModeDefaultSource = "MIDDLE"
+    Case 4
+      SerializeDevModeDefaultSource = "MANUAL"
+    Case 5
+      SerializeDevModeDefaultSource = "ENVELOPE"
+    Case 6
+      SerializeDevModeDefaultSource = "ENVMANUAL"
+    Case 7
+      SerializeDevModeDefaultSource = "AUTO"
+    Case 8
+      SerializeDevModeDefaultSource = "TRACTOR"
+    Case 9
+      SerializeDevModeDefaultSource = "SMALLFMT"
+    Case 10
+      SerializeDevModeDefaultSource = "LARGEFMT"
+    Case 11
+      SerializeDevModeDefaultSource = "LARGECAPACITY"
+    Case 14
+      SerializeDevModeDefaultSource = "CASSETTE"
+    Case 15
+      SerializeDevModeDefaultSource = "FORMSOURCE"
+    Case 256
+      SerializeDevModeDefaultSource = "USER"
+    Case Else
+      SerializeDevModeDefaultSource = "*UNKNOWN*"
+      MsgBox "Could not serialize DefaultSource of " & Value
+  End Select
+End Function
+
+Private Function DeserializeDevModeDefaultSource(str As String) As Integer
+  Select Case str
+    Case "UPPER/ONLYONE"
+      DeserializeDevModeDefaultSource = 1
+    Case "LOWER"
+      DeserializeDevModeDefaultSource = 2
+    Case "MIDDLE"
+      DeserializeDevModeDefaultSource = 3
+    Case "MANUAL"
+      DeserializeDevModeDefaultSource = 4
+    Case "ENVELOPE"
+      DeserializeDevModeDefaultSource = 5
+    Case "ENVMANUAL"
+      DeserializeDevModeDefaultSource = 6
+    Case "AUTO"
+      DeserializeDevModeDefaultSource = 7
+    Case "TRACTOR"
+      DeserializeDevModeDefaultSource = 8
+    Case "SMALLFMT"
+      DeserializeDevModeDefaultSource = 9
+    Case "LARGEFMT"
+      DeserializeDevModeDefaultSource = 10
+    Case "LARGECAPACITY"
+      DeserializeDevModeDefaultSource = 11
+    Case "CASSETTE"
+      DeserializeDevModeDefaultSource = 14
+    Case "FORMSOURCE"
+      DeserializeDevModeDefaultSource = 15
+    Case "USER"
+      DeserializeDevModeDefaultSource = 256
+  End Select
+End Function
+
+Private Function SerializeDevModeDuplex(Value As Integer) As String
+  Select Case Value
+    Case 1
+      SerializeDevModeDuplex = "SIMPLEX"
+    Case 2
+      SerializeDevModeDuplex = "VERTICAL"
+    Case 3
+      SerializeDevModeDuplex = "HORIZONTAL"
+    Case Else
+      SerializeDevModeDuplex = "*UNKNOWN*"
+      MsgBox "Could not serialize Duplex of " & Value
+  End Select
+End Function
+
+Private Function DeserializeDevModeDuplex(str As String) As Integer
+  Select Case str
+    Case "SIMPLEX"
+      DeserializeDevModeDuplex = 1
+    Case "VERTICAL"
+      DeserializeDevModeDuplex = 2
+    Case "HORIZONTAL"
+      DeserializeDevModeDuplex = 3
+  End Select
+End Function
+
+Private Function SerializeDevModeOrientation(Value As Integer) As String
+  Select Case Value
+    Case 1
+      SerializeDevModeOrientation = "PORTRAIT"
+    Case 2
+      SerializeDevModeOrientation = "LANDSCAPE"
+    Case Else
+      SerializeDevModeOrientation = "*UNKNOWN*"
+      MsgBox "Could not serialize Orientation of " & Value
+  End Select
+End Function
+
+Private Function DeserializeDevModeOrientation(str As String) As Integer
+  Select Case str
+    Case "PORTRAIT"
+      DeserializeDevModeOrientation = 1
+    Case "LANDSCAPE"
+      DeserializeDevModeOrientation = 2
+  End Select
+End Function
+
+Private Function SerializeDevModePaperSize(Value As Integer) As String
+  Select Case Value
+    Case 1
+      SerializeDevModePaperSize = "LETTER"
+    Case 2
+      SerializeDevModePaperSize = "LETTERSMALL"
+    Case 3
+      SerializeDevModePaperSize = "TABLOID"
+    Case 4
+      SerializeDevModePaperSize = "LEDGER"
+    Case 5
+      SerializeDevModePaperSize = "LEGAL"
+    Case 6
+      SerializeDevModePaperSize = "STATEMENT"
+    Case 7
+      SerializeDevModePaperSize = "EXECUTIVE"
+    Case 8
+      SerializeDevModePaperSize = "A3"
+    Case 9
+      SerializeDevModePaperSize = "A4"
+    Case 10
+      SerializeDevModePaperSize = "A4SMALL"
+    Case 11
+      SerializeDevModePaperSize = "A5"
+    Case 12
+      SerializeDevModePaperSize = "B4"
+    Case 13
+      SerializeDevModePaperSize = "B5"
+    Case 14
+      SerializeDevModePaperSize = "FOLIO"
+    Case 15
+      SerializeDevModePaperSize = "QUARTO"
+    Case 16
+      SerializeDevModePaperSize = "10X14"
+    Case 17
+      SerializeDevModePaperSize = "11X17"
+    Case 18
+      SerializeDevModePaperSize = "NOTE"
+    Case 19
+      SerializeDevModePaperSize = "ENV_9"
+    Case 20
+      SerializeDevModePaperSize = "ENV_10"
+    Case 21
+      SerializeDevModePaperSize = "ENV_11"
+    Case 22
+      SerializeDevModePaperSize = "ENV_12"
+    Case 23
+      SerializeDevModePaperSize = "ENV_14"
+    Case 24
+      SerializeDevModePaperSize = "CSHEET"
+    Case 25
+      SerializeDevModePaperSize = "DSHEET"
+    Case 26
+      SerializeDevModePaperSize = "ESHEET"
+    Case 27
+      SerializeDevModePaperSize = "ENV_DL"
+    Case 28
+      SerializeDevModePaperSize = "ENV_C5"
+    Case 29
+      SerializeDevModePaperSize = "ENV_C3"
+    Case 30
+      SerializeDevModePaperSize = "ENV_C4"
+    Case 31
+      SerializeDevModePaperSize = "ENV_C6"
+    Case 32
+      SerializeDevModePaperSize = "ENV_C65"
+    Case 33
+      SerializeDevModePaperSize = "ENV_B4"
+    Case 34
+      SerializeDevModePaperSize = "ENV_B5"
+    Case 35
+      SerializeDevModePaperSize = "ENV_B6"
+    Case 36
+      SerializeDevModePaperSize = "ENV_ITALY"
+    Case 37
+      SerializeDevModePaperSize = "ENV_MONARCH"
+    Case 38
+      SerializeDevModePaperSize = "ENV_PERSONAL"
+    Case 39
+      SerializeDevModePaperSize = "FANFOLD_US"
+    Case 40
+      SerializeDevModePaperSize = "FANFOLD_STD_GERMAN"
+    Case 41
+      SerializeDevModePaperSize = "FANFOLD_LGL_GERMAN"
+    Case 42
+      SerializeDevModePaperSize = "ISO_B4"
+    Case 43
+      SerializeDevModePaperSize = "JAPANESE_POSTCARD"
+    Case 44
+      SerializeDevModePaperSize = "9X11"
+    Case 45
+      SerializeDevModePaperSize = "10X11"
+    Case 46
+      SerializeDevModePaperSize = "15X11"
+    Case 47
+      SerializeDevModePaperSize = "ENV_INVITE"
+    Case 48
+      SerializeDevModePaperSize = "RESERVED_48"
+    Case 49
+      SerializeDevModePaperSize = "RESERVED_49"
+    Case 50
+      SerializeDevModePaperSize = "LETTER_EXTRA"
+    Case 51
+      SerializeDevModePaperSize = "LEGAL_EXTRA"
+    Case 52
+      SerializeDevModePaperSize = "TABLOID_EXTRA"
+    Case 53
+      SerializeDevModePaperSize = "A4_EXTRA"
+    Case 54
+      SerializeDevModePaperSize = "LETTER_TRANSVERSE"
+    Case 55
+      SerializeDevModePaperSize = "A4_TRANSVERSE"
+    Case 56
+      SerializeDevModePaperSize = "LETTER_EXTRA_TRANSVERSE"
+    Case 57
+      SerializeDevModePaperSize = "A_PLUS"
+    Case 58
+      SerializeDevModePaperSize = "B_PLUS"
+    Case 59
+      SerializeDevModePaperSize = "LETTER_PLUS"
+    Case 60
+      SerializeDevModePaperSize = "A4_PLUS"
+    Case 61
+      SerializeDevModePaperSize = "A5_TRANSVERSE"
+    Case 62
+      SerializeDevModePaperSize = "B5_TRANSVERSE"
+    Case 63
+      SerializeDevModePaperSize = "A3_EXTRA"
+    Case 64
+      SerializeDevModePaperSize = "A5_EXTRA"
+    Case 65
+      SerializeDevModePaperSize = "B5_EXTRA"
+    Case 66
+      SerializeDevModePaperSize = "A2"
+    Case 67
+      SerializeDevModePaperSize = "A3_TRANSVERSE"
+    Case 68
+      SerializeDevModePaperSize = "A3_EXTRA_TRANSVERSE"
+    Case 256
+      SerializeDevModePaperSize = "USER"
+    Case Else
+      SerializeDevModePaperSize = "*UNKNOWN*"
+      MsgBox "Could not serialize PaperSize of " & Value
+  End Select
+End Function
+
+Private Function DeserializeDevModePaperSize(str As String) As Integer
+  Select Case str
+    Case "LETTER"
+      DeserializeDevModePaperSize = 1
+    Case "LETTERSMALL"
+      DeserializeDevModePaperSize = 2
+    Case "TABLOID"
+      DeserializeDevModePaperSize = 3
+    Case "LEDGER"
+      DeserializeDevModePaperSize = 4
+    Case "LEGAL"
+      DeserializeDevModePaperSize = 5
+    Case "STATEMENT"
+      DeserializeDevModePaperSize = 6
+    Case "EXECUTIVE"
+      DeserializeDevModePaperSize = 7
+    Case "A3"
+      DeserializeDevModePaperSize = 8
+    Case "A4"
+      DeserializeDevModePaperSize = 9
+    Case "A4SMALL"
+      DeserializeDevModePaperSize = 10
+    Case "A5"
+      DeserializeDevModePaperSize = 11
+    Case "B4"
+      DeserializeDevModePaperSize = 12
+    Case "B5"
+      DeserializeDevModePaperSize = 13
+    Case "FOLIO"
+      DeserializeDevModePaperSize = 14
+    Case "QUARTO"
+      DeserializeDevModePaperSize = 15
+    Case "10X14"
+      DeserializeDevModePaperSize = 16
+    Case "11X17"
+      DeserializeDevModePaperSize = 17
+    Case "NOTE"
+      DeserializeDevModePaperSize = 18
+    Case "ENV_9"
+      DeserializeDevModePaperSize = 19
+    Case "ENV_10"
+      DeserializeDevModePaperSize = 20
+    Case "ENV_11"
+      DeserializeDevModePaperSize = 21
+    Case "ENV_12"
+      DeserializeDevModePaperSize = 22
+    Case "ENV_14"
+      DeserializeDevModePaperSize = 23
+    Case "CSHEET"
+      DeserializeDevModePaperSize = 24
+    Case "DSHEET"
+      DeserializeDevModePaperSize = 25
+    Case "ESHEET"
+      DeserializeDevModePaperSize = 26
+    Case "ENV_DL"
+      DeserializeDevModePaperSize = 27
+    Case "ENV_C5"
+      DeserializeDevModePaperSize = 28
+    Case "ENV_C3"
+      DeserializeDevModePaperSize = 29
+    Case "ENV_C4"
+      DeserializeDevModePaperSize = 30
+    Case "ENV_C6"
+      DeserializeDevModePaperSize = 31
+    Case "ENV_C65"
+      DeserializeDevModePaperSize = 32
+    Case "ENV_B4"
+      DeserializeDevModePaperSize = 33
+    Case "ENV_B5"
+      DeserializeDevModePaperSize = 34
+    Case "ENV_B6"
+      DeserializeDevModePaperSize = 35
+    Case "ENV_ITALY"
+      DeserializeDevModePaperSize = 36
+    Case "ENV_MONARCH"
+      DeserializeDevModePaperSize = 37
+    Case "ENV_PERSONAL"
+      DeserializeDevModePaperSize = 38
+    Case "FANFOLD_US"
+      DeserializeDevModePaperSize = 39
+    Case "FANFOLD_STD_GERMAN"
+      DeserializeDevModePaperSize = 40
+    Case "FANFOLD_LGL_GERMAN"
+      DeserializeDevModePaperSize = 41
+    Case "ISO_B4"
+      DeserializeDevModePaperSize = 42
+    Case "JAPANESE_POSTCARD"
+      DeserializeDevModePaperSize = 43
+    Case "9X11"
+      DeserializeDevModePaperSize = 44
+    Case "10X11"
+      DeserializeDevModePaperSize = 45
+    Case "15X11"
+      DeserializeDevModePaperSize = 46
+    Case "ENV_INVITE"
+      DeserializeDevModePaperSize = 47
+    Case "RESERVED_48"
+      DeserializeDevModePaperSize = 48
+    Case "RESERVED_49"
+      DeserializeDevModePaperSize = 49
+    Case "LETTER_EXTRA"
+      DeserializeDevModePaperSize = 50
+    Case "LEGAL_EXTRA"
+      DeserializeDevModePaperSize = 51
+    Case "TABLOID_EXTRA"
+      DeserializeDevModePaperSize = 52
+    Case "A4_EXTRA"
+      DeserializeDevModePaperSize = 53
+    Case "LETTER_TRANSVERSE"
+      DeserializeDevModePaperSize = 54
+    Case "A4_TRANSVERSE"
+      DeserializeDevModePaperSize = 55
+    Case "LETTER_EXTRA_TRANSVERSE"
+      DeserializeDevModePaperSize = 56
+    Case "A_PLUS"
+      DeserializeDevModePaperSize = 57
+    Case "B_PLUS"
+      DeserializeDevModePaperSize = 58
+    Case "LETTER_PLUS"
+      DeserializeDevModePaperSize = 59
+    Case "A4_PLUS"
+      DeserializeDevModePaperSize = 60
+    Case "A5_TRANSVERSE"
+      DeserializeDevModePaperSize = 61
+    Case "B5_TRANSVERSE"
+      DeserializeDevModePaperSize = 62
+    Case "A3_EXTRA"
+      DeserializeDevModePaperSize = 63
+    Case "A5_EXTRA"
+      DeserializeDevModePaperSize = 64
+    Case "B5_EXTRA"
+      DeserializeDevModePaperSize = 65
+    Case "A2"
+      DeserializeDevModePaperSize = 66
+    Case "A3_TRANSVERSE"
+      DeserializeDevModePaperSize = 67
+    Case "A3_EXTRA_TRANSVERSE"
+      DeserializeDevModePaperSize = 68
+    Case "USER"
+      DeserializeDevModePaperSize = 256
+  End Select
+End Function
+
+Private Function SerializeDevModePrintQuality(Value As Integer) As String
+  Select Case Value
+    Case -1
+      SerializeDevModePrintQuality = "DRAFT"
+    Case -2
+      SerializeDevModePrintQuality = "LOW"
+    Case -3
+      SerializeDevModePrintQuality = "MEDIUM"
+    Case -4
+      SerializeDevModePrintQuality = "HIGH"
+    Case Else
+      SerializeDevModePrintQuality = Value
+  End Select
+End Function
+
+Private Function DeserializeDevModePrintQuality(str As String) As Integer
+  Select Case str
+    Case "DRAFT"
+      DeserializeDevModePrintQuality = -1
+    Case "LOW"
+      DeserializeDevModePrintQuality = -2
+    Case "MEDIUM"
+      DeserializeDevModePrintQuality = -3
+    Case "HIGH"
+      DeserializeDevModePrintQuality = -4
+    Case Else
+      DeserializeDevModePrintQuality = CInt(str)
+  End Select
+End Function
+
+Private Function SerializeDevModeTrueType(Value As Integer) As String
+  Select Case Value
+    Case 1
+      SerializeDevModeTrueType = "BITMAP"
+    Case 2
+      SerializeDevModeTrueType = "DOWNLOAD"
+    Case 3
+      SerializeDevModeTrueType = "SUBDEV"
+    Case 4
+      SerializeDevModeTrueType = "DOWNLOAD_OUTLINE"
+    Case Else
+      SerializeDevModeTrueType = "*UNKNOWN*"
+      MsgBox "Could not serialize TrueType of " & Value
+  End Select
+End Function
+
+Private Function DeserializeDevModeTrueType(str As String) As Integer
+  Select Case str
+    Case "BITMAP"
+      DeserializeDevModeTrueType = 1
+    Case "DOWNLOAD"
+      DeserializeDevModeTrueType = 2
+    Case "SUBDEV"
+      DeserializeDevModeTrueType = 3
+    Case "DOWNLOAD_OUTLINE"
+      DeserializeDevModeTrueType = 4
+  End Select
+End Function
+
+Private Function SerializeMip(udtMip As Mip) As String
+  Dim str As String
+  
+  str = str & "SerializedPrtMip = Begin" & vbCrLf
+  str = str & "    LeftMargin = " & udtMip.lngLeftMargin & vbCrLf
+  str = str & "    TopMargin = " & udtMip.lngTopMargin & vbCrLf
+  str = str & "    RightMargin = " & udtMip.lngRightMargin & vbCrLf
+  str = str & "    BottomMargin = " & udtMip.lngBottomMargin & vbCrLf
+  str = str & "    DataOnly = " & SerializeMipDataOnly(udtMip.lngDataOnly) & vbCrLf
+  str = str & "    Width = " & udtMip.lngWidth & vbCrLf
+  str = str & "    Height = " & udtMip.lngHeight & vbCrLf
+  str = str & "    DefaultSize = " & SerializeMipDefaultSize(udtMip.lngDefaultSize) & vbCrLf
+  str = str & "    Columns = " & udtMip.lngColumns & vbCrLf
+  str = str & "    ColumnSpacing = " & udtMip.lngColumnSpacing & vbCrLf
+  str = str & "    RowSpacing = " & udtMip.lngRowSpacing & vbCrLf
+  str = str & "    ItemLayout = " & SerializeMipItemLayout(udtMip.lngItemLayout) & vbCrLf
+  str = str & "    FastPrint = " & udtMip.lngFastPrint & vbCrLf
+  str = str & "    Datasheet = " & udtMip.lngDatasheet & vbCrLf
+  str = str & "End" & vbCrLf
+  
+  SerializeMip = str
+End Function
+
+Private Function DeserializeMip(strSection As String) As Mip
+  Dim strTag As String
+  Dim strValue As String
+  Dim str As String
+  Dim strs() As String
+  Dim i As Long
+  Dim x As Long
+  Dim udtMip As Mip
+  
+  strs = Split(strSection, vbCrLf)
+  
+  For i = LBound(strs) To UBound(strs) - 1
+    str = strs(i)
+    x = InStr(str, "=")
+    strTag = Trim(Mid(str, 1, x - 1))
+    strValue = Trim(Mid(str, x + 1))
+    
+    Select Case strTag
+      Case "LeftMargin"
+        udtMip.lngLeftMargin = CLng(strValue)
+      Case "TopMargin"
+        udtMip.lngTopMargin = CLng(strValue)
+      Case "RightMargin"
+        udtMip.lngRightMargin = CLng(strValue)
+      Case "BottomMargin"
+        udtMip.lngBottomMargin = CLng(strValue)
+      Case "DataOnly"
+        udtMip.lngDataOnly = DeserializeMipDataOnly(strValue)
+      Case "Width"
+        udtMip.lngWidth = CLng(strValue)
+      Case "Height"
+        udtMip.lngHeight = CLng(strValue)
+      Case "DefaultSize"
+        udtMip.lngDefaultSize = DeserializeMipDefaultSize(strValue)
+      Case "Columns"
+        udtMip.lngColumns = CLng(strValue)
+      Case "ColumnSpacing"
+        udtMip.lngColumnSpacing = CLng(strValue)
+      Case "RowSpacing"
+        udtMip.lngRowSpacing = CLng(strValue)
+      Case "ItemLayout"
+        udtMip.lngItemLayout = DeserializeMipItemLayout(strValue)
+      Case "FastPrint"
+        udtMip.lngFastPrint = CLng(strValue)
+      Case "Datasheet"
+        udtMip.lngDatasheet = CLng(strValue)
+    End Select
+  Next i
+  
+  DeserializeMip = udtMip
+End Function
+
+Private Function SerializeMipDataOnly(Value As Long) As String
+  Select Case Value
+    Case 1
+      SerializeMipDataOnly = "TRUE"
+    Case 0
+      SerializeMipDataOnly = "FALSE"
+    Case Else
+      SerializeMipDataOnly = "*UNKNOWN*"
+      MsgBox "Could not serialize DataOnly of " & Value
+  End Select
+End Function
+
+Private Function DeserializeMipDataOnly(str As String) As Long
+  Select Case str
+    Case "TRUE"
+      DeserializeMipDataOnly = 1
+    Case "FALSE"
+      DeserializeMipDataOnly = 0
+  End Select
+End Function
+
+Private Function SerializeMipDefaultSize(Value As Long) As String
+  Select Case Value
+    Case 1
+      SerializeMipDefaultSize = "USE_DETAIL"
+    Case 0
+      SerializeMipDefaultSize = "USE_WIDTH_AND_HEIGHT"
+    Case Else
+      SerializeMipDefaultSize = "*UNKNOWN*"
+      MsgBox "Could not serialize DefaultSize of " & Value
+  End Select
+End Function
+
+Private Function DeserializeMipDefaultSize(str As String) As Long
+  Select Case str
+    Case "USE_DETAIL"
+      DeserializeMipDefaultSize = 1
+    Case "USE_WIDTH_AND_HEIGHT"
+      DeserializeMipDefaultSize = 0
+  End Select
+End Function
+
+Private Function SerializeMipItemLayout(Value As Long) As String
+  Select Case Value
+    Case 1953
+      SerializeMipItemLayout = "HORIZONTAL"
+    Case 1954
+      SerializeMipItemLayout = "VERTICAL"
+    Case Else
+      SerializeMipItemLayout = "*UNKNOWN*"
+      MsgBox "Could not serialize MipItemLayout of " & Value
+  End Select
+End Function
+
+Private Function DeserializeMipItemLayout(str As String) As Long
+  Select Case str
+    Case "HORIZONTAL"
+      DeserializeMipItemLayout = 1953
+    Case "VERTICAL"
+      DeserializeMipItemLayout = 1954
+  End Select
+End Function
