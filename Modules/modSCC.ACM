@@ -439,3 +439,35 @@ Public Sub SCC_Update(strPath As String, blnShowUpdates As Boolean)
   End Select
 
 End Sub
+
+'************************************************
+' SCC_GetLatestImportVersion
+'
+' Gets the version of the newest object imported into
+' access from the tool.
+'
+' Version history:
+' - 1.00 initial version 04/09/2012
+' - 1.01 abstracted out as this is determined in an SCC dependant way [GBW] 06/02/2020
+'
+' @author Steve Falla <steve.falla@talkjcs.com>
+' @suggestions
+' @version 1.00
+' @return Variant Latest Revision Number
+'************************************************
+Public Function SCC_GetLatestImportVersion() As String
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_GetLatestImportVersion = SVN_GetLatestImportVersion
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_GetLatestImportVersion = TEXT_GetLatestImportVersion
+  
+  End Select
+
+End Function

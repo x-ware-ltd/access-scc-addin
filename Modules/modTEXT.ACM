@@ -238,3 +238,23 @@ End Function
 Public Function TEXT_GetMappedUrl(strPath As String) As String
   TEXT_GetMappedUrl = "N/A"
 End Function
+
+'************************************************
+' TEXT_GetLatestImportVersion
+'
+' Gets the version of the newest object imported into
+' access from the tool.
+'
+' Not applicable for text files
+'
+' Version history:
+' - 1.00 initial version 06/02/2020
+'
+' @author Gilbert Bishop-White <gilbert.bishopwhite@talkjcs.com>
+' @suggestions
+' @version 1.00
+' @return String Latest Revision Number
+'************************************************
+Public Function TEXT_GetLatestImportVersion() As String
+  TEXT_GetLatestImportVersion = "N/A"
+End Function
