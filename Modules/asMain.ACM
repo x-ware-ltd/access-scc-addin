@@ -76,14 +76,25 @@ End Function
 '
 ' Version history:
 '   - 1.00 initial version 07/11/2018
+'   - 2.00 add support for specifying which SccSystem to use
 '
 ' @author       Gilbert Bishop-White <gilbert.bishopwhite@talkjcs.com>
-' @version      1.00
+' @version      2.00
 ' @suggestions
+' @param        String The SCC system to use. Must be either "TEXT" or "SVN"
 ' @param        String The path to a SCC Addin repository. Must include trailing slash.
 ' @return       Variant
 '************************************************
-Public Function ImportSilent(strImportPath As String)
+Public Function ImportSilent(strSccSystem As String, strImportPath As String)
+  Select Case strSccSystem
+    Case "SVN":
+      SetSCCSystem sccSystemSubversion
+    Case "TEXT":
+      SetSCCSystem sccSystemText
+    Case Else:
+      Err.Raise , , "Unrecognised SCC System: " & strSccSystem
+  End Select
+  
   CreateLocalSCCTables
   
   UpdateObjectProperties (asObjectType.acTable)     ' Tables
