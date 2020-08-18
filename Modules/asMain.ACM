@@ -77,15 +77,18 @@ End Function
 ' Version history:
 '   - 1.00 initial version 07/11/2018
 '   - 2.00 add support for specifying which SccSystem to use
+'   - 2.01 report list of errors
 '
 ' @author       Gilbert Bishop-White <gilbert.bishopwhite@talkjcs.com>
-' @version      2.00
+' @version      2.01
 ' @suggestions
 ' @param        String The SCC system to use. Must be either "TEXT" or "SVN"
 ' @param        String The path to a SCC Addin repository. Must include trailing slash.
-' @return       Variant
+' @return       String Any errors are returned, if no errors occured returns vbNullString
 '************************************************
-Public Function ImportSilent(strSccSystem As String, strImportPath As String)
+Public Function ImportSilent(strSccSystem As String, strImportPath As String) As String
+  Dim strError As String
+  
   Select Case strSccSystem
     Case "SVN":
       SetSCCSystem sccSystemSubversion
@@ -122,16 +125,18 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String)
   
   CurrentDb.Execute ("UPDATE MSysSCCTmpObjects SET selected=True")
   
-  asImportObjects objExtra, strImportPath & "Extras\"         ' Extras
-  asImportObjects objTable, strImportPath & "Tables\"         ' Tables
-  asImportObjects objQuery, strImportPath & "Queries\"        ' Queries
-  asImportObjects objForm, strImportPath & "Forms\"           ' Forms
-  asImportObjects objReport, strImportPath & "Reports\"       ' Reports
-  asImportObjects objMacro, strImportPath & "Macros\"         ' Macros
-  asImportObjects objModule, strImportPath & "Modules\"       ' Modules
-  asImportObjects objToolbar, strImportPath & "Toolbars\"     ' Toolbars
-  asImportObjects objReference, strImportPath & "References\" ' References
-  asImportObjects objIMEXSpecs, strImportPath & "IMEXSpecs\"  ' Import Export Specs
+  asImportObjects objExtra, strImportPath & "Extras\", strError         ' Extras
+  asImportObjects objTable, strImportPath & "Tables\", strError         ' Tables
+  asImportObjects objQuery, strImportPath & "Queries\", strError        ' Queries
+  asImportObjects objForm, strImportPath & "Forms\", strError           ' Forms
+  asImportObjects objReport, strImportPath & "Reports\", strError       ' Reports
+  asImportObjects objMacro, strImportPath & "Macros\", strError         ' Macros
+  asImportObjects objModule, strImportPath & "Modules\", strError       ' Modules
+  asImportObjects objToolbar, strImportPath & "Toolbars\", strError     ' Toolbars
+  asImportObjects objReference, strImportPath & "References\", strError ' References
+  asImportObjects objIMEXSpecs, strImportPath & "IMEXSpecs\", strError  ' Import Export Specs
+  
+  ImportSilent = strError
 End Function
     
 Public Function asRunExport()
@@ -753,7 +758,7 @@ Public Sub asUpdateVersionsFromExport(strExportPath As String)
          
 End Sub
 
-Private Sub asImportObject(objType As asObjectDBType, objName As String, objStatus As String, strImportPath As String)
+Private Sub asImportObject(objType As asObjectDBType, objName As String, objStatus As String, strImportPath As String, Optional ByRef strError As String)
   Dim strImportFileName As String, strObjectType As String
   Dim strLoadError As String
 
@@ -776,7 +781,7 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
       SetStatus "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
       LoadFromText asGetAccessType(objType), objName, appendSlash(strImportPath) & strImportFileName, strLoadError
       If strLoadError <> "" Then
-        AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf
+        AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf, strError
         strLoadError = ""
       End If
       UpdateStatusEntry asImport, objType, objName, asAdd, appendSlash(strImportPath) & strImportFileName
@@ -865,7 +870,7 @@ Private Sub asDeleteObject(objType As asObjectDBType, objName As String)
 
 End Sub
 
-Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As String)
+Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As String, Optional ByRef strError As String)
   On Error GoTo Err_asImportObjects
   
   Dim db As DAO.Database
@@ -882,7 +887,7 @@ Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As St
   
   ' Import all the objects
   Do Until rst.EOF
-    asImportObject rst!objType, rst!objName, rst!objStatus, strImportPath
+    asImportObject rst!objType, rst!objName, rst!objStatus, strImportPath, strError
     rst.MoveNext
   Loop
 
@@ -1748,10 +1753,10 @@ Private Sub SetStatus(strStatus As String)
   Echo False
 End Sub
 
-Private Sub AddResult(strResult As String)
+Private Sub AddResult(strResult As String, Optional ByRef strError As String)
 
   'This is needed as when running silently the form is not loaded
   On Error Resume Next
-  
+  strError = strError & strResult
   Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & strResult
 End Sub
