@@ -92,7 +92,7 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String)
     Case "TEXT":
       SetSCCSystem sccSystemText
     Case Else:
-      Err.Raise , , "Unrecognised SCC System: " & strSccSystem
+      Err.Raise vbObjectError + 1000, , "Unrecognised SCC System: " & strSccSystem
   End Select
   
   CreateLocalSCCTables
