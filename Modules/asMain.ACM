@@ -120,7 +120,6 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String)
   asPopulateTmpObjectsImport objReference, strImportPath & "References", modSCC.arrReferences ' References
   asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSCC.arrIMEXSpecs   ' Import Export Sepcs
   
-  CurrentDb.Execute ("UPDATE MSysSCCTmpObjects SET selected=True")
   
   asImportObjects objExtra, strImportPath & "Extras\"         ' Extras
   asImportObjects objTable, strImportPath & "Tables\"         ' Tables
@@ -132,6 +131,8 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String)
   asImportObjects objToolbar, strImportPath & "Toolbars\"     ' Toolbars
   asImportObjects objReference, strImportPath & "References\" ' References
   asImportObjects objIMEXSpecs, strImportPath & "IMEXSpecs\"  ' Import Export Specs
+
+    asPurgeTmpObjectsTables
 End Function
     
 Public Function asRunExport()
