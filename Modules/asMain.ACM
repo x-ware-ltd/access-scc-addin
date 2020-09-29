@@ -85,7 +85,7 @@ End Function
 ' @param        String The path to a SCC Addin repository. Must include trailing slash.
 ' @return       String Any errors are returned, if no errors occured returns vbNullString
 '************************************************
-Public Function ImportSilent(strSccSystem As String, strImportPath As String) As String
+Public Function ImportSilent(strSccSystem As String, strImportPath As String, Optional blnSkipMacrosAndExtras As Boolean = False) As String
   Dim strError As String
   
   Select Case strSccSystem
@@ -103,37 +103,40 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String) As
   UpdateObjectProperties (asObjectType.acQuery)     ' Queries
   UpdateObjectProperties (asObjectType.acForm)      ' Forms
   UpdateObjectProperties (asObjectType.acReport)    ' Reports
-  UpdateObjectProperties (asObjectType.acMacro)     ' Macros
   UpdateObjectProperties (asObjectType.acModule)    ' Modules
   UpdateObjectProperties (asObjectType.acToolbar)   ' Toolbars
-  UpdateObjectProperties (asObjectType.acExtra)     ' Extras
   UpdateObjectProperties (asObjectType.acReference) ' References
   UpdateObjectProperties (asObjectType.acIMEXSpecs) ' Import Export Specs
-
+  If Not blnSkipMacrosAndExtras Then
+    UpdateObjectProperties (asObjectType.acMacro)     ' Macros
+    UpdateObjectProperties (asObjectType.acExtra)     ' Extras
+  End If
   
   asPopulateTmpObjectsImport objTable, strImportPath & "Tables", modSCC.arrTables             ' Tables
   asPopulateTmpObjectsImport objQuery, strImportPath & "Queries", modSCC.arrQueries           ' Queries
   asPopulateTmpObjectsImport objForm, strImportPath & "Forms", modSCC.arrForms                ' Forms
   asPopulateTmpObjectsImport objReport, strImportPath & "Reports", modSCC.arrReports          ' Reports
-  asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSCC.arrMacros             ' Macros
   asPopulateTmpObjectsImport objModule, strImportPath & "Modules", modSCC.arrModules          ' Modules
   asPopulateTmpObjectsImport objToolbar, strImportPath & "Toolbars", modSCC.arrToolbars       ' Toolbars
-  asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras             ' Extras
   asPopulateTmpObjectsImport objReference, strImportPath & "References", modSCC.arrReferences ' References
   asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSCC.arrIMEXSpecs   ' Import Export Sepcs
+  If Not blnSkipMacrosAndExtras Then
+    asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSCC.arrMacros             ' Macros
+    asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras             ' Extras
+  End If
   
-
-  
-  asImportObjects objExtra, strImportPath & "Extras\", strError         ' Extras
   asImportObjects objTable, strImportPath & "Tables\", strError         ' Tables
   asImportObjects objQuery, strImportPath & "Queries\", strError        ' Queries
   asImportObjects objForm, strImportPath & "Forms\", strError           ' Forms
   asImportObjects objReport, strImportPath & "Reports\", strError       ' Reports
-  asImportObjects objMacro, strImportPath & "Macros\", strError         ' Macros
   asImportObjects objModule, strImportPath & "Modules\", strError       ' Modules
   asImportObjects objToolbar, strImportPath & "Toolbars\", strError     ' Toolbars
   asImportObjects objReference, strImportPath & "References\", strError ' References
   asImportObjects objIMEXSpecs, strImportPath & "IMEXSpecs\", strError  ' Import Export Specs
+  If Not blnSkipMacrosAndExtras Then
+    asImportObjects objMacro, strImportPath & "Macros\", strError         ' Macros
+    asImportObjects objExtra, strImportPath & "Extras\", strError         ' Extras
+  End If
   
   ImportSilent = strError
   asPurgeTmpObjectsTables
