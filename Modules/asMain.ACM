@@ -34,7 +34,6 @@ Private Const asFileFormatAccess2000 As Integer = 9
 Private Const asFileFormatAccess2002 As Integer = 10
 Private Const asFileFormatAccess2007 As Integer = 12
 
-Public Const gstrConfigFilename As String = "MSAccessSCC.config"
 
 Public Function Init()
   If asSupportedFileFormat() Then
@@ -623,8 +622,8 @@ Private Sub asExportAllObjects(strExportPath As String)
     asMkDir (strExportPath & "References")
     asMkDir (strExportPath & "IMEXSpecs")
     
-    blnSaveAsUTF8 = GetConfigValue("UTF-8 Encoding", strExportPath & gstrConfigFilename)
-    blnRemoveGUIDs = GetConfigValue("Remove GUIDs", strExportPath & gstrConfigFilename)
+    blnSaveAsUTF8 = GetConfigValue("UTF-8 Encoding", strExportPath)
+    blnRemoveGUIDs = GetConfigValue("Remove GUIDs", strExportPath)
           
     If Application.Forms![Access SVN - Options].chkTables.Value = True Then asExportObjects objTable, strExportPath & "Tables", blnSaveAsUTF8, blnRemoveGUIDs
     If Application.Forms![Access SVN - Options].chkQueries.Value = True Then asExportObjects objQuery, strExportPath & "Queries", blnSaveAsUTF8, blnRemoveGUIDs
