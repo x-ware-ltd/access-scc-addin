@@ -54,6 +54,16 @@ Instructions for the following can be found in the wiki:
 - How to contribute to the source
 - Frequently Asked Questions
 
+# Encoding
+
+Access 2002 and earlier encoded all objects as CP1252. In Access 2016 (possibly earlier) the following objects, depending on content, are encoded as either CP1252 or UCS2:
+- Queries
+- Reports
+- Macros
+- Forms
+
+Using the `UTF-8 Encoding` option these UCS2 files will be reencoded as utf-8 with a byte order mark (BOM). Regardless of this option, the above objects with files that are UTF-8 BOM encoded will be reencoded as UCS2 on import.
+
 # How Can I Contribute?
 The team is comprised of volunteer developers. We are always looking for new contributors that have an interest in Access and Source Code Control, and even people that can just help improve the documentation.
 
