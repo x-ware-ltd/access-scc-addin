@@ -381,7 +381,7 @@ Function UnicodeCP_to_ANSICP(bytUnicodeMSB As Byte, bytUnicodeLSB As Byte, ByRef
       bytANSI = bytUnicodeLSB
       UnicodeCP_to_ANSICP = True
     ElseIf bytUnicodeLSB >= 160 Then
-      bytANSI = lngUnicode
+      bytANSI = bytUnicodeLSB
       UnicodeCP_to_ANSICP = True
     Else
       ' we have a value in the range 128 (&H80) to 159 (&H9F) which shouldn't be possible so do nothing to return a fail
@@ -521,4 +521,15 @@ Private Function bit16ShiftR(i As Long, s As Integer) As Long
   bit16ShiftR = Fix(bit16ShiftR / (2 ^ s))
   
   bit16ShiftR = bit16ShiftR And 65535 '&HFFFF ' ensure we only have least significant 16 bits
+End Function
+
+Function ConvFileUTF8_to_ANSI(strFilename As String, Optional strNewFilename As String) As Boolean
+  
+  ConvFileUTF8_to_ANSI = False
+  
+  If ConvFileUTF8_to_UCS2(strFilename, strNewFilename) Then
+    If ConvFileUCS2_to_ANSI(strNewFilename, strNewFilename) Then
+      ConvFileUTF8_to_ANSI = True
+    End If
+  End If
 End Function

@@ -154,11 +154,37 @@ End Sub
 
 Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFilename As String, Optional strErr As String)
   Dim strCatchErr As String
+  Dim blnUTF8 As Boolean
   
   ' Forms, Reports, Queries and Reports are produced and read by Access from UCS2 ( 2 byte ) encoded files
   ' These are re-encoded to UTF-8 on saving so that all SVN tools work
   ' Due to the historic files not having been converted we need to check whether these files are in UTF8 or UCS2 format and convert if required
   
+  On Error GoTo Proc_Err
+  
+  blnUTF8 = IsUTF8(strFilename)
+  
+  If blnUTF8 Then
+    Select Case objType
+    
+      Case asObjectType.acForm, asObjectType.acReport, asObjectType.acMacro, asObjectType.acQuery
+        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
+          strFilename = strFilename & ".tmp"
+        Else
+          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
+        End If
+        
+      
+      Case Else
+        If ConvFileUTF8_to_ANSI(strFilename, strFilename & ".tmp") Then
+          strFilename = strFilename & ".tmp"
+        Else
+         strErr = "Unable to Convert '" & strFilename & "' from UTF8 encoding to ANSI so it has not imported. Please review after import."
+        End If
+    End Select
+  End If
+  
+
   Select Case objType
     Case asObjectType.acForm
       ' This is needed for when importing the SVN Tool from SVN using the SVN Tool!!!!!????
@@ -166,42 +192,20 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
         strErr = "The Form '" & objName & "' is already open. Inserted as " & objName & "-svntmp. Please rename after import"
         objName = objName & "-svntmp"
       End If
-      If IsUTF8(strFilename) Then
-        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
-          Application.LoadFromText objType, objName, strFilename & ".tmp"
-          Kill strFilename & ".tmp"
-        Else
-          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
-        End If
-      Else
-        Application.LoadFromText objType, objName, strFilename
-      End If
+      Application.LoadFromText objType, objName, strFilename
+
     Case asObjectType.acReport, asObjectType.acMacro
-      If IsUTF8(strFilename) Then
-        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
-          Application.LoadFromText objType, objName, strFilename & ".tmp"
-          Kill strFilename & ".tmp"
-        Else
-          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
-        End If
-      Else
-        Application.LoadFromText objType, objName, strFilename
-      End If
+      Application.LoadFromText objType, objName, strFilename
+
     Case asObjectType.acModule
       Application.LoadFromText objType, objName, strFilename
+      
     Case asObjectType.acTable, asObjectType.acIMEXSpecs
       LoadTableFromText objName, strFilename
+      
     Case asObjectType.acQuery
-      If IsUTF8(strFilename) Then
-        If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
-          LoadQueryFromText objName, strFilename & ".tmp"
-          Kill strFilename & ".tmp"
-        Else
-          strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
-        End If
-      Else
-        LoadQueryFromText objName, strFilename
-      End If
+      LoadQueryFromText objName, strFilename
+
     Case asObjectType.acToolbar
       strCatchErr = LoadCommandBarFromText(objName, strFilename)
       If strCatchErr <> "" Then
@@ -209,10 +213,22 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
       End If
     Case asObjectType.acExtra
       LoadExtraFromText strFilename
+      
     Case asObjectType.acReference
       LoadReferencesFromText strFilename
+      
   End Select
-
+  
+  If blnUTF8 Then
+    Kill strFilename
+  End If
+  
+Exit Sub
+  
+Proc_Err:
+  Stop
+  Resume
+  
 End Sub
 
 '************************************************
