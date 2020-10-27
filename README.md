@@ -64,6 +64,30 @@ Access 2002 and earlier encoded all objects as CP1252. In Access 2016 (possibly 
 
 Using the `UTF-8 Encoding` option these UCS2 files will be reencoded as utf-8 with a byte order mark (BOM). Regardless of this option, the above objects with files that are UTF-8 BOM encoded will be reencoded as UCS2 on import.
 
+# Configuration
+
+A file called `MSAccessProject.config` is looked for in the root of the repository. It is intended that this file is committed into SCC. This is structured as an ini file, so the config for section `MSAccess SCC Add-in`, option `UTF-8 Encoding`, is specified like
+```ini
+[MSAccess SCC Add-in]
+UTF-8 Encoding=True
+```
+
+## Configuration options
+
+All MSAccess SCC Add-in configuration has a section of `MSAccess SCC Add-in`, these are the available options:
+
+
+### `UTF-8 Encoding`
+When `UTF-8 Encoding=True`, on export, UCS2 encoded files are converted to UTF-8. This affects the following objects:
+
+- Queries
+- Reports
+- Macros
+- Forms
+
+### `Remove GUIDs`
+When `Remove GUIDs=True`, on export, GUID blocks are removed from Forms and Reports.
+
 # How Can I Contribute?
 The team is comprised of volunteer developers. We are always looking for new contributors that have an interest in Access and Source Code Control, and even people that can just help improve the documentation.
 
