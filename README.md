@@ -11,7 +11,7 @@ Unlike the Visual Sourcesafe Addin
 
 *Stop the press*: As of Access 2013, the SCC layer of Access has been "deprecated". This means if you are already using systems that rely on the MSSCCI layer, such as Visual Sourcesafe, [PushOK SCC plugin](http://www.pushok.com/software/svn.html) or [Unified SCC](http://aigenta.com/products/UnifiedScc.aspx), this will no longer work from Access 2013 onwards.
 
-### Recent Release History
+# Recent Release History
 0.51
 - Updated to support version 1.9 of the subversion libraries.
 
@@ -24,10 +24,10 @@ Unlike the Visual Sourcesafe Addin
 0.47 
 - Update to handle regional formatting of numbers. Prior to this release some regions may have caused errors, and would have stored numeric table data incorrectly in the repository. Thanks to Florian Reitmeit for spotting this one.
 
-### Version Control Systems
+# Version Control Systems
 The only VCS that is supported at the moment is Subversion but future plans could allow support for Git, Mercurial, possibly TFS (Team Foundation Server) and many others if there is enough demand.
 
-### Access Versions
+# Access Versions
 This tool was originally developed for Access 97, but it now built around Access XP.
 There is no reason why it cannot be built and used in Access 2003, 2007 and 2010, however
 any of the new features present in those systems will not work and may cause errors during
@@ -41,20 +41,20 @@ Known issues are:
 - Navigation bars not supported
 - 64 bit Access has never been tested at all (doubt I really want to!)
 
-### Requirements
+# Requirements
 You will need the following to use this:
 - A supported version of Access (XP or greater)
 - A recent version of Tortoise SVN, with the command line tools (version 1.7 or greater)
 - Access to a Subversion repository (private or cloud based)
 
-### Instructions
+# Instructions
 Instructions for the following can be found in the wiki:
 - How to install the addin
 - How to use the addin
 - How to contribute to the source
 - Frequently Asked Questions
 
-### How Can I Contribute?
+# How Can I Contribute?
 The team is comprised of volunteer developers. We are always looking for new contributors that have an interest in Access and Source Code Control, and even people that can just help improve the documentation.
 
 The current developers have a very rough roadmap of where to go forward, but if you have ideas then just exercise your initiative and commit the changes. The use of SCC on this project allows for full oversight, so if things need to be changed after review, then we can easily do that.
