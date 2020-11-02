@@ -2215,7 +2215,7 @@ Begin Form
                         0xa961e7550492d74686ac48ae557e5070
                     End
 
-                    TabIndex =36
+                    TabIndex =37
                 End
                 Begin CheckBox
                     OverlapFlags =215
@@ -2419,14 +2419,14 @@ Begin Form
                     OverlapFlags =93
                     Left =375
                     Top =7260
-                    Width =2025
-                    Height =210
+                    Width =2040
+                    Height =240
                     Name ="lblUTF8"
-                    Caption ="Convert Encoding to UTF-8"
+                    Caption ="Convert to UTF-8 (Old)"
                     LayoutCachedLeft =375
                     LayoutCachedTop =7260
-                    LayoutCachedWidth =2400
-                    LayoutCachedHeight =7470
+                    LayoutCachedWidth =2415
+                    LayoutCachedHeight =7500
                 End
                 Begin Rectangle
                     OverlapFlags =223
@@ -2548,6 +2548,59 @@ Begin Form
                             LayoutCachedHeight =750
                         End
                     End
+                End
+                Begin CommandButton
+                    OverlapFlags =215
+                    Left =5461
+                    Top =7200
+                    Width =340
+                    Height =328
+                    TabIndex =36
+                    Name ="cmdUTF8FullEncode"
+                    Caption ="Compact Database"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadaddadadadadadadadaadadadadada4adaddadadadadad44ada ,
+                        0xadadadadada444adda4444444444444aadadadadada444addadadadadad44ada ,
+                        0xadadadadada4adaddadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    GUID = Begin
+                        0xa0288f8914915140897781540b969b85
+                    End
+
+                    LayoutCachedLeft =5461
+                    LayoutCachedTop =7200
+                    LayoutCachedWidth =5801
+                    LayoutCachedHeight =7528
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
+                End
+                Begin Label
+                    OverlapFlags =215
+                    Left =3401
+                    Top =7260
+                    Width =2025
+                    Height =210
+                    Name ="Label96"
+                    Caption ="Convert all files to UTF-8"
+                    GUID = Begin
+                        0xbc6160d52a38f047b8d4ee4e7f1938a7
+                    End
+                    LayoutCachedLeft =3401
+                    LayoutCachedTop =7260
+                    LayoutCachedWidth =5426
+                    LayoutCachedHeight =7470
                 End
             End
         End
@@ -2737,6 +2790,50 @@ Private Sub cmdUTF8Encoding_Click()
     
   Me.cmdRun.SetFocus
   Me.cmdUTF8Encoding.Enabled = False
+  DoCmd.Hourglass False
+End Sub
+
+Private Sub cmdUTF8FullEncode_Click()
+  Dim i As Long
+  Dim j As Long
+  Dim strFoldername As String
+  Dim strFilename As String
+  Dim arrSCCItems() As SVNITEM
+  Dim strType As String
+  
+  DoCmd.Hourglass True
+  For i = 0 To 6
+    Select Case i
+      Case 0: strType = "Forms"
+      Case 1: strType = "Reports"
+      Case 2: strType = "Macros"
+      Case 3: strType = "Queries"
+      Case 4: strType = "Tables"
+      Case 5: strType = "Toolbars"
+      Case 6: strType = "Extras"
+    End Select
+    strFoldername = Me.txtOutputLocation.Value & "/" & strType
+      
+    SCC_GetAllVersionsSubFolder strFoldername, arrSCCItems
+    
+    If (Not arrSCCItems) <> -1 Then ' check that the arr is not nothing before looping through it
+      For j = LBound(arrSCCItems) To UBound(arrSCCItems)
+        If arrSCCItems(j).svName <> "" Then
+          strFilename = appendSlash(strFoldername) & arrSCCItems(j).svName
+          If Not ConvFile_to_UTF8(strFilename) Then
+            MsgBox "Conversion of '" & strFilename & "' to UTF-8 has failed."
+            DoCmd.Hourglass False
+            Exit Sub
+          End If
+        End If
+      Next
+    End If
+  Next
+  
+  SetConfigValue "UTF-8 Encode All", True, Me.txtOutputLocation.Value
+    
+  Me.cmdRun.SetFocus
+  Me.cmdUTF8FullEncode.Enabled = False
   DoCmd.Hourglass False
 End Sub
 
