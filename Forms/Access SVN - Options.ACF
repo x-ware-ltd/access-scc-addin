@@ -2834,6 +2834,8 @@ Private Sub cmdUTF8FullEncode_Click()
     
   Me.cmdRun.SetFocus
   Me.cmdUTF8FullEncode.Enabled = False
+  Me.cmdUTF8Encoding.Enabled = False
+  
   DoCmd.Hourglass False
 End Sub
 
