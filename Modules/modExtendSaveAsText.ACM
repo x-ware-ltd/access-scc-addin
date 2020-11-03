@@ -149,7 +149,7 @@ End_Processing:
         End If
       End If
     Case asObjectType.acModule
-      Application.SaveAsText objType, objName, strFilename ' no conversion needed - modules are output as ANSI
+      Application.SaveAsText objType, objName, strFilename
       If (enmEncode = asEncode_All_to_UTF8) Then
         If Not ConvFile_to_UTF8(strFilename) Then
           MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
