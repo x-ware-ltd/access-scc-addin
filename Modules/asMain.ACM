@@ -542,6 +542,10 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
   Set db = CurrentDb()
   Set rst = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects WHERE objType = " & objExportType & " AND selected = True", dbOpenDynaset)
   
+  If Not rst.EOF Then
+    asMkDir strExportPath
+  End If
+  
   strObjectType = asGetObjectNiceName(objExportType)
   Do Until rst.EOF
     booSkipObject = False
@@ -613,17 +617,6 @@ Private Sub asExportAllObjects(strExportPath As String)
     Dim blnRemoveGUIDs As Boolean
     
     On Error GoTo Err_OutputToText
-    
-    asMkDir (strExportPath & "Tables")
-    asMkDir (strExportPath & "Queries")
-    asMkDir (strExportPath & "Forms")
-    asMkDir (strExportPath & "Reports")
-    asMkDir (strExportPath & "Macros")
-    asMkDir (strExportPath & "Modules")
-    asMkDir (strExportPath & "Toolbars")
-    asMkDir (strExportPath & "Extras")
-    asMkDir (strExportPath & "References")
-    asMkDir (strExportPath & "IMEXSpecs")
     
     blnSaveAsUTF8 = GetConfigValue("UTF-8 Encoding", strExportPath)
     blnRemoveGUIDs = GetConfigValue("Remove GUIDs", strExportPath)
