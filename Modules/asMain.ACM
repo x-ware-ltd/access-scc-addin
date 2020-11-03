@@ -1417,6 +1417,14 @@ Public Sub asPopulateTmpObjectsExport(objType As asObjectDBType)
   End If
 End Sub
 
+Private Function EndsWith(strCheck As String, strMatch As String)
+  If Len(strCheck) < Len(strMatch) Then
+    Exit Function
+  End If
+  
+  EndsWith = (Mid(strCheck, Len(strCheck) - Len(strMatch) + 1) = strMatch)
+End Function
+
 Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath As String, arrSVNItems() As SVNITEM)
   Dim db As DAO.Database
   Dim rst1 As DAO.Recordset
@@ -1425,6 +1433,9 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
   Dim strStatus As String
   Dim strDeletedQuery As String
   Dim j As Integer
+  Dim strFileExtension As String
+  
+  strFileExtension = asGetObjectExportFileExtension(objType)
   
   Set db = CurrentDb()
   Set rst1 = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects", dbOpenDynaset)
@@ -1432,7 +1443,7 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
   SCC_GetAllVersionsSubFolder strImportPath, arrSVNItems
   If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
     For j = LBound(arrSVNItems) To UBound(arrSVNItems)
-      If arrSVNItems(j).svName <> "" Then
+      If EndsWith(arrSVNItems(j).svName, strFileExtension) Then
         strObjName = winPathSpecialCharsDecode(Left$(arrSVNItems(j).svName, Len(arrSVNItems(j).svName) - 4))
         rst1.AddNew
         rst1!objName = strObjName
@@ -1452,6 +1463,9 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
           Exit For
         End If
         On Error GoTo 0
+      Else
+        AddResult asGetObjectNiceName(objType) & """" & arrSVNItems(j).svName & """ &" _
+                  & " skipped, as it does not end with expected extention """ & strFileExtension & """"
       End If
     Next j
   End If
