@@ -190,6 +190,7 @@ End Sub
 Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFilename As String, Optional strErr As String)
   Dim strCatchErr As String
   Dim blnUTF8 As Boolean
+  Dim strTempFilename As String
   
   ' Forms, Reports, Queries and Reports are produced and read by Access from UCS2 ( 2 byte ) encoded files
   ' These are re-encoded to UTF-8 on saving so that all SVN tools work
@@ -204,7 +205,7 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
     
       Case asObjectType.acForm, asObjectType.acReport, asObjectType.acMacro, asObjectType.acQuery
         If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
-          strFilename = strFilename & ".tmp"
+          strTempFilename = strFilename & ".tmp"
         Else
           strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
         End If
@@ -212,11 +213,13 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
       
       Case Else
         If ConvFileUTF8_to_ANSI(strFilename, strFilename & ".tmp") Then
-          strFilename = strFilename & ".tmp"
+          strTempFilename = strFilename & ".tmp"
         Else
          strErr = "Unable to Convert '" & strFilename & "' from UTF8 encoding to ANSI so it has not imported. Please review after import."
         End If
     End Select
+  Else
+   strTempFilename = strFilename
   End If
   
 
@@ -227,35 +230,35 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
         strErr = "The Form '" & objName & "' is already open. Inserted as " & objName & "-svntmp. Please rename after import"
         objName = objName & "-svntmp"
       End If
-      Application.LoadFromText objType, objName, strFilename
+      Application.LoadFromText objType, objName, strTempFilename
 
     Case asObjectType.acReport, asObjectType.acMacro
-      Application.LoadFromText objType, objName, strFilename
+      Application.LoadFromText objType, objName, strTempFilename
 
     Case asObjectType.acModule
-      Application.LoadFromText objType, objName, strFilename
+      Application.LoadFromText objType, objName, strTempFilename
       
     Case asObjectType.acTable, asObjectType.acIMEXSpecs
-      LoadTableFromText objName, strFilename
+      LoadTableFromText objName, strTempFilename
       
     Case asObjectType.acQuery
-      LoadQueryFromText objName, strFilename
+      LoadQueryFromText objName, strTempFilename
 
     Case asObjectType.acToolbar
-      strCatchErr = LoadCommandBarFromText(objName, strFilename)
+      strCatchErr = LoadCommandBarFromText(objName, strTempFilename)
       If strCatchErr <> "" Then
         strErr = strCatchErr
       End If
     Case asObjectType.acExtra
-      LoadExtraFromText strFilename
+      LoadExtraFromText strTempFilename
       
     Case asObjectType.acReference
-      LoadReferencesFromText strFilename
+      LoadReferencesFromText strTempFilename
       
   End Select
   
   If blnUTF8 Then
-    Kill strFilename
+    Kill strTempFilename
   End If
   
 Exit Sub
