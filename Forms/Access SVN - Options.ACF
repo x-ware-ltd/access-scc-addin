@@ -2383,7 +2383,7 @@ Begin Form
                 Begin CommandButton
                     Enabled = NotDefault
                     OverlapFlags =93
-                    Left =2435
+                    Left =2660
                     Top =7200
                     Width =340
                     Height =328
@@ -2419,10 +2419,10 @@ Begin Form
                     OverlapFlags =93
                     Left =375
                     Top =7260
-                    Width =2040
+                    Width =2280
                     Height =240
                     Name ="lblUTF8"
-                    Caption ="Convert to UTF-8 (Old)"
+                    Caption ="Convert to UTF-8 (Deprecated)"
                     LayoutCachedLeft =375
                     LayoutCachedTop =7260
                     LayoutCachedWidth =2415
@@ -2471,7 +2471,7 @@ Begin Form
                 Begin CommandButton
                     Enabled = NotDefault
                     OverlapFlags =215
-                    Left =2430
+                    Left =2655
                     Top =7558
                     Width =340
                     Height =328
