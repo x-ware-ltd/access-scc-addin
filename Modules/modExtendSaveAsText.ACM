@@ -118,11 +118,9 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
           
       ' we now have the file but it is in UCS2 format
       ' we may want to convert this to UTF-8
-      If blnSaveAsUTF8 Or (enmEncode = asEncode_UCS2_to_UTF8) Or (enmEncode = asEncode_All_to_UTF8) Then
-        If Not ConvFileUCS2_to_UTF8(strFilename) Then 'convert file to UTF8
-          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-        End If
-      ElseIf Not blnSourceIsUCS2 Then
+      blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_UCS2_to_UTF8) Or (enmEncode = asEncode_All_to_UTF8)
+      
+      If Not blnSaveAsUTF8 And Not blnSourceIsUCS2 Then
         ' we don't want to output in UTF-8 encoding and MS Access originally produced a file which is not UCS2 encoded
         ' so convert it back to ANSI
         If ConvFileUCS2_to_ANSI(strFilename, strFilename & ".tmp") Then
@@ -139,51 +137,37 @@ End_Processing:
     
     Case asObjectType.acQuery, asObjectType.acMacro
       Application.SaveAsText objType, objName, strFilename
-      If (blnSaveAsUTF8 Or (enmEncode = asEncode_UCS2_to_UTF8)) And IsUCS2(strFilename) Then
-        If Not ConvFileUCS2_to_UTF8(strFilename) Then 'convert file to UTF8
-          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-        End If
-      ElseIf (enmEncode = asEncode_All_to_UTF8) Then
-        If Not ConvFile_to_UTF8(strFilename) Then
-          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-        End If
-      End If
+      blnSaveAsUTF8 = blnSaveAsUTF8 _
+        Or (enmEncode = asEncode_UCS2_to_UTF8 And IsUCS2(strFilename)) _
+        Or (enmEncode = asEncode_All_to_UTF8)
+      
     Case asObjectType.acModule
       Application.SaveAsText objType, objName, strFilename
-      If (enmEncode = asEncode_All_to_UTF8) Then
-        If Not ConvFile_to_UTF8(strFilename) Then
-          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-        End If
-      End If
+      blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_All_to_UTF8)
+      
     Case asObjectType.acTable, asObjectType.acIMEXSpecs
       SaveTableAsText objName, strFilename
-      If (enmEncode = asEncode_All_to_UTF8) Then
-        If Not ConvFile_to_UTF8(strFilename) Then
-          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-        End If
-      End If
+      blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_All_to_UTF8)
+      
     Case asObjectType.acToolbar
       SaveCommandBarAsText objName, strFilename
-      If (enmEncode = asEncode_All_to_UTF8) Then
-        If Not ConvFile_to_UTF8(strFilename) Then
-          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-        End If
-      End If
+      blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_All_to_UTF8)
+      
     Case asObjectType.acExtra
       SaveExtraAsText strFilename
-      If (enmEncode = asEncode_All_to_UTF8) Then
-        If Not ConvFile_to_UTF8(strFilename) Then
-          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-        End If
-      End If
+      blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_All_to_UTF8)
+      
     Case asObjectType.acReference
       SaveReferencesAsText strFilename
-      If (enmEncode = asEncode_All_to_UTF8) Then
-        If Not ConvFile_to_UTF8(strFilename) Then
-          MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
-        End If
-      End If
+      blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_All_to_UTF8)
   End Select
+  
+  If blnSaveAsUTF8 Then
+    If Not ConvFile_to_UTF8(strFilename) Then
+      MsgBox "Unable to convert '" & objName & "' to UTF-8 encoding. Beware when committing."
+    End If
+  End If
+    
 End Sub
 
 
