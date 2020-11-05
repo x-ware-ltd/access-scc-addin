@@ -38,7 +38,10 @@ End Sub
 ' @param      String the base path to perform a commit against
 '************************************************
 Public Sub TEXT_Commit(strPath As String, blnShowCommit As Boolean)
-  
+  Select Case MsgBox("Export Completed. Would you like to open the output folder?", vbYesNo)
+    Case vbYes
+      Shell "Explorer.exe " & CStr(strPath), vbNormalFocus
+  End Select
 End Sub
 
 '************************************************
