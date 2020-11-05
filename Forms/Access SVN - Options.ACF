@@ -2925,7 +2925,8 @@ Public Sub UpdateVersionDetails()
   Else
     Me.btnImport.Enabled = True
   End If
-  Me.cmdUTF8Encoding.Enabled = Not GetConfigValue("UTF-8 Encoding", Me.txtOutputLocation.Value)
+  Me.cmdUTF8Encoding.Enabled = Not (GetConfigValue("UTF-8 Encoding", Me.txtOutputLocation.Value) Or GetConfigValue("UTF-8 Encode All", Me.txtOutputLocation.Value))
+  Me.cmdUTF8FullEncode.Enabled = Not GetConfigValue("UTF-8 Encode All", Me.txtOutputLocation.Value)
   Me.cmdRemoveGUIDs.Enabled = Not GetConfigValue("Remove GUIDs", Me.txtOutputLocation.Value)
 
   'txtLastVersion cannot be empty string, so protect against it
