@@ -2802,15 +2802,18 @@ Private Sub cmdUTF8FullEncode_Click()
   Dim strType As String
   
   DoCmd.Hourglass True
-  For i = 0 To 6
+  For i = 0 To 9
     Select Case i
-      Case 0: strType = "Forms"
-      Case 1: strType = "Reports"
-      Case 2: strType = "Macros"
-      Case 3: strType = "Queries"
-      Case 4: strType = "Tables"
-      Case 5: strType = "Toolbars"
-      Case 6: strType = "Extras"
+      Case 0: strType = "Tables"
+      Case 1: strType = "Queries"
+      Case 2: strType = "Forms"
+      Case 3: strType = "Reports"
+      Case 4: strType = "Macros"
+      Case 5: strType = "Modules"
+      Case 6: strType = "Toolbars"
+      Case 7: strType = "Extras"
+      Case 8: strType = "References"
+      Case 9: strType = "IMEXSpecs"
     End Select
     strFoldername = Me.txtOutputLocation.Value & "/" & strType
       
