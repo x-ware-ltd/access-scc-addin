@@ -22,7 +22,7 @@ Begin Form
     RecSrcDt = Begin
         0x63a323827542e340
     End
-    Caption ="Subversion for Access - Results"
+    Caption ="MS Access SCC - Results"
     DatasheetFontName ="Arial"
     PrtMip = Begin
         0xae050000a6050000a6050000a605000000000000201c0000e010000001000000 ,
