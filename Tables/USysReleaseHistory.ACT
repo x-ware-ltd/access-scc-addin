@@ -263,5 +263,7 @@ Begin TableDef
         61• .61•#09/30/2020 00:00:00#•‡BETA SilentImport allow skipping macros and extras‡
         62• .62•#11/05/2020 00:00:00#•‡BETA Add support for reencoding all files to UTF8‡
         63• .63•#11/09/2020 00:00:00#•‡BETA Feature freeze on plantext-support release‡
+        64• .64•#11/09/2020 00:00:00#•‡RC Show messagebox on text export finish‡
+        65• .65•#11/09/2020 00:00:00#•‡RC Remove debugging from LoadFromText‡
     End
 End
