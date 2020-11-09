@@ -180,8 +180,6 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
   ' These are re-encoded to UTF-8 on saving so that all SVN tools work
   ' Due to the historic files not having been converted we need to check whether these files are in UTF8 or UCS2 format and convert if required
   
-  On Error GoTo Proc_Err
-  
   blnUTF8 = IsUTF8(strFilename)
   
   If blnUTF8 Then
@@ -244,12 +242,6 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
   If blnUTF8 Then
     Kill strTempFilename
   End If
-  
-Exit Sub
-  
-Proc_Err:
-  Stop
-  Resume
   
 End Sub
 
