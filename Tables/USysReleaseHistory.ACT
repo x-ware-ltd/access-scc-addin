@@ -265,5 +265,6 @@ Begin TableDef
         63• .63•#11/09/2020 00:00:00#•‡BETA Feature freeze on plantext-support release‡
         64• .64•#11/09/2020 00:00:00#•‡RC Show messagebox on text export finish‡
         65• .65•#11/09/2020 00:00:00#•‡RC Remove debugging from LoadFromText‡
+        66• .66•#11/10/2020 00:00:00#•‡RC Rename addin in RegInfo‡
     End
 End
