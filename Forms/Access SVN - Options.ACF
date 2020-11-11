@@ -1758,20 +1758,22 @@ Private Sub cmdUTF8FullEncode_Click()
       Case 9: strType = "IMEXSpecs"
     End Select
     strFoldername = Me.txtOutputLocation.Value & "/" & strType
-      
-    SCC_GetAllVersionsSubFolder strFoldername, arrSCCItems
     
-    If (Not arrSCCItems) <> -1 Then ' check that the arr is not nothing before looping through it
-      For j = LBound(arrSCCItems) To UBound(arrSCCItems)
-        If arrSCCItems(j).svName <> "" Then
-          strFilename = appendSlash(strFoldername) & arrSCCItems(j).svName
-          If Not ConvFile_to_UTF8(strFilename) Then
-            MsgBox "Conversion of '" & strFilename & "' to UTF-8 has failed."
-            DoCmd.Hourglass False
-            Exit Sub
+    If FileExists(strFoldername) Then
+      SCC_GetAllVersionsSubFolder strFoldername, arrSCCItems
+      
+      If (Not arrSCCItems) <> -1 Then ' check that the arr is not nothing before looping through it
+        For j = LBound(arrSCCItems) To UBound(arrSCCItems)
+          If arrSCCItems(j).svName <> "" Then
+            strFilename = appendSlash(strFoldername) & arrSCCItems(j).svName
+            If Not ConvFile_to_UTF8(strFilename) Then
+              MsgBox "Conversion of '" & strFilename & "' to UTF-8 has failed."
+              DoCmd.Hourglass False
+              Exit Sub
+            End If
           End If
-        End If
-      Next
+        Next
+      End If
     End If
   Next
   
