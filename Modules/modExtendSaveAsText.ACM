@@ -22,7 +22,6 @@ Public Enum asSaveAsMode
 End Enum
 
 Public Enum asEncode
-    asEncode_No_Conversion = 0
     asEncode_UCS2_to_UTF8 = 1
     asEncode_All_to_UTF8 = 2
 End Enum
@@ -796,8 +795,8 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
   
   sDelimiterOld = Chr(44)  '  ,
   sSeperatorOld = Chr(34)  '  "
-  sDelimiter = Chr(135)    '  Â‡
-  sSEPERATOR = Chr(149)    '  Â•
+  sDelimiter = Chr(135)    '  ‡
+  sSEPERATOR = Chr(149)    '  •
   CRSPLF = Chr(213) & Chr(214) & Chr(210) 'This is used as an alternative to vbCRLF where ir is itself found in a field
   DLMTR = Chr(243) & Chr(242) & Chr(241) 'This is used as an alternative to sDelimiter where it is itself found in a field
   
