@@ -20,7 +20,7 @@ Option Explicit
 '   - 1.00 initial version
 '
 ' @version    1.00
-' @param      String the base path to perform an SVN update against
+' @param      String the base path to perform a TEXT update against
 '************************************************
 Public Sub TEXT_Update(strPath As String, blnShowUpdates As Boolean)
 
@@ -53,7 +53,7 @@ End Sub
 '   - 1.00 initial version
 '
 ' @version    1.00
-' @param      String the base path to perform an SVN add against
+' @param      String the base path to perform a TEXT add against
 '************************************************
 Public Function TEXT_Add_File(strPath As String)
 
@@ -66,7 +66,7 @@ End Function
 '   - 1.00 initial version
 '
 ' @version    1.00
-' @param      String the base path to perform an SVN delete against
+' @param      String the base path to perform a TEXT delete against
 '************************************************
 Public Function TEXT_Delete_File(strPath As String)
   On Error GoTo Proc_Err
@@ -85,7 +85,7 @@ Proc_Err:
 End Function
 
 '************************************************
-' Gets the version of the SVN client
+' Gets the version of the TEXT client
 '
 ' Not applicable for text files
 '
@@ -94,14 +94,14 @@ End Function
 '
 ' @version    1.00
 ' @param      Boolean optional param to restrict the value to the minor version only eg. 1.5 rather than 1.5.4
-' @return     String the current version of the SVN client
+' @return     String the current version of the TEXT client
 '************************************************
 Public Function TEXT_ClientVersion(Optional minorVersionOnly As Boolean = False) As String
     TEXT_ClientVersion = "N/A"
 End Function
 
 '************************************************
-' Gets the currently checked out version of an SVN repository
+' Gets the currently checked out version of a TEXT repository
 '
 ' Not applicable for text files
 '
@@ -109,23 +109,22 @@ End Function
 '   - 1.00 initial version
 '
 ' @version    1.00
-' @param      String the base path to use when getting the SVN version
-' @return     String the current SVN version of the code
+' @param      String the base path to use when getting the TEXT version
+' @return     String the current TEXT version of the code
 '************************************************
 Public Function TEXT_GetVersion(strPath As String) As String
   TEXT_GetVersion = "N/A"
 End Function
 
 '************************************************
-' SVN Get Info
+' TEXT Get Info
 '
 ' Gathers information about a working copy file
 '
 ' Version history:
 '  - 1.00 initial version
-'  - 1.01 updated to eliminate dependency on WSH and to support version 1.7 of SVN [SF] 22/05/2012
 '
-' @version    1.01
+' @version    1.00
 ' @param      String the path of the checked out file
 ' @return     SVNITEM details of the checked out file
 '************************************************
@@ -155,6 +154,18 @@ Public Function TEXT_GetStatus(strPath As String) As String
   TEXT_GetStatus = "N/A"
 End Function
 
+'************************************************
+' TEXT Get All Versions Sub Folder
+'
+' Iterate through the given folder and add a SVNITEM for each file.
+'
+' Version history:
+'  - 1.00 initial version
+'
+' @version    1.00
+' @param      String the path of the TEXT repostitory
+' @param      SVNITEM() array to fill with the files found in the folder
+'************************************************
 Public Function TEXT_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() As SVNITEM)
   Dim intArrSize As Integer
   Dim strFolder As String
@@ -202,9 +213,9 @@ End Function
 ' Version history:
 '   - 1.00 initial version
 '
-' @version    1.02
-' @param      String the base path of a checked out SVN module to use when getting the SVN version
-' @return     String the latest SVN version of the code in the repository
+' @version    1.00
+' @param      String the path to a folder to use when getting the TEXT version
+' @return     String the latest TEXT version of the code in the repository
 '************************************************
 Public Function TEXT_GetLatestVersion(strPath As String) As String
   TEXT_GetLatestVersion = "N/A"
@@ -219,7 +230,7 @@ End Function
 '   - 1.00 initial version
 '
 ' @version    1.00
-' @param      String the base path of a checked out SVN module
+' @param      String the path to the TEXT folder
 ' @return     String the latest working copy revision
 '************************************************
 Public Function TEXT_GetWorkingFolderVersion(strPath As String) As String
@@ -235,8 +246,8 @@ End Function
 '   - 1.00 initial version
 '
 ' @version    1.00
-' @param      String the base path of a checked out SVN module
-' @return     String the SVN URL mapped to the folder
+' @param      String the path to the TEXT folder
+' @return     String the TEXT URL mapped to the folder
 '************************************************
 Public Function TEXT_GetMappedUrl(strPath As String) As String
   TEXT_GetMappedUrl = "N/A"
