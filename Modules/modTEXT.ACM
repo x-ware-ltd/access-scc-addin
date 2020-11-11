@@ -130,12 +130,16 @@ End Function
 '************************************************
 Public Function TEXT_GetInfo(strPath As String) As SVNITEM
   Dim i As Long
+  Dim str As String
   i = InStrRev(strPath, "\")
   
   TEXT_GetInfo.svPath = strPath
   TEXT_GetInfo.svName = Mid(strPath, i + 1)
-  TEXT_GetInfo.svRevision = xwHashFile(strPath)
-  TEXT_GetInfo.svCheckSum = xwHashFile(strPath)
+
+  str = xwHashFile(strPath)
+  TEXT_GetInfo.svRevision = str
+  TEXT_GetInfo.svCheckSum = str
+
 End Function
 
 '************************************************
