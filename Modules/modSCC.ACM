@@ -3,9 +3,12 @@ Option Explicit
 
 Public Enum SccSystem
   sccSystemSubversion = 1  ' Supported
+  sccSystemText = 4        ' Supported
+  
+  ' These are placeholders for future possible enhanced support
+  ' for specific SCC systems
   sccSystemGIT = 2         ' Unsupported
   sccSystemMercurial = 3   ' Unsupported
-  sccSystemText = 4        ' Supported
 End Enum
 
 Private msccSystem As SccSystem ' the scc system being used
