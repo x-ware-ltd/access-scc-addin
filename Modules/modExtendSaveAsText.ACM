@@ -22,6 +22,7 @@ Public Enum asSaveAsMode
 End Enum
 
 Public Enum asEncode
+    asEncode_No_Conversion = 0
     asEncode_UCS2_to_UTF8 = 1
     asEncode_All_to_UTF8 = 2
 End Enum
