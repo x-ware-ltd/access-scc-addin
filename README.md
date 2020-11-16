@@ -24,16 +24,14 @@ In addition the add-in can be used in `TEXT` mode. This is a source code control
 Future plans could allow enhanced support for Git, Mercurial, possibly TFS (Team Foundation Server) and many others if there is enough demand.
 
 # Access Versions
-This tool was originally developed for Access 97, but it now built around Access XP.
-There is no reason why it cannot be built and used in Access 2003, 2007 and 2010, however
-any of the new features present in those systems will not work and may cause errors during
-export. 
+This tool was originally developed for Access 97, but it now built around Access XP (2002-2003 format database).
+The addin is actively used in Access 2016, but there may be features present in newer versions of Access that will not work and could cause errors on import or export. 
 
 Known issues are:
 - Relationships not being imported/exported (we have no need for them, so have not implemented them)
 - Attachment fields in tables do not work
 - Multi valued records
-- Ribbon not being imported/exported
+- Ribbon not actively supported (As they are storred internally in a table they can be imported/exported, but can not be effectively diffed)
 - Navigation bars not supported
 - 64 bit Access has never been tested at all (doubt I really want to!)
 
