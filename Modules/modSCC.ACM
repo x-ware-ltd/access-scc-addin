@@ -3,6 +3,10 @@ Option Explicit
 
 Public Enum SccSystem
   sccSystemSubversion = 1  ' Supported
+
+  ' The Text implementation works generically
+  ' with GIT (or any SCC system) but does not integrate fully, ie. specific
+  ' git functions (commit, push, etc) have to be performed manuallyby the user
   sccSystemText = 4        ' Supported
   
   ' These are placeholders for future possible enhanced support
