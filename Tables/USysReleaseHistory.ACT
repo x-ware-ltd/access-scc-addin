@@ -268,5 +268,6 @@ Begin TableDef
         66• .66•#11/10/2020 00:00:00#•‡RC Rename addin in RegInfo‡
         67• .67•#11/11/2020 00:00:00#•‡RC Fix bug reencoding all when folder missing‡
         68• .68•#11/11/2020 00:00:00#•‡RC Bugfix/cleanup from code review‡
+        69• .69•#03/10/2021 00:00:00#•‡RC add Icons‡
     End
 End
