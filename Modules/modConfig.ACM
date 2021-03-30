@@ -17,12 +17,36 @@ End Type
 
 Private mudtsDefaults() As ConfigItem
 
-' GetConfigValue and SetConfigValue are currently only coded to allow True/False Value - see ToString and FromString functions below
-Public Function GetConfigValue(strItem As String, strFilename As String) As Variant
-  Dim strValue As String
+' 2020-09-29 MSAccessSCC.config has been renamed to MSAccessProject.config
+' this function prefers the new name if it exists or if no config file exists
+' but can use the old file name to help with moving over
+Private Function GetConfigPath(ByVal strFolder As String) As String
+  Dim str As String
   
-  If FileExists(strFilename) Then
-    strValue = ProfileGetItem(APPNAME, strItem, "", strFilename)
+  strFolder = appendSlash(strFolder)
+  If FileExists(strFolder & "MSAccessProject.config") Then
+    ' if we have a MSAccessProject.config use it
+    str = "MSAccessProject.config"
+  ElseIf FileExists(strFolder & "MSAccessSCC.config") Then
+    ' failing that, if we have an old MSAccessSCC.config use it
+    str = "MSAccessSCC.config"
+  Else
+    ' if we have neither, use the new name
+    str = "MSAccessProject.config"
+  End If
+  
+  GetConfigPath = strFolder & str
+End Function
+
+' GetConfigValue and SetConfigValue are currently only coded to allow True/False Value - see ToString and FromString functions below
+Public Function GetConfigValue(strItem As String, strFolder As String) As Variant
+  Dim strValue As String
+  Dim strFilePath As String
+  
+  strFilePath = GetConfigPath(strFolder)
+  
+  If FileExists(strFilePath) Then
+    strValue = ProfileGetItem(APPNAME, strItem, "", strFilePath)
     If strValue = "" Then
       GetConfigValue = GetDefaultValue(strItem)
     Else
@@ -34,29 +58,33 @@ Public Function GetConfigValue(strItem As String, strFilename As String) As Vari
   End If
 End Function
 
-Public Function SetConfigValue(strItem As String, varValue As Variant, strFilename As String) As Boolean
+Public Function SetConfigValue(strItem As String, varValue As Variant, strFolder As String) As Boolean
   ' Returns true if the vcalue is set
+  Dim strFilePath As String
+  
+  strFilePath = GetConfigPath(strFolder)
   
   SetConfigValue = False ' Initially set to false
   
   If GetDefaultValueType(strItem) = vbNull Then Exit Function ' do nothing if strItem is not a recognised Item
   If GetDefaultValueType(strItem) <> VarType(varValue) Then Exit Function ' do nothing if varValue is not the right type
   
-  If Not FileExists(strFilename) Then
+  If Not FileExists(strFilePath) Then
     ' Create a file containing the default values
-    CreateDefaultConfigFile strFilename
-    SCC_Add_File strFilename ' add the new file to SVN
+    CreateDefaultConfigFile strFilePath
+    SCC_Add_File strFilePath ' add the new file to SVN
   End If
-  SetConfigValue = (WritePrivateProfileString(APPNAME, strItem, ToString(varValue), strFilename) <> 0)
+  SetConfigValue = (WritePrivateProfileString(APPNAME, strItem, ToString(varValue), strFilePath) <> 0)
 End Function
 
 Private Sub InitiateDefaults()
   ' populate the module level mudtsDefaults with the default values
   If Not mudtsDefaults Then
     ' The array hasn't been populated yet
-    ReDim mudtsDefaults(1)
+    ReDim mudtsDefaults(2)
     With mudtsDefaults(0): .Key = "Remove GUIDs": .DefaultVal = False: .VarType = vbBoolean: End With
     With mudtsDefaults(1): .Key = "UTF-8 Encoding": .DefaultVal = False: .VarType = vbBoolean: End With
+    With mudtsDefaults(2): .Key = "UTF-8 Encode All": .DefaultVal = False: .VarType = vbBoolean: End With
   End If
 End Sub
 

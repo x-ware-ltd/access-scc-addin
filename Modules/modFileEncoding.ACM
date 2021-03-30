@@ -324,15 +324,16 @@ Function PopulateANSI_Unicode_BestFit(ByRef lngsMap() As Long)
   If Not lngsMap Then
     ' The array has not been populated yet
     ReDim lngsMap(128 To 159)
-    ' unused codes &H81 (129), &H8D (141), &H8F (143), &H90 (144) and &H9D (157) are mapped to '?' &H003F
-    lngsMap(128) = &H20AC: lngsMap(129) = &H3F:   lngsMap(130) = &H201A: lngsMap(131) = &H192
+    ' unused codes &H81 (129), &H8D (141), &H8F (143), &H90 (144) and &H9D (157) are mapped to -1,
+    ' the user of lngsMap should pick a -1 up as a failure to convert
+    lngsMap(128) = &H20AC: lngsMap(129) = -1:     lngsMap(130) = &H201A: lngsMap(131) = &H192
     lngsMap(132) = &H201E: lngsMap(133) = &H2026: lngsMap(134) = &H2020: lngsMap(135) = &H2021
     lngsMap(136) = &H2C6:  lngsMap(137) = &H2030: lngsMap(138) = &H160:  lngsMap(139) = &H2039
-    lngsMap(140) = &H152:  lngsMap(141) = &H3F:   lngsMap(142) = &H17D:  lngsMap(143) = &H3F
-    lngsMap(144) = &H3F:   lngsMap(145) = &H2018: lngsMap(146) = &H2019: lngsMap(147) = &H201C
+    lngsMap(140) = &H152:  lngsMap(141) = -1:     lngsMap(142) = &H17D:  lngsMap(143) = -1
+    lngsMap(144) = -1:     lngsMap(145) = &H2018: lngsMap(146) = &H2019: lngsMap(147) = &H201C
     lngsMap(148) = &H201D: lngsMap(149) = &H2022: lngsMap(150) = &H2013: lngsMap(151) = &H2014
     lngsMap(152) = &H2DC:  lngsMap(153) = &H2122: lngsMap(154) = &H161:  lngsMap(155) = &H203A
-    lngsMap(156) = &H153:  lngsMap(157) = &H3F:   lngsMap(158) = &H17E:  lngsMap(159) = &H178
+    lngsMap(156) = &H153:  lngsMap(157) = -1:     lngsMap(158) = &H17E:  lngsMap(159) = &H178
   End If
   
 End Function
@@ -351,6 +352,10 @@ Function ANSICP_to_UnicodeCP(bytANSI As Byte, ByRef bytUnicodeMSB As Byte, ByRef
   Else
     ' in this range we neede to use the best  fit lookup table
     Call PopulateANSI_Unicode_BestFit(bytsUnicodeBestFit)
+    If bytsUnicodeBestFit(bytANSI) = -1 Then
+      ' a best fit cannot be found
+      Exit Function
+    End If
     bytUnicodeMSB = Fix(bytsUnicodeBestFit(bytANSI) / 256)
     bytUnicodeLSB = bytsUnicodeBestFit(bytANSI) And lngLSBMask
   End If
@@ -376,7 +381,7 @@ Function UnicodeCP_to_ANSICP(bytUnicodeMSB As Byte, bytUnicodeLSB As Byte, ByRef
       bytANSI = bytUnicodeLSB
       UnicodeCP_to_ANSICP = True
     ElseIf bytUnicodeLSB >= 160 Then
-      bytANSI = lngUnicode
+      bytANSI = bytUnicodeLSB
       UnicodeCP_to_ANSICP = True
     Else
       ' we have a value in the range 128 (&H80) to 159 (&H9F) which shouldn't be possible so do nothing to return a fail
@@ -516,4 +521,15 @@ Private Function bit16ShiftR(i As Long, s As Integer) As Long
   bit16ShiftR = Fix(bit16ShiftR / (2 ^ s))
   
   bit16ShiftR = bit16ShiftR And 65535 '&HFFFF ' ensure we only have least significant 16 bits
+End Function
+
+Function ConvFileUTF8_to_ANSI(strFilename As String, Optional strNewFilename As String) As Boolean
+  
+  ConvFileUTF8_to_ANSI = False
+  
+  If ConvFileUTF8_to_UCS2(strFilename, strNewFilename) Then
+    If ConvFileUCS2_to_ANSI(strNewFilename, strNewFilename) Then
+      ConvFileUTF8_to_ANSI = True
+    End If
+  End If
 End Function

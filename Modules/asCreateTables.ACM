@@ -12,10 +12,11 @@ Option Explicit
 ' - 1.01 detects old version and upgrades to new SCC tables [SF] 25/05/2012
 ' - 1.02 adds the new preferences to an existing schema [SF] 04/09/2012
 ' - 1.03 fix to ensure that old style SVN tables get all schema updates [SF] 04/09/2012
+' - 1.04 add SccSystem column [GBW] 05/11/2019
 '
 ' @author Steve Falla <steve.falla@talkjcs.com>
 ' @suggestions
-' @version 1.03
+' @version 1.04
 '************************************************
 Public Sub CreateLocalSCCTables()
   Dim db As DAO.Database
@@ -38,6 +39,10 @@ Public Sub CreateLocalSCCTables()
   If InFields(db.TableDefs("MSysSCCPrefs").Fields, "ShowCommitWindow") = False Then
     Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "ShowCommitWindow", dbBoolean, 0, "Whether to show the commit window, or auto close it", , , , , , , , True)
     Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "ShowUpdateWindow", dbBoolean, 0, "Whether to show the update window, or auto close it", , , , , , , , True)
+  End If
+  
+  If InFields(db.TableDefs("MSysSCCPrefs").Fields, "SccSystem") = False Then
+    Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "SccSystem", dbLong, 0, "The SCC system in use. From the SccSystem enum", , , , , , , , True)
   End If
   
   db.Close: Set db = Nothing
@@ -188,6 +193,7 @@ Private Function CreateSCCPrefsTable(db As DAO.Database)
   Set fd = AddField(td, "CheckRepoOnSartup", dbBoolean, 0, "Whether to check  the repository version on startup", , , , , , , , True)
   Set fd = AddField(td, "ShowCommitWindow", dbBoolean, 0, "Whether to show the commit window, or auto close it", , , , , , , , True)
   Set fd = AddField(td, "ShowUpdateWindow", dbBoolean, 0, "Whether to show the update window, or auto close it", , , , , , , , True)
+  Set fd = AddField(td, "SccSystem", dbLong, 0, "The SCC system in use. From the SccSystem enum", , , , , , , , True)
   td.Fields.Delete "Temp"
   
   strSQL = "INSERT INTO [MSysSCCPrefs] (ExportPath) VALUES ('" & CurrentDbDir() & "')"

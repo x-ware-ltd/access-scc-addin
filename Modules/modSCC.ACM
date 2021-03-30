@@ -3,6 +3,14 @@ Option Explicit
 
 Public Enum SccSystem
   sccSystemSubversion = 1  ' Supported
+
+  ' The Text implementation works generically
+  ' with GIT (or any SCC system) but does not integrate fully, ie. specific
+  ' git functions (commit, push, etc) have to be performed manuallyby the user
+  sccSystemText = 4        ' Supported
+  
+  ' These are placeholders for future possible enhanced support
+  ' for specific SCC systems
   sccSystemGIT = 2         ' Unsupported
   sccSystemMercurial = 3   ' Unsupported
 End Enum
@@ -54,7 +62,8 @@ Public Function SCC_GetLatestVersion(strPath As String) As String
     Case sccSystemGIT
     
     Case sccSystemMercurial
-  
+    Case sccSystemText
+      SCC_GetLatestVersion = TEXT_GetLatestVersion(strPath)
   End Select
 
 End Function
@@ -81,6 +90,9 @@ Public Function SCC_GetMappedUrl(strPath As String) As String
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_GetMappedUrl = TEXT_GetMappedUrl(strPath)
   
   End Select
 
@@ -108,6 +120,9 @@ Public Function SCC_GetWorkingFolderVersion(strPath As String) As String
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_GetWorkingFolderVersion = TEXT_GetWorkingFolderVersion(strPath)
   
   End Select
 
@@ -134,7 +149,9 @@ Public Sub SCC_GetAllVersionsSubFolder(strPath As String, ByRef arrFill() As SVN
     Case sccSystemGIT
     
     Case sccSystemMercurial
-  
+    
+    Case sccSystemText
+      TEXT_GetAllVersionsSubFolder strPath, arrFill
   End Select
 
 End Sub
@@ -166,6 +183,18 @@ Public Sub SCC_GetAllVersions(strPath As String)
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\Extras", arrExtras
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\Forms", arrForms
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\Macros", arrMacros
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\Modules", arrModules
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\Queries", arrQueries
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\References", arrReferences
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\Reports", arrReports
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\Tables", arrTables
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\Toolbars", arrToolbars
+      TEXT_GetAllVersionsSubFolder stripSlash(strPath) & "\IMEXSpecs", arrIMEXSpecs
   
   End Select
 
@@ -194,6 +223,9 @@ Public Function SCC_GetStatus(strPath As String) As String
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_GetStatus = TEXT_GetStatus(strPath)
   
   End Select
 
@@ -220,6 +252,9 @@ Public Function SCC_GetInfo(strPath As String) As SVNITEM
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_GetInfo = TEXT_GetInfo(strPath)
   
   End Select
 
@@ -244,6 +279,9 @@ Public Function SCC_GetVersion(strPath As String) As String
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_GetVersion = TEXT_GetVersion(strPath)
   
   End Select
 
@@ -282,6 +320,9 @@ Public Function SCC_IsSupportedClient() As Boolean
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_IsSupportedClient = True
   
   End Select
 
@@ -308,6 +349,9 @@ Public Function SCC_Delete_File(strPath As String)
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_Delete_File = TEXT_Delete_File(strPath)
   
   End Select
 
@@ -334,7 +378,11 @@ Public Function SCC_Add_File(strPath As String)
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_Add_File = TEXT_Add_File(strPath)
   
+      
   End Select
 
 End Function
@@ -361,6 +409,9 @@ Public Sub SCC_Commit(strPath As String, blnShowCommit As Boolean)
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      TEXT_Commit strPath, blnShowCommit
   
   End Select
 
@@ -388,7 +439,42 @@ Public Sub SCC_Update(strPath As String, blnShowUpdates As Boolean)
     Case sccSystemGIT
     
     Case sccSystemMercurial
+    
+    Case sccSystemText
+      TEXT_Update strPath, blnShowUpdates
   
   End Select
 
 End Sub
+
+'************************************************
+' SCC_GetLatestImportVersion
+'
+' Gets the version of the newest object imported into
+' access from the tool.
+'
+' Version history:
+' - 1.00 initial version 04/09/2012
+' - 1.01 abstracted out as this is determined in an SCC dependant way [GBW] 06/02/2020
+'
+' @author Steve Falla <steve.falla@talkjcs.com>
+' @suggestions
+' @version 1.00
+' @return Variant Latest Revision Number
+'************************************************
+Public Function SCC_GetLatestImportVersion() As String
+
+  Select Case GetSCCSystem
+    Case sccSystemSubversion
+      SCC_GetLatestImportVersion = SVN_GetLatestImportVersion
+    
+    Case sccSystemGIT
+    
+    Case sccSystemMercurial
+    
+    Case sccSystemText
+      SCC_GetLatestImportVersion = TEXT_GetLatestImportVersion
+  
+  End Select
+
+End Function

@@ -122,8 +122,8 @@ Begin TableDef
     End
     Begin Data
         ‡Subkey‡•‡Type‡•‡ValName‡•‡Value‡
-        ‡HKEY_CURRENT_ACCESS_PROFILE\Menu Add-Ins\&Subversion for MS Access‡•0•#NULL#•#NULL#
-        ‡HKEY_CURRENT_ACCESS_PROFILE\Menu Add-Ins\&Subversion for MS Access‡•1•‡Expression‡•‡=Init()‡
-        ‡HKEY_CURRENT_ACCESS_PROFILE\Menu Add-Ins\&Subversion for MS Access‡•1•‡Library‡•‡|ACCDIR\Subversion4MSAccess.mda‡
+        ‡HKEY_CURRENT_ACCESS_PROFILE\Menu Add-Ins\&Access SCC‡•0•#NULL#•#NULL#
+        ‡HKEY_CURRENT_ACCESS_PROFILE\Menu Add-Ins\&Access SCC‡•1•‡Expression‡•‡=Init()‡
+        ‡HKEY_CURRENT_ACCESS_PROFILE\Menu Add-Ins\&Access SCC‡•1•‡Library‡•‡|ACCDIR\AccessSCC.mda‡
     End
 End

@@ -253,11 +253,21 @@ Begin TableDef
         51• .51•#09/29/2015 00:00:00#•‡Tested against the subversion 1.9 libraries‡
         52• .52•#07/08/2019 00:00:00#•‡Added support for automatted build tools‡
         53• .53•#07/08/2019 00:00:00#•‡Add support for removing GUIDS‡
-        54• .54•#07/08/2019 00:00:00#•‡Add support for reencoding files to UTF8‡
+        54• .54•#07/08/2019 00:00:00#•‡Add support for reencoding UCS2 files to UTF8‡
         55• .55•#07/08/2019 00:00:00#•‡Fix bug when selected folder is not repository‡
         56• .56•#07/08/2019 00:00:00#•‡Change Name to 'Subversion for MS Access'‡
         57• .57•#07/08/2019 00:00:00#•‡Fix bug ignore .sccignore files‡
         58• .58•#07/09/2019 00:00:00#•‡Fix bug allowing double encoding of UTF-8 files‡
         59• .59•#07/09/2019 00:00:00#•‡Change to leave PrtDev sections in place‡
+        60• .6•#09/24/2020 00:00:00#•‡BETA plaintext/accessc support‡
+        61• .61•#09/30/2020 00:00:00#•‡BETA SilentImport allow skipping macros and extras‡
+        62• .62•#11/05/2020 00:00:00#•‡BETA Add support for reencoding all files to UTF8‡
+        63• .63•#11/09/2020 00:00:00#•‡BETA Feature freeze on plantext-support release‡
+        64• .64•#11/09/2020 00:00:00#•‡RC Show messagebox on text export finish‡
+        65• .65•#11/09/2020 00:00:00#•‡RC Remove debugging from LoadFromText‡
+        66• .66•#11/10/2020 00:00:00#•‡RC Rename addin in RegInfo‡
+        67• .67•#11/11/2020 00:00:00#•‡RC Fix bug reencoding all when folder missing‡
+        68• .68•#11/11/2020 00:00:00#•‡RC Bugfix/cleanup from code review‡
+        69• .69•#03/10/2021 00:00:00#•‡RC add Icons‡
     End
 End
