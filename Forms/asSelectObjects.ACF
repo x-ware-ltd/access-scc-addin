@@ -29,7 +29,7 @@ Begin Form
     RecSrcDt = Begin
         0x3fa5c0764d44e340
     End
-    Caption ="Subversion for MS Access - Select Database Objects"
+    Caption ="MS Access SCC - Select Database Objects"
     OnOpen ="[Event Procedure]"
     DatasheetFontName ="Arial"
     PrtMip = Begin
