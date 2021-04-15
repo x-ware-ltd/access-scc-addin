@@ -131,7 +131,7 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String, Op
   asImportObjects objReport, strImportPath & "Reports\", strError       ' Reports
   asImportObjects objModule, strImportPath & "Modules\", strError       ' Modules
   asImportObjects objToolbar, strImportPath & "Toolbars\", strError     ' Toolbars
-  asImportObjects objReference, strImportPath & "References\", strError ' References
+  asImportObjects objReference, strImportPath & "References\", strError, strImportRootPath:=strImportPath   ' References
   asImportObjects objIMEXSpecs, strImportPath & "IMEXSpecs\", strError  ' Import Export Specs
   If Not blnSkipMacrosAndExtras Then
     asImportObjects objMacro, strImportPath & "Macros\", strError         ' Macros
@@ -762,7 +762,7 @@ Public Sub asUpdateVersionsFromExport(strExportPath As String)
          
 End Sub
 
-Private Sub asImportObject(objType As asObjectDBType, objName As String, objStatus As String, strImportPath As String, Optional ByRef strError As String)
+Private Sub asImportObject(objType As asObjectDBType, objName As String, objStatus As String, strImportPath As String, Optional strImportRootPath As String, Optional ByRef strError As String)
   Dim strImportFileName As String, strObjectType As String
   Dim strLoadError As String
 
@@ -783,7 +783,7 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
       
     Case "New"
       SetStatus "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
-      LoadFromText asGetAccessType(objType), objName, appendSlash(strImportPath) & strImportFileName, strLoadError
+      LoadFromText asGetAccessType(objType), objName, appendSlash(strImportPath) & strImportFileName, strImportRootPath, strLoadError
       If strLoadError <> "" Then
         AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf, strError
         strLoadError = ""
@@ -792,7 +792,7 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
       
     Case Else
       SetStatus "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
-      LoadFromText asGetAccessType(objType), objName, appendSlash(strImportPath) & strImportFileName, strLoadError
+      LoadFromText asGetAccessType(objType), objName, appendSlash(strImportPath) & strImportFileName, strImportRootPath, strLoadError
       If strLoadError <> "" Then
         AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf
         strLoadError = ""
@@ -874,7 +874,7 @@ Private Sub asDeleteObject(objType As asObjectDBType, objName As String)
 
 End Sub
 
-Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As String, Optional ByRef strError As String)
+Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As String, Optional ByRef strError As String, Optional strImportRootPath As String)
   On Error GoTo Err_asImportObjects
   
   Dim db As DAO.Database
@@ -891,7 +891,7 @@ Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As St
   
   ' Import all the objects
   Do Until rst.EOF
-    asImportObject rst!objType, rst!objName, rst!objStatus, strImportPath, strError
+    asImportObject rst!objType, rst!objName, rst!objStatus, strImportPath, strImportRootPath, strError
     rst.MoveNext
   Loop
 
@@ -935,7 +935,7 @@ Private Sub asImportAllFromText(strExportPath As String)
     If Application.Forms![Access SVN - Options].chkModules.Value = True Then asImportObjects objModule, strExportPath & "Modules\"          ' Modules
     If Application.Forms![Access SVN - Options].chkCmdBars.Value = True Then asImportObjects objToolbar, strExportPath & "Toolbars\"        ' Toolbars
     If Application.Forms![Access SVN - Options].chkExtras.Value = True Then asImportObjects objExtra, strExportPath & "Extras\"             ' Extras
-    If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asImportObjects objReference, strExportPath & "References\" ' References
+    If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asImportObjects objReference, strExportPath & "References\", strImportRootPath:=strExportPath ' References
     If Application.Forms![Access SVN - Options].chkImportExport.Value = True Then asImportObjects objIMEXSpecs, strExportPath & "IMEXSpecs\"   ' Import Export Specs
     
     Echo True

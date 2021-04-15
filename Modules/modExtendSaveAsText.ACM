@@ -172,7 +172,7 @@ End_Processing:
 End Sub
 
 
-Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFilename As String, Optional strErr As String)
+Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFilename As String, strImportRootPath As String, Optional strErr As String)
   Dim strCatchErr As String
   Dim blnUTF8 As Boolean
   Dim strTempFilename As String
@@ -236,7 +236,7 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
       LoadExtraFromText strTempFilename
       
     Case asObjectType.acReference
-      LoadReferencesFromText strTempFilename
+      LoadReferencesFromText strTempFilename, strImportRootPath
       
   End Select
   
@@ -357,10 +357,15 @@ End Sub
 '
 ' @param    String the filename to import references from
 '************************************************
-Public Sub LoadReferencesFromText(FileName As String)
-
+Public Sub LoadReferencesFromText(FileName As String, strImportRootPath As String)
   Dim f As Integer, i As Integer
-  Dim strLine As String, strGUID As String, strMajor As String, strMinor As String, strName As String, strFullPath As String
+  Dim strLine As String
+  Dim strGUID As String
+  Dim strMajor As String
+  Dim strMinor As String
+  Dim strName As String
+  Dim strFullPath As String
+  Dim str As String
   Dim lngError As Long
   Dim ref As Access.Reference
   
@@ -418,23 +423,42 @@ Public Sub LoadReferencesFromText(FileName As String)
         
         On Error Resume Next
         Application.References.AddFromGuid strGUID, strMajor, strMinor
-        lngError = Err
+        lngError = Err.Number
         On Error GoTo 0
-        If lngError <> 0 Then
-          'Couldn't register the library
-          lngError = 0
-          On Error Resume Next
-          Application.References.AddFromFile strFullPath
-          lngError = Err
-          On Error GoTo 0
-          If lngError <> 0 Then
-            MsgBox "Unable to create reference to the " & strName & " " & strMajor & "." & strMinor & " (" & strFullPath & ") Library."
+        If lngError = 0 Then
+          GoTo Proc_Next
+        End If
+        
+        'Couldn't register the library, try adding from file
+        On Error Resume Next
+        Application.References.AddFromFile strFullPath
+        lngError = Err.Number
+        On Error GoTo 0
+        If lngError = 0 Then
+          GoTo Proc_Next
+        End If
+        
+        'Couldn't register the library, try adding from distributables
+        If LenB(strImportRootPath) <> 0 Then
+          str = appendSlash(strImportRootPath) & "Distributables\" & ShortName(strFullPath)
+          If FileExists(str) Then
+            On Error Resume Next
+            Application.References.AddFromFile str
+            lngError = Err.Number
+            On Error GoTo 0
+            If lngError = 0 Then
+              GoTo Proc_Next
+            End If
           End If
         End If
+        
+        
+        MsgBox "Unable to create reference to the " & strName & " " & strMajor & "." & strMinor & " (" & strFullPath & ") Library."
         
       Case Else
         Stop 'Shouldn't have anything else!
     End Select
+Proc_Next:
   Loop
 End Sub
 
