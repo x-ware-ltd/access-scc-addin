@@ -1,6 +1,5 @@
 ﻿Version =20
 VersionRequired =20
-Checksum =-1923953816
 Begin Form
     PopUp = NotDefault
     RecordSelectors = NotDefault
@@ -19,11 +18,11 @@ Begin Form
     GridY =10
     Width =6236
     DatasheetFontHeight =10
-    ItemSuffix =98
-    Left =-31921
-    Top =-6105
-    Right =-12946
-    Bottom =5685
+    ItemSuffix =100
+    Left =6600
+    Top =2955
+    Right =12840
+    Bottom =12240
     DatasheetGridlinesColor =12632256
     RecSrcDt = Begin
         0xb319a669b144e340
@@ -276,7 +275,7 @@ Begin Form
             GridlineShade =65.0
         End
         Begin Section
-            Height =9014
+            Height =9297
             Name ="Detail"
             Begin
                 Begin Rectangle
@@ -1120,7 +1119,7 @@ Begin Form
                     Enabled = NotDefault
                     OverlapFlags =93
                     Left =2095
-                    Top =8152
+                    Top =8432
                     Width =340
                     Height =328
                     TabIndex =29
@@ -1154,7 +1153,7 @@ Begin Form
                 Begin Label
                     OverlapFlags =93
                     Left =395
-                    Top =8209
+                    Top =8489
                     Width =1635
                     Height =210
                     Name ="lblCompact"
@@ -1167,7 +1166,7 @@ Begin Form
                 Begin Rectangle
                     OverlapFlags =223
                     Left =225
-                    Top =8052
+                    Top =8332
                     Width =5840
                     Height =870
                     Name ="Box62"
@@ -1180,7 +1179,7 @@ Begin Form
                     BackStyle =1
                     OverlapFlags =215
                     Left =395
-                    Top =7925
+                    Top =8205
                     Width =1140
                     Height =210
                     FontWeight =700
@@ -1197,7 +1196,7 @@ Begin Form
                     OverlapFlags =215
                     BackStyle =0
                     Left =3627
-                    Top =8152
+                    Top =8432
                     Width =2324
                     Height =227
                     TabIndex =30
@@ -1212,7 +1211,7 @@ Begin Form
                         Begin Label
                             OverlapFlags =215
                             Left =2890
-                            Top =8152
+                            Top =8432
                             Width =615
                             Height =240
                             Name ="Label65"
@@ -1227,7 +1226,7 @@ Begin Form
                 Begin CommandButton
                     OverlapFlags =215
                     Left =2090
-                    Top =8510
+                    Top =8790
                     Width =340
                     Height =328
                     TabIndex =31
@@ -1261,7 +1260,7 @@ Begin Form
                 Begin Label
                     OverlapFlags =215
                     Left =390
-                    Top =8567
+                    Top =8847
                     Width =1635
                     Height =210
                     Name ="Label69"
@@ -1356,7 +1355,7 @@ Begin Form
                 Begin CheckBox
                     OverlapFlags =215
                     Left =5751
-                    Top =8634
+                    Top =8914
                     Width =170
                     Height =170
                     TabIndex =32
@@ -1374,7 +1373,7 @@ Begin Form
                         Begin Label
                             OverlapFlags =215
                             Left =4050
-                            Top =8578
+                            Top =8858
                             Width =1590
                             Height =240
                             Name ="Label81"
@@ -1570,7 +1569,7 @@ Begin Form
                 Begin Label
                     OverlapFlags =95
                     Left =375
-                    Top =7115
+                    Top =7143
                     Width =2280
                     Height =240
                     Name ="lblUTF8"
@@ -1585,7 +1584,7 @@ Begin Form
                     Left =210
                     Top =6957
                     Width =5840
-                    Height =870
+                    Height =1155
                     Name ="Box95"
                     LayoutCachedLeft =210
                     LayoutCachedTop =6957
@@ -1608,10 +1607,10 @@ Begin Form
                     LayoutCachedHeight =7040
                 End
                 Begin Label
-                    OverlapFlags =215
+                    OverlapFlags =223
                     Left =375
-                    Top =7475
-                    Width =1785
+                    Top =7501
+                    Width =2280
                     Height =210
                     Name ="lblRemoveGUIDs"
                     Caption ="Remove GUID Sections"
@@ -1622,9 +1621,9 @@ Begin Form
                 End
                 Begin CommandButton
                     Enabled = NotDefault
-                    OverlapFlags =215
+                    OverlapFlags =223
                     Left =2655
-                    Top =7413
+                    Top =7383
                     Width =340
                     Height =328
                     TabIndex =34
@@ -1703,9 +1702,10 @@ Begin Form
                     End
                 End
                 Begin CommandButton
+                    Enabled = NotDefault
                     OverlapFlags =215
                     Left =5461
-                    Top =7428
+                    Top =7383
                     Width =340
                     Height =328
                     TabIndex =36
@@ -2498,15 +2498,46 @@ Begin Form
                         0x1000000014000000
                     End
                     Picture ="Data-Synchronize-60.png"
-                    GUID = Begin
-                        0xca9fe8cb6f08c841a6dedc1fa3e8d3fa
-                    End
-
-                    LayoutCachedLeft =226
-                    LayoutCachedTop =113
-                    LayoutCachedWidth =1126
-                    LayoutCachedHeight =1013
+                    TabIndex =38
+                End
+                Begin Label
+                    OverlapFlags =223
+                    Left =375
+                    Top =7829
+                    Width =2280
+                    Height =210
+                    Name ="Label98"
+                    Caption ="Remove Layout Cache"
+                End
+                Begin CommandButton
+                    Enabled = NotDefault
+                    OverlapFlags =215
+                    Left =2655
+                    Top =7711
+                    Width =340
+                    Height =328
                     TabIndex =37
+                    Name ="cmdRemoveLayoutCache"
+                    Caption ="Compact Database"
+                    OnClick ="[Event Procedure]"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadaddadadadadadadadaadadadadada4adaddadadadadad44ada ,
+                        0xadadadadada444adda4444444444444aadadadadada444addadadadadad44ada ,
+                        0xadadadadada4adaddadadadadadadadaadadadadadadadaddadadadadadadada ,
+                        0xadadadadadadadad
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
                 End
             End
         End
@@ -2656,13 +2687,29 @@ End Sub
 Private Sub cmdRemoveGUIDs_Click()
   
   DoCmd.Hourglass True
+  SetConfigValue "Remove GUIDs", True, Me.txtOutputLocation.Value
   If CleanFormsReports(Me.txtOutputLocation.Value) Then
-    SetConfigValue "Remove GUIDs", True, Me.txtOutputLocation.Value
     DoCommit ' bring up SCC Commit window
     Me.cmdRun.SetFocus
     Me.cmdRemoveGUIDs.Enabled = False
   Else
+    SetConfigValue "Remove GUIDs", False, Me.txtOutputLocation.Value
     MsgBox "Removing GUIDs from Forms and Reports has failed."
+  End If
+  DoCmd.Hourglass False
+End Sub
+
+Private Sub cmdRemoveLayoutCache_Click()
+
+  DoCmd.Hourglass True
+  SetConfigValue "Remove Layout Cache", True, Me.txtOutputLocation.Value
+  If CleanFormsReports(Me.txtOutputLocation.Value) Then
+    DoCommit ' bring up SCC Commit window
+    Me.cmdRun.SetFocus
+    Me.cmdRemoveLayoutCache.Enabled = False
+  Else
+    SetConfigValue "Remove Layout Cache", False, Me.txtOutputLocation.Value
+    MsgBox "Removing Layout Cache from Forms and Reports has failed."
   End If
   DoCmd.Hourglass False
 End Sub
@@ -2865,6 +2912,7 @@ Public Sub UpdateVersionDetails()
   Me.cmdUTF8Encoding.Enabled = Not (GetConfigValue("UTF-8 Encoding", Me.txtOutputLocation.Value) Or GetConfigValue("UTF-8 Encode All", Me.txtOutputLocation.Value))
   Me.cmdUTF8FullEncode.Enabled = Not GetConfigValue("UTF-8 Encode All", Me.txtOutputLocation.Value)
   Me.cmdRemoveGUIDs.Enabled = Not GetConfigValue("Remove GUIDs", Me.txtOutputLocation.Value)
+  Me.cmdRemoveLayoutCache.Enabled = Not Nz(GetConfigValue("Remove LayoutCache", Me.txtOutputLocation.Value), False)
 
   'txtLastVersion cannot be empty string, so protect against it
   str = SCC_GetLatestImportVersion()

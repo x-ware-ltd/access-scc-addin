@@ -1,4 +1,4 @@
-Option Compare Database
+ï»¿Option Compare Database
 Option Explicit
 
 Public Enum asObjectType ' Extended version of the acObjectType
@@ -42,26 +42,58 @@ Private Const clngNOTFOUND = -2147483648#
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
-Private Sub PopulateIgnoreArr(ByRef Ignores() As Ignore)
-  ReDim Ignores(1) As Ignore
+Private Function PopulateIgnoreArr(ByRef Ignores() As Ignore)
+  Dim strExportPath As String
+  Dim blnIgnoreGUID As Boolean
+  Dim blnIgnoreLayoutCache As Boolean
+  Dim lngArrayUbound As Long
   
-  Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
-  Ignores(0).bytsEnd = "End" & vbCrLf
-  Ignores(1).bytsStart = "Checksum ="
-  Ignores(1).bytsEnd = vbCrLf
-  'Ignores(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
-  'Ignores(2).bytsEnd = "End" & vbCrLf
-  'Ignores(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
+  'Get Output Location to find config file
+  strExportPath = Application.Forms("Access SVN - Options").txtOutputLocation.Value
+
+  blnIgnoreGUID = Nz(GetConfigValue("Remove GUIDs", strExportPath), False)
+  blnIgnoreLayoutCache = Nz(GetConfigValue("Remove Layout Cache", strExportPath), False)
+  
+  lngArrayUbound = -1 ' Using minus one to represent empty, as cannot check if Ignores is empty, and 0 would mean 1 item.
+  
+  If blnIgnoreGUID Then
+    lngArrayUbound = 1
+    ReDim Ignores(lngArrayUbound) As Ignore
+    
+    Ignores(lngArrayUbound - 1).bytsStart = "GUID = Begin" & vbCrLf
+    Ignores(lngArrayUbound - 1).bytsEnd = "End" & vbCrLf
+    Ignores(lngArrayUbound).bytsStart = "Checksum ="
+    Ignores(lngArrayUbound).bytsEnd = vbCrLf
+  End If
+  
+  If blnIgnoreLayoutCache Then
+    If lngArrayUbound < 0 Then
+      lngArrayUbound = 0
+    Else
+      lngArrayUbound = lngArrayUbound + 1
+    End If
+    ReDim Ignores(lngArrayUbound) As Ignore
+
+    Ignores(lngArrayUbound).bytsStart = "LayoutCached"
+    Ignores(lngArrayUbound).bytsEnd = vbCrLf
+  End If
+
+  'Ignores(3).bytsStart = "PrtDevMode = Begin" & vbCrLf
   'Ignores(3).bytsEnd = "End" & vbCrLf
-  'Ignores(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
+  'Ignores(4).bytsStart = "PrtDevNames = Begin" & vbCrLf
   'Ignores(4).bytsEnd = "End" & vbCrLf
-  'Ignores(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
+  'Ignores(5).bytsStart = "PrtDevModeW = Begin" & vbCrLf
   'Ignores(5).bytsEnd = "End" & vbCrLf
-  'Ignores(6).bytsStart = "PrtMip = Begin" & vbCrLf
+  'Ignores(6).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
   'Ignores(6).bytsEnd = "End" & vbCrLf
-  'Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
+  'Ignores(7).bytsStart = "PrtMip = Begin" & vbCrLf
   'Ignores(7).bytsEnd = "End" & vbCrLf
-End Sub
+  'Ignores(8).bytsStart = "NameMap = Begin" & vbCrLf
+  'Ignores(8).bytsEnd = "End" & vbCrLf
+  
+  PopulateIgnoreArr = lngArrayUbound >= 0
+  
+End Function
 
 
 '************************************************
@@ -73,13 +105,14 @@ End Sub
 ' @version 1.0
 '************************************************
 
-Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, enmEncode As asEncode, blnRemoveGUIDs As Boolean)
+Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, enmEncode As asEncode)
   Dim Ignores() As Ignore
   Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
   Dim blnSaveAsUTF8 As Boolean
+  Dim blnClean As Boolean
 
-  PopulateIgnoreArr Ignores
+  blnClean = PopulateIgnoreArr(Ignores)
   
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
@@ -109,7 +142,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
         ' now both files are in UCS2 we can replace the code section
         If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       Else
-        If blnRemoveGUIDs Then
+        If blnClean Then
           If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
         Else
           If FileExists(strFilename) Then
@@ -798,8 +831,8 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
   
   sDelimiterOld = Chr(44)  '  ,
   sSeperatorOld = Chr(34)  '  "
-  sDelimiter = Chr(135)    '  ‡
-  sSEPERATOR = Chr(149)    '  •
+  sDelimiter = Chr(135)    '  â€¡
+  sSEPERATOR = Chr(149)    '  â€¢
   CRSPLF = Chr(213) & Chr(214) & Chr(210) 'This is used as an alternative to vbCRLF where ir is itself found in a field
   DLMTR = Chr(243) & Chr(242) & Chr(241) 'This is used as an alternative to sDelimiter where it is itself found in a field
   
