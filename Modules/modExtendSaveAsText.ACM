@@ -42,7 +42,21 @@ Private Const clngNOTFOUND = -2147483648#
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
-Private Function PopulateIgnoreArr(ByRef Ignores() As Ignore)
+'************************************************
+' PopulateIgnoreArr
+'
+' This populates an array of Ignore types with bytes to be ignored on export,
+' depending on what config options are set
+'
+' Version history:
+' - 1.00 initial version [Unknown Author, Unknown Date]
+' - 1.01 Add layout cache option. Add returning whether any ignores were added [Oliver Vahey 29/07/2021]
+'
+' @version 1.01
+' @param    Ignores() Array of Ignore object to be populated
+' @return   Boolean returns true if any ignores were added, else false
+'************************************************
+Private Function PopulateIgnoreArr(ByRef Ignores() As Ignore) As Boolean
   Dim strExportPath As String
   Dim blnIgnoreGUID As Boolean
   Dim blnIgnoreLayoutCache As Boolean
