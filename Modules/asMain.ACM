@@ -1565,8 +1565,9 @@ End Function
 ' Version history:
 '   - 1.00 initial version
 '   - 1.01 updated to allow support for accdb style file formats [SF] 02/10/2013
+'   - 1.02 now fully support access 2016 [OV] 29/07/2021
 '
-' @version    1.01
+' @version    1.02
 ' @return     Boolean True if supported, otherwise False
 '************************************************
 Private Function asSupportedFileFormat() As Boolean
@@ -1578,11 +1579,7 @@ Private Function asSupportedFileFormat() As Boolean
     Case asFileFormatAccess97:      asSupportedFileFormat = False
     Case asFileFormatAccess2000:    asSupportedFileFormat = False  ' Access 2000 format is NOT supported
     Case asFileFormatAccess2002:    asSupportedFileFormat = True   ' Access XP format is supported
-    Case asFileFormatAccess2007
-      asSupportedFileFormat = True   ' Access 2007/10/13 is supported with caveats
-      MsgBox "This file format is supported with restrictions." & vbCrLf & vbCrLf & _
-             "Please see the website http://code.google.com/p/access-scc-addin for full details.", vbInformation + vbOKOnly, "Access File Format Warning"
-
+    Case asFileFormatAccess2007:    asSupportedFileFormat = True   ' Access 2016 format is supported
     Case Else:                      asSupportedFileFormat = False
   End Select
   
