@@ -1,4 +1,4 @@
-ï»¿Option Compare Database
+Option Compare Database
 Option Explicit
 
 Public Enum asObjectType ' Extended version of the acObjectType
@@ -72,24 +72,11 @@ Private Function PopulateIgnoreArr(ByRef Ignores() As Ignore)
     Else
       lngArrayUbound = lngArrayUbound + 1
     End If
-    ReDim Ignores(lngArrayUbound) As Ignore
+    ReDim Preserve Ignores(lngArrayUbound) As Ignore
 
     Ignores(lngArrayUbound).bytsStart = "LayoutCached"
     Ignores(lngArrayUbound).bytsEnd = vbCrLf
   End If
-
-  'Ignores(3).bytsStart = "PrtDevMode = Begin" & vbCrLf
-  'Ignores(3).bytsEnd = "End" & vbCrLf
-  'Ignores(4).bytsStart = "PrtDevNames = Begin" & vbCrLf
-  'Ignores(4).bytsEnd = "End" & vbCrLf
-  'Ignores(5).bytsStart = "PrtDevModeW = Begin" & vbCrLf
-  'Ignores(5).bytsEnd = "End" & vbCrLf
-  'Ignores(6).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
-  'Ignores(6).bytsEnd = "End" & vbCrLf
-  'Ignores(7).bytsStart = "PrtMip = Begin" & vbCrLf
-  'Ignores(7).bytsEnd = "End" & vbCrLf
-  'Ignores(8).bytsStart = "NameMap = Begin" & vbCrLf
-  'Ignores(8).bytsEnd = "End" & vbCrLf
   
   PopulateIgnoreArr = lngArrayUbound >= 0
   
@@ -831,8 +818,8 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
   
   sDelimiterOld = Chr(44)  '  ,
   sSeperatorOld = Chr(34)  '  "
-  sDelimiter = Chr(135)    '  â€¡
-  sSEPERATOR = Chr(149)    '  â€¢
+  sDelimiter = Chr(135)    '  ‡
+  sSEPERATOR = Chr(149)    '  •
   CRSPLF = Chr(213) & Chr(214) & Chr(210) 'This is used as an alternative to vbCRLF where ir is itself found in a field
   DLMTR = Chr(243) & Chr(242) & Chr(241) 'This is used as an alternative to sDelimiter where it is itself found in a field
   
