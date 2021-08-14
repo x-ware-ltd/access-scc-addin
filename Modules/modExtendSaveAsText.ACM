@@ -380,6 +380,8 @@ End Sub
 '
 ' @version 1.01
 ' @param    String the filename to import references from
+' @param    String the import root path, under which we will look for
+'           the Distributables folder.
 '************************************************
 Public Sub LoadReferencesFromText(FileName As String, strImportRootPath As String)
   Dim f As Integer, i As Integer
