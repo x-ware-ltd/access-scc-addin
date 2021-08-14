@@ -351,10 +351,34 @@ Public Sub SaveReferencesAsText(FileName As String)
 End Sub
 
 '************************************************
-' Imports references info about the DB file from a Text file
+' Import references from a text file
 '
-' Used with SVN to store table definitions
+' The order a reference is loaded is:
+' - GUID
+'     This will pick up registered DLLs.
+' - By FullPath
+'     This will pick up DLLs that are not registered, but are in a standard
+'     location.
+' - Under Distributables
+'     This resolves two problems with running Access build machines that need
+'     to build (but not run) ad-hoc databases.
 '
+'     Firstly there is a version handling issue with some libraries
+'     (e.g. Chilkat) where many versions of the library have the same GUID
+'     and version numbers. In this case you can not install both versions of
+'     the library on your build machine. Note that this results in building
+'     databases that can not actually be run on the build machine.
+'
+'     A second benefit is that new libraries can be added by including them in
+'     the Distributables folder, you do not need to register the library on
+'     the build machine.
+'
+'
+' Version history:
+' - 1.00 initial version ??/??/????
+' - 1.01 Add a fallback to find references in Distributables
+'
+' @version 1.01
 ' @param    String the filename to import references from
 '************************************************
 Public Sub LoadReferencesFromText(FileName As String, strImportRootPath As String)
