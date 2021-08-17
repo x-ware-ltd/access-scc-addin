@@ -2685,30 +2685,42 @@ Private Sub cmdFolderDialog_Click()
 End Sub
 
 Private Sub cmdRemoveGUIDs_Click()
+  Dim blnRemoveLayoutCache As Boolean
+  Dim strExportPath As String
   
   DoCmd.Hourglass True
-  SetConfigValue "Remove GUIDs", True, Me.txtOutputLocation.Value
-  If CleanFormsReports(Me.txtOutputLocation.Value) Then
+  
+  'Get Output Location to find config file
+  strExportPath = Application.Forms("Access SVN - Options").txtOutputLocation.Value
+  blnRemoveLayoutCache = GetConfigValue("Remove Layout Cache", strExportPath)
+  
+  If CleanFormsReports(Me.txtOutputLocation.Value, True, blnRemoveLayoutCache) Then
+    SetConfigValue "Remove GUIDs", True, Me.txtOutputLocation.Value
     DoCommit ' bring up SCC Commit window
     Me.cmdRun.SetFocus
     Me.cmdRemoveGUIDs.Enabled = False
   Else
-    SetConfigValue "Remove GUIDs", False, Me.txtOutputLocation.Value
     MsgBox "Removing GUIDs from Forms and Reports has failed."
   End If
   DoCmd.Hourglass False
 End Sub
 
 Private Sub cmdRemoveLayoutCache_Click()
-
+  Dim blnRemoveGUIDs As Boolean
+  Dim strExportPath As String
+  
   DoCmd.Hourglass True
-  SetConfigValue "Remove Layout Cache", True, Me.txtOutputLocation.Value
-  If CleanFormsReports(Me.txtOutputLocation.Value) Then
+  
+  'Get Output Location to find config file
+  strExportPath = Application.Forms("Access SVN - Options").txtOutputLocation.Value
+  blnRemoveGUIDs = GetConfigValue("Remove GUIDs", strExportPath)
+  
+  If CleanFormsReports(Me.txtOutputLocation.Value, blnRemoveGUIDs, True) Then
+    SetConfigValue "Remove Layout Cache", True, Me.txtOutputLocation.Value
     DoCommit ' bring up SCC Commit window
     Me.cmdRun.SetFocus
     Me.cmdRemoveLayoutCache.Enabled = False
   Else
-    SetConfigValue "Remove Layout Cache", False, Me.txtOutputLocation.Value
     MsgBox "Removing Layout Cache from Forms and Reports has failed."
   End If
   DoCmd.Hourglass False

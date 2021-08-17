@@ -1,4 +1,4 @@
-﻿Option Compare Database
+Option Compare Database
 Option Explicit
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
@@ -530,7 +530,7 @@ Private Function asGetAccessType(objType As asObjectDBType) As Integer
   End Select
 End Function
 
-Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As String, enmEncode As asEncode)
+Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As String, enmEncode As asEncode, blnRemoveGUIDs As Boolean, blnRemoveLayoutCache As Boolean)
   On Error GoTo Err_asExportObjects
   
   Dim db As DAO.Database
@@ -572,7 +572,7 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
           UpdateStatusEntry asExport, rst!objType, rst!objName, asDelete
           
         Case "New"
-          SaveAsText asGetAccessType(objExportType), rst!objName, appendSlash(strExportPath) & strObjectFileName, enmEncode
+          SaveAsText asGetAccessType(objExportType), rst!objName, appendSlash(strExportPath) & strObjectFileName, enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
           If objExportType = objForm Or objExportType = objReport Then
             If isFaultyPrinterDeviceExport(appendSlash(strExportPath) & strObjectFileName) Then
               FixPrinterExport (appendSlash(strExportPath) & strObjectFileName)
@@ -582,7 +582,7 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
           UpdateStatusEntry asExport, rst!objType, rst!objName, asAdd
         
         Case Else
-          SaveAsText asGetAccessType(objExportType), rst!objName, appendSlash(strExportPath) & strObjectFileName, enmEncode
+          SaveAsText asGetAccessType(objExportType), rst!objName, appendSlash(strExportPath) & strObjectFileName, enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
           If objExportType = objForm Or objExportType = objReport Then
             If isFaultyPrinterDeviceExport(appendSlash(strExportPath) & strObjectFileName) Then
               FixPrinterExport (appendSlash(strExportPath) & strObjectFileName)
@@ -614,7 +614,9 @@ End Sub
 
 Private Sub asExportAllObjects(strExportPath As String)
     Dim enmEncode As asEncode
-
+    Dim blnRemoveGUIDs As Boolean
+    Dim blnRemoveLayoutCache As Boolean
+    
     On Error GoTo Err_OutputToText
     
     
@@ -623,17 +625,20 @@ Private Sub asExportAllObjects(strExportPath As String)
     ElseIf GetConfigValue("UTF-8 Encoding", strExportPath) Then
       enmEncode = asEncode_UCS2_to_UTF8
     End If
+
+    blnRemoveGUIDs = GetConfigValue("Remove GUIDs", strExportPath)
+    blnRemoveLayoutCache = GetConfigValue("Remove Layout Cache", strExportPath)
           
-    If Application.Forms![Access SVN - Options].chkTables.Value = True Then asExportObjects objTable, strExportPath & "Tables", enmEncode
-    If Application.Forms![Access SVN - Options].chkQueries.Value = True Then asExportObjects objQuery, strExportPath & "Queries", enmEncode
-    If Application.Forms![Access SVN - Options].chkForms.Value = True Then asExportObjects objForm, strExportPath & "Forms", enmEncode
-    If Application.Forms![Access SVN - Options].chkReports.Value = True Then asExportObjects objReport, strExportPath & "Reports", enmEncode
-    If Application.Forms![Access SVN - Options].chkMacros.Value = True Then asExportObjects objMacro, strExportPath & "Macros", enmEncode
-    If Application.Forms![Access SVN - Options].chkModules.Value = True Then asExportObjects objModule, strExportPath & "Modules", enmEncode
-    If Application.Forms![Access SVN - Options].chkCmdBars.Value = True Then asExportObjects objToolbar, strExportPath & "Toolbars", enmEncode
-    If Application.Forms![Access SVN - Options].chkExtras.Value = True Then asExportObjects objExtra, strExportPath & "Extras", enmEncode
-    If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asExportObjects objReference, strExportPath & "References", enmEncode
-    If Application.Forms![Access SVN - Options].chkImportExport.Value = True Then asExportObjects objIMEXSpecs, strExportPath & "IMEXSpecs", enmEncode
+    If Application.Forms![Access SVN - Options].chkTables.Value = True Then asExportObjects objTable, strExportPath & "Tables", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
+    If Application.Forms![Access SVN - Options].chkQueries.Value = True Then asExportObjects objQuery, strExportPath & "Queries", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
+    If Application.Forms![Access SVN - Options].chkForms.Value = True Then asExportObjects objForm, strExportPath & "Forms", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
+    If Application.Forms![Access SVN - Options].chkReports.Value = True Then asExportObjects objReport, strExportPath & "Reports", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
+    If Application.Forms![Access SVN - Options].chkMacros.Value = True Then asExportObjects objMacro, strExportPath & "Macros", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
+    If Application.Forms![Access SVN - Options].chkModules.Value = True Then asExportObjects objModule, strExportPath & "Modules", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
+    If Application.Forms![Access SVN - Options].chkCmdBars.Value = True Then asExportObjects objToolbar, strExportPath & "Toolbars", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
+    If Application.Forms![Access SVN - Options].chkExtras.Value = True Then asExportObjects objExtra, strExportPath & "Extras", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
+    If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asExportObjects objReference, strExportPath & "References", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
+    If Application.Forms![Access SVN - Options].chkImportExport.Value = True Then asExportObjects objIMEXSpecs, strExportPath & "IMEXSpecs", enmEncode, blnRemoveGUIDs, blnRemoveLayoutCache
 
 Exit_OutputToText:
     asPurgeTmpObjectsTables

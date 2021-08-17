@@ -56,17 +56,8 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Desti
 ' @param    Ignores() Array of Ignore object to be populated
 ' @return   Boolean returns true if any ignores were added, else false
 '************************************************
-Private Function PopulateIgnoreArr(ByRef Ignores() As Ignore) As Boolean
-  Dim strExportPath As String
-  Dim blnIgnoreGUID As Boolean
-  Dim blnIgnoreLayoutCache As Boolean
+Private Function PopulateIgnoreArr(ByRef Ignores() As Ignore, blnIgnoreGUID As Boolean, blnIgnoreLayoutCache As Boolean) As Boolean
   Dim lngArrayUbound As Long
-  
-  'Get Output Location to find config file
-  strExportPath = Application.Forms("Access SVN - Options").txtOutputLocation.Value
-
-  blnIgnoreGUID = Nz(GetConfigValue("Remove GUIDs", strExportPath), False)
-  blnIgnoreLayoutCache = Nz(GetConfigValue("Remove Layout Cache", strExportPath), False)
   
   lngArrayUbound = -1 ' Using minus one to represent empty, as cannot check if Ignores is empty, and 0 would mean 1 item.
   
@@ -106,14 +97,14 @@ End Function
 ' @version 1.0
 '************************************************
 
-Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, enmEncode As asEncode)
+Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, enmEncode As asEncode, blnRemoveGUIDs As Boolean, blnRemoveLayoutCache As Boolean)
   Dim Ignores() As Ignore
   Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
   Dim blnSaveAsUTF8 As Boolean
   Dim blnClean As Boolean
 
-  blnClean = PopulateIgnoreArr(Ignores)
+  blnClean = PopulateIgnoreArr(Ignores, blnRemoveGUIDs, blnRemoveLayoutCache)
   
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
@@ -1201,7 +1192,7 @@ Private Sub AppendParent(AccObj() As AccObject)
   End With
 End Sub
 
-Public Function CleanFormsReports(strImportPath As String) As Boolean
+Public Function CleanFormsReports(strImportPath As String, blnRemoveGUIDs As Boolean, blnRemoveLayoutCache As Boolean) As Boolean
   ' cleans out the lines (Sections) specified in the Ignores Array from every Form and Report in the Path Sepcified
   Dim Ignores() As Ignore
   Dim arrSVNItems() As SVNITEM
@@ -1210,7 +1201,7 @@ Public Function CleanFormsReports(strImportPath As String) As Boolean
   Dim i As Long
   Dim j As Long
   
-  PopulateIgnoreArr Ignores
+  PopulateIgnoreArr Ignores, blnRemoveGUIDs, blnRemoveLayoutCache
   
   For i = 0 To 1
     strFoldername = appendSlash(strImportPath) & IIf(i = 0, "Forms", "Reports")
