@@ -1,0 +1,25 @@
+Option Compare Database
+Option Explicit
+
+
+'************************************************
+' Short Name
+'
+' This function returns the filename when a full path is supplied
+'
+' @author
+' @version      1.00
+' @suggestions  Could just use findlast function to locate the last "\" character
+' @param        Variant the full pathname to examine
+' @return       Variant the filename part of the path
+'************************************************
+Function ShortName(ByVal Full As Variant) As Variant
+  Dim x As Variant
+  
+  x = 1
+  Do
+    x = InStr(x + 1, Full, "\")
+  Loop Until InStr(x + 1, Full, "\") = 0
+  ' x is position of last \
+  ShortName = Right$(Full, Len(Full) - x)
+End Function
