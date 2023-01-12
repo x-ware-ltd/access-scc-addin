@@ -259,15 +259,9 @@ Begin TableDef
         57• .57•#07/08/2019 00:00:00#•‡Fix bug ignore .sccignore files‡
         58• .58•#07/09/2019 00:00:00#•‡Fix bug allowing double encoding of UTF-8 files‡
         59• .59•#07/09/2019 00:00:00#•‡Change to leave PrtDev sections in place‡
-        60• .6•#09/24/2020 00:00:00#•‡BETA plaintext/accessc support‡
-        61• .61•#09/30/2020 00:00:00#•‡BETA SilentImport allow skipping macros and extras‡
-        62• .62•#11/05/2020 00:00:00#•‡BETA Add support for reencoding all files to UTF8‡
-        63• .63•#11/09/2020 00:00:00#•‡BETA Feature freeze on plantext-support release‡
-        64• .64•#11/09/2020 00:00:00#•‡RC Show messagebox on text export finish‡
-        65• .65•#11/09/2020 00:00:00#•‡RC Remove debugging from LoadFromText‡
-        66• .66•#11/10/2020 00:00:00#•‡RC Rename addin in RegInfo‡
-        67• .67•#11/11/2020 00:00:00#•‡RC Fix bug reencoding all when folder missing‡
-        68• .68•#11/11/2020 00:00:00#•‡RC Bugfix/cleanup from code review‡
-        69• .69•#03/10/2021 00:00:00#•‡RC add Icons‡
+        70• .7•#03/30/2021 00:00:00#•‡Github support: TEXT mode and UTF-8 support‡
+        71• .71•#06/05/2021 00:00:00#•‡Check form/report exists before deleting it‡
+        72• .72•#08/23/2021 00:00:00#•‡Fallback to finding references in Distributables‡
+        73• .73•#08/04/2021 00:00:00#•‡Remove outdated startup msgbox‡
     End
 End
