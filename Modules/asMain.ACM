@@ -125,6 +125,11 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String, Op
     asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras             ' Extras
   End If
   
+  ' If there are broken references, reimport the references even if they are unchanged
+  If ReferencesBroken() Then
+    CodeDb.Execute "UPDATE MSysSCCTmpObjects IN '" & CurrentDb.Name & "' SET selected = TRUE WHERE objType = " & CInt(objReference)
+  End If
+  
   asImportObjects objTable, strImportPath & "Tables\", strError         ' Tables
   asImportObjects objQuery, strImportPath & "Queries\", strError        ' Queries
   asImportObjects objForm, strImportPath & "Forms\", strError           ' Forms
@@ -140,6 +145,20 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String, Op
   
   ImportSilent = strError
   asPurgeTmpObjectsTables
+End Function
+
+Public Function ReferencesBroken() As Boolean
+  Dim ref As Reference
+  
+  For Each ref In Application.References
+    If Not ref.IsBroken Then
+      ReferencesBroken = True
+      Exit Function
+    End If
+  Next
+  
+  ' If we get here no references are broken
+  ReferencesBroken = False
 End Function
     
 Public Function asRunExport()

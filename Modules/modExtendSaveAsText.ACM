@@ -344,7 +344,12 @@ Public Sub SaveReferencesAsText(FileName As String)
       Print #f, "        GUID = " & ref.Guid
       Print #f, "        Major = " & ref.Major
       Print #f, "        Minor = " & ref.Minor
+      On Error Resume Next
+      ' If a dll is not registered getting the FullPath will fail
+      ' in this case, When this is being called from UpdateObjectProperties the
+      ' references will show as changed
       Print #f, "        FullPath = " & ref.FullPath
+      On Error GoTo 0
       Print #f, "    End"
     End If
   Next
