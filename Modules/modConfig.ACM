@@ -1,4 +1,4 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 ' Windows API declaration to get a  profile string from INI  file
@@ -81,10 +81,11 @@ Private Sub InitiateDefaults()
   ' populate the module level mudtsDefaults with the default values
   If Not mudtsDefaults Then
     ' The array hasn't been populated yet
-    ReDim mudtsDefaults(2)
+    ReDim mudtsDefaults(3)
     With mudtsDefaults(0): .Key = "Remove GUIDs": .DefaultVal = False: .VarType = vbBoolean: End With
     With mudtsDefaults(1): .Key = "UTF-8 Encoding": .DefaultVal = False: .VarType = vbBoolean: End With
     With mudtsDefaults(2): .Key = "UTF-8 Encode All": .DefaultVal = False: .VarType = vbBoolean: End With
+    With mudtsDefaults(3): .Key = "Remove Layout Cache": .DefaultVal = False: .VarType = vbBoolean: End With
   End If
 End Sub
 

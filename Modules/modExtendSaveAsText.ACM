@@ -42,26 +42,50 @@ Private Const clngNOTFOUND = -2147483648#
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
 
-Private Sub PopulateIgnoreArr(ByRef Ignores() As Ignore)
-  ReDim Ignores(1) As Ignore
+'************************************************
+' PopulateIgnoreArr
+'
+' This populates an array of Ignore types with bytes to be ignored on export,
+' depending on what config options are set
+'
+' Version history:
+' - 1.00 initial version [Unknown Author, Unknown Date]
+' - 1.01 Add layout cache option. Add returning whether any ignores were added [Oliver Vahey 29/07/2021]
+'
+' @version 1.01
+' @param    Ignores() Array of Ignore object to be populated
+' @return   Boolean returns true if any ignores were added, else false
+'************************************************
+Private Function PopulateIgnoreArr(ByRef Ignores() As Ignore, blnIgnoreGUID As Boolean, blnIgnoreLayoutCache As Boolean) As Boolean
+  Dim lngArrayUbound As Long
   
-  Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
-  Ignores(0).bytsEnd = "End" & vbCrLf
-  Ignores(1).bytsStart = "Checksum ="
-  Ignores(1).bytsEnd = vbCrLf
-  'Ignores(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
-  'Ignores(2).bytsEnd = "End" & vbCrLf
-  'Ignores(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
-  'Ignores(3).bytsEnd = "End" & vbCrLf
-  'Ignores(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
-  'Ignores(4).bytsEnd = "End" & vbCrLf
-  'Ignores(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
-  'Ignores(5).bytsEnd = "End" & vbCrLf
-  'Ignores(6).bytsStart = "PrtMip = Begin" & vbCrLf
-  'Ignores(6).bytsEnd = "End" & vbCrLf
-  'Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
-  'Ignores(7).bytsEnd = "End" & vbCrLf
-End Sub
+  lngArrayUbound = -1 ' Using minus one to represent empty, as cannot check if Ignores is empty, and 0 would mean 1 item.
+  
+  If blnIgnoreGUID Then
+    lngArrayUbound = 1
+    ReDim Ignores(lngArrayUbound) As Ignore
+    
+    Ignores(lngArrayUbound - 1).bytsStart = "GUID = Begin" & vbCrLf
+    Ignores(lngArrayUbound - 1).bytsEnd = "End" & vbCrLf
+    Ignores(lngArrayUbound).bytsStart = "Checksum ="
+    Ignores(lngArrayUbound).bytsEnd = vbCrLf
+  End If
+  
+  If blnIgnoreLayoutCache Then
+    If lngArrayUbound < 0 Then
+      lngArrayUbound = 0
+    Else
+      lngArrayUbound = lngArrayUbound + 1
+    End If
+    ReDim Preserve Ignores(lngArrayUbound) As Ignore
+
+    Ignores(lngArrayUbound).bytsStart = "LayoutCached"
+    Ignores(lngArrayUbound).bytsEnd = vbCrLf
+  End If
+  
+  PopulateIgnoreArr = lngArrayUbound >= 0
+  
+End Function
 
 
 '************************************************
@@ -73,13 +97,14 @@ End Sub
 ' @version 1.0
 '************************************************
 
-Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, enmEncode As asEncode, blnRemoveGUIDs As Boolean)
+Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, enmEncode As asEncode, blnRemoveGUIDs As Boolean, blnRemoveLayoutCache As Boolean)
   Dim Ignores() As Ignore
   Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
   Dim blnSaveAsUTF8 As Boolean
+  Dim blnClean As Boolean
 
-  PopulateIgnoreArr Ignores
+  blnClean = PopulateIgnoreArr(Ignores, blnRemoveGUIDs, blnRemoveLayoutCache)
   
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
@@ -109,7 +134,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
         ' now both files are in UCS2 we can replace the code section
         If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       Else
-        If blnRemoveGUIDs Then
+        If blnClean Then
           If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
         Else
           If FileExists(strFilename) Then
@@ -1222,7 +1247,7 @@ Private Sub AppendParent(AccObj() As AccObject)
   End With
 End Sub
 
-Public Function CleanFormsReports(strImportPath As String) As Boolean
+Public Function CleanFormsReports(strImportPath As String, blnRemoveGUIDs As Boolean, blnRemoveLayoutCache As Boolean) As Boolean
   ' cleans out the lines (Sections) specified in the Ignores Array from every Form and Report in the Path Sepcified
   Dim Ignores() As Ignore
   Dim arrSVNItems() As SVNITEM
@@ -1231,7 +1256,7 @@ Public Function CleanFormsReports(strImportPath As String) As Boolean
   Dim i As Long
   Dim j As Long
   
-  PopulateIgnoreArr Ignores
+  PopulateIgnoreArr Ignores, blnRemoveGUIDs, blnRemoveLayoutCache
   
   For i = 0 To 1
     strFoldername = appendSlash(strImportPath) & IIf(i = 0, "Forms", "Reports")
