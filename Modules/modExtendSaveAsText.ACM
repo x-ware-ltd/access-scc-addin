@@ -40,7 +40,7 @@ End Type
 
 Private Const clngNOTFOUND = -2147483648#
 
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As LongPtr)
 
 Private Sub PopulateIgnoreArr(ByRef Ignores() As Ignore)
   ReDim Ignores(1) As Ignore
@@ -853,8 +853,8 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
   
   sDelimiterOld = Chr(44)  '  ,
   sSeperatorOld = Chr(34)  '  "
-  sDelimiter = Chr(135)    '  ‡
-  sSEPERATOR = Chr(149)    '  •
+  sDelimiter = Chr(135)    '  ï¿½
+  sSEPERATOR = Chr(149)    '  ï¿½
   CRSPLF = Chr(213) & Chr(214) & Chr(210) 'This is used as an alternative to vbCRLF where ir is itself found in a field
   DLMTR = Chr(243) & Chr(242) & Chr(241) 'This is used as an alternative to sDelimiter where it is itself found in a field
   
@@ -1150,10 +1150,17 @@ Private Function WriteProperties(obj As Object, fNum As Integer, intOffset As In
                 Print #fNum, Space(intOffset + 4) & "Type = " & prp.Type
                 strPrpName = "    Value"
               End If
-              Select Case prp.Type
-                Case dbText, dbMemo: Print #fNum, Space(intOffset) & strPrpName & " = """ & prp.Value & """"
-                Case dbDate, dbTime: Print #fNum, Space(intOffset) & strPrpName & " = #" & Format(prp.Value, "mm/dd/yyyy hh:mm:ss") & "#"
-                Case Else: Print #fNum, Space(intOffset) & strPrpName & " = " & prp.Value
+              ' Scale and precision introduced with date time extended types, but seem to be declared as the wrong property type
+              ' Override this here to always just export them normally
+              Select Case strPrpName
+                Case "Precision", "Scale"
+                  Print #fNum, Space(intOffset) & strPrpName & " = " & prp.Value
+                Case Else
+                  Select Case prp.Type
+                    Case dbText, dbMemo: Print #fNum, Space(intOffset) & strPrpName & " = """ & prp.Value & """"
+                    Case dbDate, dbTime: Print #fNum, Space(intOffset) & strPrpName & " = #" & Format(prp.Value, "mm/dd/yyyy hh:mm:ss") & "#"
+                    Case Else: Print #fNum, Space(intOffset) & strPrpName & " = " & prp.Value
+                  End Select
               End Select
               If Not blnBuiltIn Then
                 Print #fNum, Space(intOffset) & "End"

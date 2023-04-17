@@ -1,13 +1,13 @@
 Option Compare Database
 Option Explicit
 
-Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExA" (ByVal hWnd1 As Long, ByVal hWnd2 As Long, ByVal lpsz1 As String, ByVal lpsz2 As String) As Long
-Private Declare Function apiGetClassName Lib "user32" Alias "GetClassNameA" (ByVal hwnd As Long, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
-Private Declare Function GetFocus Lib "user32" () As Long
-Private Declare Function GetParent Lib "user32" (ByVal hwnd As Long) As Long
-Private Declare Function SetWindowText Lib "user32" Alias "SetWindowTextA" (ByVal hwnd As Long, ByVal lpString As String) As Long
-Private Declare Function GetWindowText Lib "user32" Alias "GetWindowTextA" (ByVal hwnd As Long, ByVal lpString As String, ByVal cch As Long) As Long
-Private Declare Function IsWindowVisible Lib "user32" (ByVal hwnd As Long) As Long
+Private Declare PtrSafe Function FindWindowEx Lib "user32" Alias "FindWindowExA" (ByVal hWnd1 As LongPtr, ByVal hWnd2 As LongPtr, ByVal lpsz1 As String, ByVal lpsz2 As String) As LongPtr
+Private Declare PtrSafe Function apiGetClassName Lib "user32" Alias "GetClassNameA" (ByVal hwnd As LongPtr, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
+Private Declare PtrSafe Function GetFocus Lib "user32" () As LongPtr
+Private Declare PtrSafe Function GetParent Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
+Private Declare PtrSafe Function SetWindowText Lib "user32" Alias "SetWindowTextA" (ByVal hwnd As LongPtr, ByVal lpString As String) As Long
+Private Declare PtrSafe Function GetWindowText Lib "user32" Alias "GetWindowTextA" (ByVal hwnd As LongPtr, ByVal lpString As String, ByVal cch As Long) As Long
+Private Declare PtrSafe Function IsWindowVisible Lib "user32" (ByVal hwnd As LongPtr) As Long
 
 '************************************************
 ' Force Query to Open in SQL View
@@ -49,9 +49,9 @@ Public Function ForceQuerySQLView(sQueryName As String) As Boolean
   On Error GoTo Err_ForceQuerySQLView
   
   Dim lngRet As Long
-  Dim hWndOQry As Long
-  Dim hWndOKttbx As Long
-  Dim hwndODsk As Long
+  Dim hWndOQry As LongPtr
+  Dim hWndOKttbx As LongPtr
+  Dim hwndODsk As LongPtr
   Dim sCaption As String
   Dim db As DAO.Database
   Dim qdf As DAO.QueryDef
@@ -162,7 +162,7 @@ End Function
 ' From Dev Ashish's Site
 ' The Access Web
 ' http://www.mvps.org/access/
-Private Function fGetClassName(hwnd As Long)
+Private Function fGetClassName(hwnd As LongPtr)
   Dim strBuffer As String
   Dim lngLen As Long
   

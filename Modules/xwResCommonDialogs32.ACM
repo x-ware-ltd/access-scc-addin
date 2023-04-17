@@ -2,24 +2,24 @@ Option Explicit
 Option Compare Text
 
 Private Type shellBrowseInfo32
-    hwndOwner      As Long
+    hwndOwner      As LongPtr
     pIDLRoot       As Long
     pszDisplayName As Long
     lpszTitle      As String
     ulFlags        As Long
-    lpfnCallback   As Long
+    lpfnCallback   As LongPtr
     lParam         As Long
     iImage         As Long
 End Type
 
 Public Const MAXDWORD = &HFFFF
 
-Private Declare Function GetShortPathName32 Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
-Private Declare Sub CoTaskMemFree32 Lib "ole32.dll" Alias "CoTaskMemFree" (ByVal hMem As Long)
-Private Declare Function SHBrowseForFolder32 Lib "shell32" Alias "SHBrowseForFolder" (lpbi As shellBrowseInfo32) As Long
-Private Declare Function SHGetPathFromIDList32 Lib "shell32" Alias "SHGetPathFromIDList" (ByVal pidList As Long, ByVal lpBuffer As String) As Long
-Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As String) As Long
-Private Declare Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As Long, ByVal lpBuffer As String) As Long
+Private Declare PtrSafe Function GetShortPathName32 Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
+Private Declare PtrSafe Sub CoTaskMemFree32 Lib "ole32.dll" Alias "CoTaskMemFree" (ByVal hMem As LongPtr)
+Private Declare PtrSafe Function SHBrowseForFolder32 Lib "shell32" Alias "SHBrowseForFolder" (lpbi As shellBrowseInfo32) As Long
+Private Declare PtrSafe Function SHGetPathFromIDList32 Lib "shell32" Alias "SHGetPathFromIDList" (ByVal pidList As Long, ByVal lpBuffer As String) As Long
+Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As LongPtr, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As String) As Long
+Private Declare PtrSafe Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As Long, ByVal lpBuffer As String) As Long
 
 Private Const OFN_READONLY = &H1
 Private Const OFN_OVERWRITEPROMPT = &H2
@@ -80,7 +80,7 @@ Dim mstrCurrentDirectory As String
 ' @param  String  Optional param to set the starting path when selecting a folder
 ' @return String  The selected folder
 '************************************************
-Function BrowseFolderDialog(ByVal hWndFrm As Long, ByVal strTitle As String, ByVal blnShortPath As Boolean, Optional ByVal strStartPath As String = vbNullString) As String
+Function BrowseFolderDialog(ByVal hWndFrm As LongPtr, ByVal strTitle As String, ByVal blnShortPath As Boolean, Optional ByVal strStartPath As String = vbNullString) As String
   Dim lngNullTest As Long
   Dim lngIDList As Long, lngRes As Long
   Dim strFolder As String, strShortFolder As String
@@ -131,7 +131,7 @@ BrowseFolderDialog_Err:
 
 End Function
 
-Private Function BrowseCallbackProc(ByVal hwnd As Long, ByVal uMsg As Long, ByVal lp As Long, ByVal pData As Long) As Long
+Private Function BrowseCallbackProc(ByVal hwnd As LongPtr, ByVal uMsg As Long, ByVal lp As Long, ByVal pData As Long) As Long
   Dim lngRet As Long
   Dim strBuffer As String
 
@@ -156,6 +156,6 @@ Private Function BrowseCallbackProc(ByVal hwnd As Long, ByVal uMsg As Long, ByVa
 End Function
 
 ' This function allows you to assign a function pointer to a vaiable.
-Private Function GetAddressofFunction(add As Long) As Long
+Private Function GetAddressofFunction(add As LongPtr) As LongPtr
   GetAddressofFunction = add
 End Function
