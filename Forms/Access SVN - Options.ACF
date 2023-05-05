@@ -2646,8 +2646,9 @@ End Sub
 Private Sub cmdFolderDialog_Click()
   Dim strFolderPath As String
 
-  strFolderPath = BrowseFolderDialog(Me.hwnd, "Select SVN Checkout Folder", 0, Me.txtOutputLocation.Value)
-  If strFolderPath <> "" Then
+  strFolderPath = BrowseFolderDialog("Select a Checkout Folder", Nz(Me.txtOutputLocation.Value, vbNullString))
+  
+  If strFolderPath <> vbNullString Then
     Me.txtOutputLocation = strFolderPath
   End If
   Call txtOutputLocation_AfterUpdate
