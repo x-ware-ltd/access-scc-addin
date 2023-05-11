@@ -146,7 +146,7 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String, Op
   ImportSilent = strError
   asPurgeTmpObjectsTables
 End Function
-    
+
 Public Function ReferencesBroken() As Boolean
   Dim ref As Reference
   
