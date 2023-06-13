@@ -30,6 +30,9 @@ End Function
 '
 ' Opens a Browse for Folder Dialog
 '
+' Note - this function is not extracted from
+' xwFileFunctions in JCS
+'
 ' @version 1.00
 ' @param  String  The title of the dialog
 ' @param  String  The initial file name
