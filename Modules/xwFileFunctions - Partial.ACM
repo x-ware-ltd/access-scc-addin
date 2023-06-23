@@ -23,3 +23,32 @@ Function ShortName(ByVal Full As Variant) As Variant
   ' x is position of last \
   ShortName = Right$(Full, Len(Full) - x)
 End Function
+
+
+'************************************************
+' Browse Folder Dialog
+'
+' Opens a Browse for Folder Dialog
+'
+' Note - this function is not extracted from
+' xwFileFunctions in JCS
+'
+' @version 1.00
+' @param  String  The title of the dialog
+' @param  String  The initial file name
+' @return String  The selected folder
+'************************************************
+Public Function BrowseFolderDialog(strTitle As String, InitialFileName As String) As String
+
+    With Application.FileDialog(msoFileDialogFolderPicker)
+        .Title = strTitle
+        .InitialFileName = InitialFileName
+        .Show
+        .AllowMultiSelect = False
+        If .SelectedItems.Count = 0 Then 'If no folder is selected, abort
+            Exit Function
+        End If
+        BrowseFolderDialog = .SelectedItems(1)
+    End With
+
+End Function

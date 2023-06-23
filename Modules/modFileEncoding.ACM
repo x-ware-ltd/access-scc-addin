@@ -1,7 +1,7 @@
 Option Compare Database
 Option Explicit
 
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As LongPtr)
 
 Function IsANSI(strFilename As String) As Boolean
   ' Returns true if the file specified is in ANSI (1 byte per character) format

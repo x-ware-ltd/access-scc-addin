@@ -2,9 +2,9 @@ Option Compare Database
 Option Explicit
 Option Private Module
 
-Private Declare Function GetTempPath Lib "kernel32" Alias "GetTempPathA" _
+Private Declare PtrSafe Function GetTempPath Lib "kernel32" Alias "GetTempPathA" _
     (ByVal nBufferLength As Long, ByVal lpBuffer As String) As Long
-Private Declare Function GetTempFileName Lib "kernel32" Alias "GetTempFileNameA" _
+Private Declare PtrSafe Function GetTempFileName Lib "kernel32" Alias "GetTempFileNameA" _
     (ByVal lpszPath As String, ByVal lpPrefixString As String, _
     ByVal wUnique As Long, ByVal lpTempFileName As String) As Long
 

@@ -263,5 +263,7 @@ Begin TableDef
         71• .71•#06/05/2021 00:00:00#•‡Check form/report exists before deleting it‡
         72• .72•#08/23/2021 00:00:00#•‡Fallback to finding references in Distributables‡
         73• .73•#08/04/2021 00:00:00#•‡Remove outdated startup msgbox‡
+        74• .74•#03/31/2024 00:00:00#•‡Automatically re-import broken references‡
+        75• .75•#06/15/2023 00:00:00#•‡Add support for 64-bit Office‡
     End
 End

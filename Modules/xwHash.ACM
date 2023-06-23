@@ -14,15 +14,15 @@ Option Explicit
 ' @version 1.000
 '************************************************
 
-Private Declare Function VarPtrArray Lib "msvbvm60.dll" Alias "VarPtr" (Ptr() As Any) As Long
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (dest As Any, Source As Any, ByVal Bytes As Long)
+Private Declare PtrSafe Function VarPtrArray Lib "msvbvm60.dll" Alias "VarPtr" (Ptr() As Any) As LongPtr
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (dest As Any, Source As Any, ByVal Bytes As LongPtr)
 
-Private Declare Function CryptAcquireContext Lib "advapi32" Alias "CryptAcquireContextA" (ByRef phProv As Long, ByVal pszContainer As String, ByVal pszProvider As String, ByVal dwProvType As Long, ByVal dwFlags As Long) As Long    'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
-Private Declare Function CryptCreateHash Lib "advapi32" (ByVal hProv As Long, ByVal algid As Long, ByVal hKey As Long, ByVal dwFlags As Long, ByRef phHash As Long) As Long                      'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
-Private Declare Function CryptDestroyHash Lib "advapi32" (ByVal hHash As Long) As Long      'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
-Private Declare Function CryptGetHashParam Lib "advapi32" (ByVal hHash As Long, ByVal dwParam As Long, ByRef pbData As Any, ByRef pdwDataLen As Long, ByVal dwFlags As Long) As Long
-Private Declare Function CryptHashData Lib "advapi32" (ByVal hHash As Long, ByRef pbData As Any, ByVal dwDataLen As Long, ByVal dwFlags As Long) As Long
-Private Declare Function CryptReleaseContext Lib "advapi32" (ByVal hProv As Long, ByVal dwFlags As Long) As Long  'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
+Private Declare PtrSafe Function CryptAcquireContext Lib "advapi32" Alias "CryptAcquireContextA" (ByRef phProv As LongPtr, ByVal pszContainer As String, ByVal pszProvider As String, ByVal dwProvType As Long, ByVal dwFlags As Long) As Long    'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
+Private Declare PtrSafe Function CryptCreateHash Lib "advapi32" (ByVal hProv As LongPtr, ByVal algid As Long, ByVal hKey As LongPtr, ByVal dwFlags As Long, ByRef phHash As LongPtr) As Long                      'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
+Private Declare PtrSafe Function CryptDestroyHash Lib "advapi32" (ByVal hHash As LongPtr) As Long      'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
+Private Declare PtrSafe Function CryptGetHashParam Lib "advapi32" (ByVal hHash As LongPtr, ByVal dwParam As Long, ByRef pbData As Any, ByRef pdwDataLen As Long, ByVal dwFlags As Long) As Long
+Private Declare PtrSafe Function CryptHashData Lib "advapi32" (ByVal hHash As LongPtr, ByRef pbData As Any, ByVal dwDataLen As Long, ByVal dwFlags As Long) As Long
+Private Declare PtrSafe Function CryptReleaseContext Lib "advapi32" (ByVal hProv As LongPtr, ByVal dwFlags As Long) As Long  'TRUE (<> 0) = success.  See Err.LastDLLError if FALSE.
 
 Private Const MS_DEFAULT_PROVIDER As String = "Microsoft Base Cryptographic Provider v1.0"
 Private Const PROV_RSA_FULL As Long = 1&
@@ -57,8 +57,8 @@ Public Function xwHashFile(strFilename As String, Optional enmHashType As xwHash
   
   Const lngBlockSize = 16384& '16KB the chunk size used on the file to stream it into the API calls
     
-  Dim hProvider As Long 'Handle to the Crypto Provider
-  Dim hHash As Long     'Handle to Hash object
+  Dim hProvider As LongPtr 'Handle to the Crypto Provider
+  Dim hHash As LongPtr     'Handle to Hash object
   Dim intFile As Integer
   Dim lngFileLength As Long
   Dim lngWholeChunks As Long
@@ -141,8 +141,8 @@ End Function
 ' @return String The Hash for the Byte Array, or vbNullString if unsuccessful
 '************************************************
 Public Function xwHashBytes(byt() As Byte, Optional enmHashType As xwHashType = HashType_MD5) As String
-  Dim hProvider As Long 'Handle to the Crypto Provider
-  Dim hHash As Long     'Handle to Hash object
+  Dim hProvider As LongPtr 'Handle to the Crypto Provider
+  Dim hHash As LongPtr     'Handle to Hash object
   
   If Not pvtIsArrayDimensioned(byt) Then Err.Raise vbObjectError + 14005&, "xwHash", "Byte array has not been initialised": Exit Function
   If CryptAcquireContext(hProvider, vbNullString, MS_DEFAULT_PROVIDER, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) = 0& Then Err.Raise vbObjectError + 14000&, "xwHash", "Failed to acquire access to CryptAPI: " & CStr(Err.LastDllError): Exit Function
@@ -156,7 +156,7 @@ xwHashBytes_Exit:
   CryptReleaseContext hProvider, 0&
 End Function
 
-Private Function pvtGetHashValue(hHash As Long) As String
+Private Function pvtGetHashValue(hHash As LongPtr) As String
   Dim lngHashSize As Long
   Dim bytHashValue() As Byte
   Dim intByte As Integer
@@ -178,8 +178,8 @@ Private Function pvtGetHashValue(hHash As Long) As String
 End Function
 
 Private Function pvtIsArrayDimensioned(byt() As Byte) As Boolean
-  Dim ptrArray As Long 'Pointer to the Array
-  Dim ptrStruc As Long 'Pointer to Array structure
+  Dim ptrArray As LongPtr 'Pointer to the Array
+  Dim ptrStruc As LongPtr 'Pointer to Array structure
   
   ptrArray = VarPtrArray(byt)
   'If the array has yet to be dimensioned the value in the array pointer location will be zero
