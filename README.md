@@ -33,7 +33,6 @@ Known issues are:
 - Multi valued records
 - Ribbon not actively supported (As they are storred internally in a table they can be imported/exported, but can not be effectively diffed)
 - Navigation bars not supported
-- 64 bit Access has never been tested at all (doubt I really want to!)
 
 # Requirements
 You will need the following to use this:
