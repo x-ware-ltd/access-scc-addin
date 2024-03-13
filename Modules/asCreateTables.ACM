@@ -45,6 +45,14 @@ Public Sub CreateLocalSCCTables()
     Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "SccSystem", dbLong, 0, "The SCC system in use. From the SccSystem enum", , , , , , , , True)
   End If
   
+  If InFields(db.TableDefs("MSysSCCPrefs").Fields, "Library") = False Then
+    Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "Library", dbText, 100, "The library these preferences apply to", bRequired:=True, bAllowZeroLength:=True, vDefaultValue:=vbNullString)
+  End If
+  
+  If InFields(db.TableDefs("MSysSCCStatus").Fields, "objSourceLibrary") = False Then
+    Set fd = AddField(db.TableDefs("MSysSCCStatus"), "objSourceLibrary", dbText, 100, "The library these this object comes from", bRequired:=True, bAllowZeroLength:=True, vDefaultValue:=vbNullString)
+  End If
+  
   db.Close: Set db = Nothing
 End Sub
 

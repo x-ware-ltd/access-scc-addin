@@ -85,9 +85,8 @@ End Function
 ' @param        String The path to a SCC Addin repository. Must include trailing slash.
 ' @return       String Any errors are returned, if no errors occured returns vbNullString
 '************************************************
-Public Function ImportSilent(strSccSystem As String, strImportPath As String, Optional blnSkipMacrosAndExtras As Boolean = False) As String
+Public Function ImportSilent(strSccSystem As String, strImportPath As String, Optional blnSkipMacrosAndExtras As Boolean = False, Optional strLibrary As String = vbNullString, Optional blnSkipPrivate As Boolean = False) As String
   Dim strError As String
-  
   Select Case strSccSystem
     Case "SVN":
       SetSCCSystem sccSystemSubversion
@@ -112,17 +111,17 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String, Op
     UpdateObjectProperties (asObjectType.acExtra)     ' Extras
   End If
   
-  asPopulateTmpObjectsImport objTable, strImportPath & "Tables", modSCC.arrTables             ' Tables
-  asPopulateTmpObjectsImport objQuery, strImportPath & "Queries", modSCC.arrQueries           ' Queries
-  asPopulateTmpObjectsImport objForm, strImportPath & "Forms", modSCC.arrForms                ' Forms
-  asPopulateTmpObjectsImport objReport, strImportPath & "Reports", modSCC.arrReports          ' Reports
-  asPopulateTmpObjectsImport objModule, strImportPath & "Modules", modSCC.arrModules          ' Modules
-  asPopulateTmpObjectsImport objToolbar, strImportPath & "Toolbars", modSCC.arrToolbars       ' Toolbars
-  asPopulateTmpObjectsImport objReference, strImportPath & "References", modSCC.arrReferences ' References
-  asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSCC.arrIMEXSpecs   ' Import Export Sepcs
+  asPopulateTmpObjectsImport objTable, strImportPath & "Tables", modSCC.arrTables, strLibrary, blnSkipPrivate             ' Tables
+  asPopulateTmpObjectsImport objQuery, strImportPath & "Queries", modSCC.arrQueries, strLibrary, blnSkipPrivate           ' Queries
+  asPopulateTmpObjectsImport objForm, strImportPath & "Forms", modSCC.arrForms, strLibrary, blnSkipPrivate                ' Forms
+  asPopulateTmpObjectsImport objReport, strImportPath & "Reports", modSCC.arrReports, strLibrary, blnSkipPrivate          ' Reports
+  asPopulateTmpObjectsImport objModule, strImportPath & "Modules", modSCC.arrModules, strLibrary, blnSkipPrivate          ' Modules
+  asPopulateTmpObjectsImport objToolbar, strImportPath & "Toolbars", modSCC.arrToolbars, strLibrary, blnSkipPrivate       ' Toolbars
+  asPopulateTmpObjectsImport objReference, strImportPath & "References", modSCC.arrReferences, strLibrary, blnSkipPrivate ' References
+  asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSCC.arrIMEXSpecs, strLibrary, blnSkipPrivate   ' Import Export Sepcs
   If Not blnSkipMacrosAndExtras Then
-    asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSCC.arrMacros             ' Macros
-    asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras             ' Extras
+    asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSCC.arrMacros, strLibrary, blnSkipPrivate             ' Macros
+    asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras, strLibrary, blnSkipPrivate             ' Extras
   End If
   
   ' If there are broken references, reimport the references even if they are unchanged
@@ -130,17 +129,17 @@ Public Function ImportSilent(strSccSystem As String, strImportPath As String, Op
     CodeDb.Execute "UPDATE MSysSCCTmpObjects IN '" & CurrentDb.Name & "' SET selected = TRUE WHERE objType = " & CInt(objReference)
   End If
   
-  asImportObjects objTable, strImportPath & "Tables\", strError         ' Tables
-  asImportObjects objQuery, strImportPath & "Queries\", strError        ' Queries
-  asImportObjects objForm, strImportPath & "Forms\", strError           ' Forms
-  asImportObjects objReport, strImportPath & "Reports\", strError       ' Reports
-  asImportObjects objModule, strImportPath & "Modules\", strError       ' Modules
-  asImportObjects objToolbar, strImportPath & "Toolbars\", strError     ' Toolbars
-  asImportObjects objReference, strImportPath & "References\", strError, strImportRootPath:=strImportPath   ' References
-  asImportObjects objIMEXSpecs, strImportPath & "IMEXSpecs\", strError  ' Import Export Specs
+  asImportObjects objTable, strImportPath & "Tables\", strError, , strLibrary        ' Tables
+  asImportObjects objQuery, strImportPath & "Queries\", strError, , strLibrary       ' Queries
+  asImportObjects objForm, strImportPath & "Forms\", strError, , strLibrary          ' Forms
+  asImportObjects objReport, strImportPath & "Reports\", strError, , strLibrary      ' Reports
+  asImportObjects objModule, strImportPath & "Modules\", strError, , strLibrary      ' Modules
+  asImportObjects objToolbar, strImportPath & "Toolbars\", strError, , strLibrary    ' Toolbars
+  asImportObjects objReference, strImportPath & "References\", strError, strImportPath, strLibrary   ' References
+  asImportObjects objIMEXSpecs, strImportPath & "IMEXSpecs\", strError, , strLibrary ' Import Export Specs
   If Not blnSkipMacrosAndExtras Then
-    asImportObjects objMacro, strImportPath & "Macros\", strError         ' Macros
-    asImportObjects objExtra, strImportPath & "Extras\", strError         ' Extras
+    asImportObjects objMacro, strImportPath & "Macros\", strError, , strLibrary        ' Macros
+    asImportObjects objExtra, strImportPath & "Extras\", strError, , strLibrary        ' Extras
   End If
   
   ImportSilent = strError
@@ -365,7 +364,7 @@ Public Function UpdateObjectProperties(oType As asObjectType) As Boolean
   UpdateObjectProperties = True
 End Function
 
-Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType, strName As String, intAction As Integer, Optional strPath As String = "")
+Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType, strName As String, intAction As Integer, Optional strPath As String = "", Optional strLibrary As String)
   Dim strQuery As String
   Dim db As DAO.Database
   Dim oSVNImport As SVNITEM
@@ -389,13 +388,13 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
           ' If the object uses a checksum to check for changes use the checksum field in the table
           If objDBTypeUsesCheckSum(objType) Then
             'strObjModifiedChecksum = getObjectModifiedCheckSum(objType, strName)
-            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportChecksum) " & _
-                       "VALUES (" & objType & ", '" & strName & "', '" & oSVNImport.svRevision & "', '" & oSVNImport.svCheckSum & "', '" & oSVNImport.svCheckSum & "')"
+            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportChecksum, objSourceLibrary) " & _
+                       "VALUES (" & objType & ", '" & strName & "', '" & oSVNImport.svRevision & "', '" & oSVNImport.svCheckSum & "', '" & oSVNImport.svCheckSum & "', '" & strLibrary & "')"
           Else
             'dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
             dblObjModifiedDate = CDbl(Now()) ' The SVNObjectProps table has not been updated yet
-            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportDate) " & _
-                       "VALUES (" & objType & ", '" & strName & "', '" & oSVNImport.svRevision & "', '" & oSVNImport.svCheckSum & "', " & str$(dblObjModifiedDate) & ")"
+            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportDate, objSourceLibrary) " & _
+                       "VALUES (" & objType & ", '" & strName & "', '" & oSVNImport.svRevision & "', '" & oSVNImport.svCheckSum & "', " & str$(dblObjModifiedDate) & ", '" & strLibrary & "')"
           End If
         
         Case asCommit
@@ -439,12 +438,12 @@ Private Sub UpdateStatusEntry(intDirection As Integer, objType As asObjectDBType
           ' If the object uses a checksum to check for changes use the checksum fiedl in the table
           If objDBTypeUsesCheckSum(objType) Then
             strObjModifiedChecksum = getObjectModifiedCheckSum(objType, strName)
-            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportChecksum, objStatusUnknown) " & _
-                       "VALUES (" & objType & ", '" & strName & "', '0', '0', '" & strObjModifiedChecksum & "', True)"
+            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportChecksum, objStatusUnknown, objSourceLibrary) " & _
+                       "VALUES (" & objType & ", '" & strName & "', '0', '0', '" & strObjModifiedChecksum & "', True, '" & strLibrary & "')"
           Else
             dblObjModifiedDate = getObjectModifiedTimestamp(objType, strName)
-            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportDate, objStatusUnknown) " & _
-                       "VALUES (" & objType & ", '" & strName & "', '0', '0', " & str$(dblObjModifiedDate) & ", True)"
+            strQuery = "INSERT INTO MSysSCCStatus (objType, objName, objImportVersion, objSCCChecksum, objImportDate, objStatusUnknown, objSourceLibrary) " & _
+                       "VALUES (" & objType & ", '" & strName & "', '0', '0', " & str$(dblObjModifiedDate) & ", True, '" & strLibrary & "')"
           End If
         
         Case asCommit
@@ -556,10 +555,13 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
   Dim rst As DAO.Recordset
   Dim strObjectType As String
   Dim strObjectFileName As String
-  Dim booSkipObject As Boolean
+  Dim blnSkipObject As Boolean
   
   Set db = CurrentDb()
-  Set rst = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects WHERE objType = " & objExportType & " AND selected = True", dbOpenDynaset)
+  Set rst = db.OpenRecordset("SELECT t.*, s.objSourceLibrary " & _
+                             "FROM MSysSCCTmpObjects t LEFT JOIN MSysSCCStatus s " & _
+                             "ON t.objType = s.objType AND t.objName = s.objName " & _
+                             "WHERE t.objType = " & objExportType & " AND selected = True", dbOpenDynaset)
   
   If Not rst.EOF Then
     asMkDir strExportPath
@@ -567,18 +569,25 @@ Private Sub asExportObjects(objExportType As asObjectDBType, strExportPath As St
   
   strObjectType = asGetObjectNiceName(objExportType)
   Do Until rst.EOF
-    booSkipObject = False
+    blnSkipObject = False
     ' Don't process the internal SQL queries that are stored in access
     If objExportType = objQuery And Left(rst!objName, 4) = "~sq_" Then
-      booSkipObject = True
+      blnSkipObject = True
     End If
     
     ' Don't process internal Access tables, (and the SVN status tables)
     If objExportType = objTable And Left(rst!objName, 4) = "MSys" Then
-      booSkipObject = True
+      blnSkipObject = True
     End If
     
-    If Not booSkipObject Then
+    If Not IsNull(rst("objSourceLibrary")) Then
+      If rst("objSourceLibrary") <> "" Then
+        AddResult "Cannot Export " & rst("objName") & " '" & strObjectFileName & "' - This object belongs to the '" & rst("objSourceLibrary") & "' library."
+        blnSkipObject = True
+      End If
+    End If
+    
+    If Not blnSkipObject Then
       strObjectFileName = winPathSpecialChars(rst!objName) & asGetObjectExportFileExtension(objExportType)
       
       SetStatus "Exporting " & strObjectType & " '" & rst!objName & "'"
@@ -781,7 +790,7 @@ Public Sub asUpdateVersionsFromExport(strExportPath As String)
          
 End Sub
 
-Private Sub asImportObject(objType As asObjectDBType, objName As String, objStatus As String, strImportPath As String, Optional strImportRootPath As String, Optional ByRef strError As String)
+Private Sub asImportObject(objType As asObjectDBType, objName As String, objStatus As String, strImportPath As String, Optional strImportRootPath As String, Optional ByRef strError As String, Optional strLibrary As String)
   Dim strImportFileName As String, strObjectType As String
   Dim strLoadError As String
 
@@ -798,7 +807,7 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
     Case "Deleted"
       SetStatus "Deleting " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
       asDeleteObject objType, objName
-      UpdateStatusEntry asImport, objType, objName, asDelete
+      UpdateStatusEntry asImport, objType, objName, asDelete, , strLibrary
       
     Case "New"
       SetStatus "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
@@ -807,7 +816,7 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
         AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf, strError
         strLoadError = ""
       End If
-      UpdateStatusEntry asImport, objType, objName, asAdd, appendSlash(strImportPath) & strImportFileName
+      UpdateStatusEntry asImport, objType, objName, asAdd, appendSlash(strImportPath) & strImportFileName, strLibrary
       
     Case Else
       SetStatus "Importing " & strObjectType & " '" & objName & "' from " & appendSlash(strImportPath) & strImportFileName
@@ -816,7 +825,7 @@ Private Sub asImportObject(objType As asObjectDBType, objName As String, objStat
         AddResult "Error importing " & objName & ": " & strLoadError & vbCrLf
         strLoadError = ""
       End If
-      UpdateStatusEntry asImport, objType, objName, asCommit, appendSlash(strImportPath) & strImportFileName
+      UpdateStatusEntry asImport, objType, objName, asCommit, appendSlash(strImportPath) & strImportFileName, strLibrary
       
   End Select
 
@@ -893,7 +902,7 @@ Private Sub asDeleteObject(objType As asObjectDBType, objName As String)
 
 End Sub
 
-Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As String, Optional ByRef strError As String, Optional strImportRootPath As String)
+Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As String, Optional ByRef strError As String, Optional strImportRootPath As String, Optional strLibrary As String)
   On Error GoTo Err_asImportObjects
   
   Dim db As DAO.Database
@@ -910,7 +919,7 @@ Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As St
   
   ' Import all the objects
   Do Until rst.EOF
-    asImportObject rst!objType, rst!objName, rst!objStatus, strImportPath, strImportRootPath, strError
+    asImportObject rst!objType, rst!objName, rst!objStatus, strImportPath, strImportRootPath, strError, strLibrary
     rst.MoveNext
   Loop
 
@@ -1452,7 +1461,15 @@ Private Function EndsWith(strCheck As String, strMatch As String)
   EndsWith = (Mid(strCheck, Len(strCheck) - Len(strMatch) + 1) = strMatch)
 End Function
 
-Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath As String, arrSVNItems() As SVNITEM)
+Private Function StartsWith(strCheck As String, strMatch As String)
+  If Len(strCheck) < Len(strMatch) Then
+    Exit Function
+  End If
+  
+  StartsWith = (Mid(strCheck, 1, Len(strMatch)) = strMatch)
+End Function
+
+Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath As String, arrSVNItems() As SVNITEM, strLibrary As String, blnSkipPrivate As Boolean)
   Dim db As DAO.Database
   Dim rst1 As DAO.Recordset
   Dim rst2 As DAO.Recordset
@@ -1461,6 +1478,7 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
   Dim strDeletedQuery As String
   Dim j As Integer
   Dim strFileExtension As String
+  Dim blnSkip As Boolean
   
   strFileExtension = asGetObjectExportFileExtension(objType)
   
@@ -1470,7 +1488,22 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
   SCC_GetAllVersionsSubFolder strImportPath, arrSVNItems
   If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
     For j = LBound(arrSVNItems) To UBound(arrSVNItems)
-      If EndsWith(arrSVNItems(j).svName, strFileExtension) Then
+      blnSkip = False
+      
+      If blnSkipPrivate Then
+        If StartsWith(arrSVNItems(j).svName, "_") Then
+          blnSkip = True
+        End If
+      End If
+      
+      If Not EndsWith(arrSVNItems(j).svName, strFileExtension) Then
+        blnSkip = True
+      Else
+        AddResult asGetObjectNiceName(objType) & """" & arrSVNItems(j).svName & """ &" _
+                  & " skipped, as it does not end with expected extention """ & strFileExtension & """"
+      End If
+    
+      If Not blnSkip Then
         strObjName = winPathSpecialCharsDecode(Left$(arrSVNItems(j).svName, Len(arrSVNItems(j).svName) - 4))
         rst1.AddNew
         rst1!objName = strObjName
@@ -1490,9 +1523,6 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
           Exit For
         End If
         On Error GoTo 0
-      Else
-        AddResult asGetObjectNiceName(objType) & """" & arrSVNItems(j).svName & """ &" _
-                  & " skipped, as it does not end with expected extention """ & strFileExtension & """"
       End If
     Next j
   End If
@@ -1504,7 +1534,8 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
                     "ON S.objName = T.objName " & _
                     "AND S.objType = T.objType " & _
                     "WHERE T.objName Is Null " & _
-                    "AND S.objType = " & objType
+                    "AND S.objType = " & objType & " " & _
+                    "AND S.objSourceLibrary = """ & strLibrary & """"
   Set rst2 = db.OpenRecordset(strDeletedQuery)
   If rst2.RecordCount > 0 Then
     Do Until rst2.EOF
@@ -1554,16 +1585,16 @@ Public Sub asPopulateTmpObjectsTables(intDirection As Integer)
     Case asImport
       strImportPath = appendSlash(Application.Forms![Access SVN - Options].txtOutputLocation.Value)
     
-      If Application.Forms![Access SVN - Options].chkTables.Value = True Then asPopulateTmpObjectsImport objTable, strImportPath & "Tables", modSCC.arrTables                 ' Tables
-      If Application.Forms![Access SVN - Options].chkQueries.Value = True Then asPopulateTmpObjectsImport objQuery, strImportPath & "Queries", modSCC.arrQueries              ' Queries
-      If Application.Forms![Access SVN - Options].chkForms.Value = True Then asPopulateTmpObjectsImport objForm, strImportPath & "Forms", modSCC.arrForms                     ' Forms
-      If Application.Forms![Access SVN - Options].chkReports.Value = True Then asPopulateTmpObjectsImport objReport, strImportPath & "Reports", modSCC.arrReports             ' Reports
-      If Application.Forms![Access SVN - Options].chkMacros.Value = True Then asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSCC.arrMacros                 ' Macros
-      If Application.Forms![Access SVN - Options].chkModules.Value = True Then asPopulateTmpObjectsImport objModule, strImportPath & "Modules", modSCC.arrModules             ' Modules
-      If Application.Forms![Access SVN - Options].chkCmdBars.Value = True Then asPopulateTmpObjectsImport objToolbar, strImportPath & "Toolbars", modSCC.arrToolbars          ' Toolbars
-      If Application.Forms![Access SVN - Options].chkExtras.Value = True Then asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras                 ' Extras
-      If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asPopulateTmpObjectsImport objReference, strImportPath & "References", modSCC.arrReferences ' References
-      If Application.Forms![Access SVN - Options].chkImportExport.Value = True Then asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSCC.arrIMEXSpecs ' Import Export Sepcs
+      If Application.Forms![Access SVN - Options].chkTables.Value = True Then asPopulateTmpObjectsImport objTable, strImportPath & "Tables", modSCC.arrTables, vbNullString, False                 ' Tables
+      If Application.Forms![Access SVN - Options].chkQueries.Value = True Then asPopulateTmpObjectsImport objQuery, strImportPath & "Queries", modSCC.arrQueries, vbNullString, False               ' Queries
+      If Application.Forms![Access SVN - Options].chkForms.Value = True Then asPopulateTmpObjectsImport objForm, strImportPath & "Forms", modSCC.arrForms, vbNullString, False                      ' Forms
+      If Application.Forms![Access SVN - Options].chkReports.Value = True Then asPopulateTmpObjectsImport objReport, strImportPath & "Reports", modSCC.arrReports, vbNullString, False              ' Reports
+      If Application.Forms![Access SVN - Options].chkMacros.Value = True Then asPopulateTmpObjectsImport objMacro, strImportPath & "Macros", modSCC.arrMacros, vbNullString, False                  ' Macros
+      If Application.Forms![Access SVN - Options].chkModules.Value = True Then asPopulateTmpObjectsImport objModule, strImportPath & "Modules", modSCC.arrModules, vbNullString, False              ' Modules
+      If Application.Forms![Access SVN - Options].chkCmdBars.Value = True Then asPopulateTmpObjectsImport objToolbar, strImportPath & "Toolbars", modSCC.arrToolbars, vbNullString, False           ' Toolbars
+      If Application.Forms![Access SVN - Options].chkExtras.Value = True Then asPopulateTmpObjectsImport objExtra, strImportPath & "Extras", modSCC.arrExtras, vbNullString, False                  ' Extras
+      If Application.Forms![Access SVN - Options].chkReferences.Value = True Then asPopulateTmpObjectsImport objReference, strImportPath & "References", modSCC.arrReferences, vbNullString, False  ' References
+      If Application.Forms![Access SVN - Options].chkImportExport.Value = True Then asPopulateTmpObjectsImport objIMEXSpecs, strImportPath & "IMEXSpecs", modSCC.arrIMEXSpecs, vbNullString, False  ' Import Export Sepcs
     
     Case Else
       MsgBox "This function was not called with a valid import export type.", vbExclamation, "Access - SVN"
