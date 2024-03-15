@@ -20,7 +20,6 @@ Option Explicit
 '************************************************
 Public Sub CreateLocalSCCTables()
   Dim db As DAO.Database
-  Dim fd As DAO.Field
   
   Set db = CurrentDb()
   
@@ -36,42 +35,32 @@ Public Sub CreateLocalSCCTables()
   If Not TableExists(db, "MSysSCCStatus") Then CreateSCCStatusTable db
   If Not TableExists(db, "MSysSCCPrefs") Then CreateSCCPrefsTable db
   
-  If InFields(db.TableDefs("MSysSCCPrefs").Fields, "ShowCommitWindow") = False Then
-    Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "ShowCommitWindow", dbBoolean, 0, "Whether to show the commit window, or auto close it", , , , , , , , True)
-    Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "ShowUpdateWindow", dbBoolean, 0, "Whether to show the update window, or auto close it", , , , , , , , True)
-  End If
   
-  If InFields(db.TableDefs("MSysSCCPrefs").Fields, "SccSystem") = False Then
-    Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "SccSystem", dbLong, 0, "The SCC system in use. From the SccSystem enum", , , , , , , , True)
-  End If
-  
-  If InFields(db.TableDefs("MSysSCCPrefs").Fields, "Library") = False Then
-    Set fd = AddField(db.TableDefs("MSysSCCPrefs"), "Library", dbText, 100, "The library these preferences apply to", bRequired:=True, bAllowZeroLength:=True, vDefaultValue:=vbNullString)
-  End If
-  
-  If InFields(db.TableDefs("MSysSCCStatus").Fields, "objSourceLibrary") = False Then
-    Set fd = AddField(db.TableDefs("MSysSCCStatus"), "objSourceLibrary", dbText, 100, "The library these this object comes from", bRequired:=True, bAllowZeroLength:=True, vDefaultValue:=vbNullString)
-  End If
+  AddField db.TableDefs("MSysSCCPrefs"), "ShowCommitWindow", dbBoolean, 0, "Whether to show the commit window, or auto close it", , , , , , , , True
+  AddField db.TableDefs("MSysSCCPrefs"), "ShowUpdateWindow", dbBoolean, 0, "Whether to show the update window, or auto close it", , , , , , , , True
+  AddField db.TableDefs("MSysSCCPrefs"), "SccSystem", dbLong, 0, "The SCC system in use. From the SccSystem enum", , , , , , , , True
+  AddField db.TableDefs("MSysSCCPrefs"), "Library", dbText, 100, "The library these preferences apply to", bRequired:=True, bAllowZeroLength:=True, vDefaultValue:=vbNullString
+  AddField db.TableDefs("MSysSCCStatus"), "objSourceLibrary", dbText, 100, "The library these this object comes from", bRequired:=True, bAllowZeroLength:=True, vDefaultValue:=vbNullString
+
   
   db.Close: Set db = Nothing
 End Sub
 
 Private Function CreateSCCObjectPropertiesTable(db As DAO.Database)
-  Dim fd As DAO.Field
   Dim td As DAO.TableDef
   Dim Idx As DAO.Index
   
   Set td = db.CreateTableDef("MSysSCCObjectProperties")
   
-  Set fd = AddField(td, "Temp", dbText, 1)
+  AddField td, "Temp", dbText, 1
   db.TableDefs.Append td
-  Set fd = AddField(td, "objType", dbLong, 0, "Object Type identifier", , , , 1)
-  Set fd = AddField(td, "objName", dbText, 255, "The name of the access object", , , , 0, , True)
-  Set fd = AddField(td, "objID", dbText, 50, "The internal ID of the access object", , , , 1, , False, True)
-  Set fd = AddField(td, "ParentID", dbLong, 0, "The object parent ID", , , , 1, , False)
-  Set fd = AddField(td, "objCreateDate", dbDouble, 0, "The object creation date")
-  Set fd = AddField(td, "objUpdateDate", dbDouble, 0, "The object update date")
-  Set fd = AddField(td, "objUpdateChecksum", dbText, 50, "The current MD5 Checksum of the object, used when date modified is not available", , , , 0, , False, True)
+  AddField td, "objType", dbLong, 0, "Object Type identifier", , , , 1
+  AddField td, "objName", dbText, 255, "The name of the access object", , , , 0, , True
+  AddField td, "objID", dbText, 50, "The internal ID of the access object", , , , 1, , False, True
+  AddField td, "ParentID", dbLong, 0, "The object parent ID", , , , 1, , False
+  AddField td, "objCreateDate", dbDouble, 0, "The object creation date"
+  AddField td, "objUpdateDate", dbDouble, 0, "The object update date"
+  AddField td, "objUpdateChecksum", dbText, 50, "The current MD5 Checksum of the object, used when date modified is not available", , , , 0, , False, True
   td.Fields.Delete "Temp"
   
   Set Idx = td.CreateIndex("PrimaryKey")
@@ -86,19 +75,18 @@ Private Function CreateSCCObjectPropertiesTable(db As DAO.Database)
 End Function
 
 Private Function CreateSCCTmpObjectsTable(db As DAO.Database)
-  Dim fd As DAO.Field
   Dim td As DAO.TableDef
   Dim Idx As DAO.Index
   
   Set td = db.CreateTableDef("MSysSCCTmpObjects")
   
-  Set fd = AddField(td, "Temp", dbText, 1)
+  AddField td, "Temp", dbText, 1
   db.TableDefs.Append td
-  Set fd = AddField(td, "ID", dbLong, 0, "Unique identifier", , , , , True)
-  Set fd = AddField(td, "objName", dbText, 255, "The name of the access object")
-  Set fd = AddField(td, "objType", dbInteger, 0, "The object type")
-  Set fd = AddField(td, "objStatus", dbText, 100, "The object status")
-  Set fd = AddField(td, "selected", dbBoolean, 0, "If object is selected for import export", , , , , , , , True)
+  AddField td, "ID", dbLong, 0, "Unique identifier", , , , , True
+  AddField td, "objName", dbText, 255, "The name of the access object"
+  AddField td, "objType", dbInteger, 0, "The object type"
+  AddField td, "objStatus", dbText, 100, "The object status"
+  AddField td, "selected", dbBoolean, 0, "If object is selected for import export", , , , , , , , True
   td.Fields.Delete "Temp"
   
   Set Idx = td.CreateIndex("primaryIndex")
@@ -123,20 +111,19 @@ Private Function CreateSCCTmpObjectsTable(db As DAO.Database)
 End Function
 
 Public Function CreateSCCStatusTable(db As DAO.Database)
-  Dim fd As DAO.Field
   Dim tdf As DAO.TableDef
   Dim Idx As DAO.Index
   
   Set tdf = db.CreateTableDef("MSysSCCStatus")
-  Set fd = AddField(tdf, "Temp", dbText, 1)
+  AddField tdf, "Temp", dbText, 1
   db.TableDefs.Append tdf
-  Set fd = AddField(tdf, "objType", dbInteger, 0, "The object Type", , , , , True)
-  Set fd = AddField(tdf, "objName", dbText, 255, "The name of the access object")
-  Set fd = AddField(tdf, "objImportVersion", dbText, 100, "The import version")
-  Set fd = AddField(tdf, "objSCCChecksum", dbText, 100, "The current SCC checksum")
-  Set fd = AddField(tdf, "objImportDate", dbDouble, 0, "The import date")
-  Set fd = AddField(tdf, "objImportChecksum", dbText, 50, "The import MD5 Checksum of the object, used when date modified cannot be used for change check", , , , 0, , False, True)
-  Set fd = AddField(tdf, "objStatusUnknown", dbBoolean, 0, "Whether the SCC status is unknown", , , , , , , , False)
+  AddField tdf, "objType", dbInteger, 0, "The object Type", , , , , True
+  AddField tdf, "objName", dbText, 255, "The name of the access object"
+  AddField tdf, "objImportVersion", dbText, 100, "The import version"
+  AddField tdf, "objSCCChecksum", dbText, 100, "The current SCC checksum"
+  AddField tdf, "objImportDate", dbDouble, 0, "The import date"
+  AddField tdf, "objImportChecksum", dbText, 50, "The import MD5 Checksum of the object, used when date modified cannot be used for change check", , , , 0, , False, True
+  AddField tdf, "objStatusUnknown", dbBoolean, 0, "Whether the SCC status is unknown", , , , , , , , False
   tdf.Fields.Delete "Temp"
   
   
@@ -174,34 +161,33 @@ Public Function CreateSCCStatusTable(db As DAO.Database)
 End Function
 
 Private Function CreateSCCPrefsTable(db As DAO.Database)
-  Dim fd As DAO.Field
   Dim td As DAO.TableDef
   Dim strSQL As String
   
   Set td = db.CreateTableDef("MSysSCCPrefs")
   
-  Set fd = AddField(td, "Temp", dbText, 1)
+  AddField td, "Temp", dbText, 1
   db.TableDefs.Append td
-  Set fd = AddField(td, "ExportPath", dbText, 255, "The export path to use in this project", , , , , , , , "C:\SVNRoot\")
-  Set fd = AddField(td, "CommitAfterExport", dbBoolean, 0, "Whether to perform an SVN commit after the export", , , , , , , , True)
-  Set fd = AddField(td, "UpdateBeforeImport", dbBoolean, 0, "Whether to perform an SVN update before an import", , , , , , , , True)
-  Set fd = AddField(td, "QueriesFlag", dbBoolean, 0, "Whether to process queries", , , , , , , , True)
-  Set fd = AddField(td, "FormsFlag", dbBoolean, 0, "Whether to process forms", , , , , , , , True)
-  Set fd = AddField(td, "ReportsFlag", dbBoolean, 0, "Whether to process reports", , , , , , , , True)
-  Set fd = AddField(td, "MacrosFlag", dbBoolean, 0, "Whether to process macros", , , , , , , , True)
-  Set fd = AddField(td, "ModulesFlag", dbBoolean, 0, "Whether to process modules", , , , , , , , True)
-  Set fd = AddField(td, "TablesFlag", dbBoolean, 0, "Whether to process tables", , , , , , , , True)
-  Set fd = AddField(td, "ToolbarsFlag", dbBoolean, 0, "Whether to process toolbars", , , , , , , , True)
-  Set fd = AddField(td, "ExtrasFlag", dbBoolean, 0, "Whether to process extras", , , , , , , , True)
-  Set fd = AddField(td, "ReferencesFlag", dbBoolean, 0, "Whether to process references", , , , , , , , True)
-  Set fd = AddField(td, "ImExSpecsFlag", dbBoolean, 0, "Whether to process import export specs", , , , , , , , True)
-  Set fd = AddField(td, "RelationshipsFlag", dbBoolean, 0, "Whether to process relationships", , , , , , , , True)
-  Set fd = AddField(td, "LastImportDate", dbDate, 0, "The Last Date of an import", , , , , , , , True)
-  Set fd = AddField(td, "LastCheckoutVersion", dbText, 50, "The last version checked out from SVN", , , , , , , , True)
-  Set fd = AddField(td, "CheckRepoOnSartup", dbBoolean, 0, "Whether to check  the repository version on startup", , , , , , , , True)
-  Set fd = AddField(td, "ShowCommitWindow", dbBoolean, 0, "Whether to show the commit window, or auto close it", , , , , , , , True)
-  Set fd = AddField(td, "ShowUpdateWindow", dbBoolean, 0, "Whether to show the update window, or auto close it", , , , , , , , True)
-  Set fd = AddField(td, "SccSystem", dbLong, 0, "The SCC system in use. From the SccSystem enum", , , , , , , , True)
+  AddField td, "ExportPath", dbText, 255, "The export path to use in this project", , , , , , , , "C:\SVNRoot\"
+  AddField td, "CommitAfterExport", dbBoolean, 0, "Whether to perform an SVN commit after the export", , , , , , , , True
+  AddField td, "UpdateBeforeImport", dbBoolean, 0, "Whether to perform an SVN update before an import", , , , , , , , True
+  AddField td, "QueriesFlag", dbBoolean, 0, "Whether to process queries", , , , , , , , True
+  AddField td, "FormsFlag", dbBoolean, 0, "Whether to process forms", , , , , , , , True
+  AddField td, "ReportsFlag", dbBoolean, 0, "Whether to process reports", , , , , , , , True
+  AddField td, "MacrosFlag", dbBoolean, 0, "Whether to process macros", , , , , , , , True
+  AddField td, "ModulesFlag", dbBoolean, 0, "Whether to process modules", , , , , , , , True
+  AddField td, "TablesFlag", dbBoolean, 0, "Whether to process tables", , , , , , , , True
+  AddField td, "ToolbarsFlag", dbBoolean, 0, "Whether to process toolbars", , , , , , , , True
+  AddField td, "ExtrasFlag", dbBoolean, 0, "Whether to process extras", , , , , , , , True
+  AddField td, "ReferencesFlag", dbBoolean, 0, "Whether to process references", , , , , , , , True
+  AddField td, "ImExSpecsFlag", dbBoolean, 0, "Whether to process import export specs", , , , , , , , True
+  AddField td, "RelationshipsFlag", dbBoolean, 0, "Whether to process relationships", , , , , , , , True
+  AddField td, "LastImportDate", dbDate, 0, "The Last Date of an import", , , , , , , , True
+  AddField td, "LastCheckoutVersion", dbText, 50, "The last version checked out from SVN", , , , , , , , True
+  AddField td, "CheckRepoOnSartup", dbBoolean, 0, "Whether to check  the repository version on startup", , , , , , , , True
+  AddField td, "ShowCommitWindow", dbBoolean, 0, "Whether to show the commit window, or auto close it", , , , , , , , True
+  AddField td, "ShowUpdateWindow", dbBoolean, 0, "Whether to show the update window, or auto close it", , , , , , , , True
+  AddField td, "SccSystem", dbLong, 0, "The SCC system in use. From the SccSystem enum", , , , , , , , True
   td.Fields.Delete "Temp"
   
   strSQL = "INSERT INTO [MSysSCCPrefs] (ExportPath) VALUES ('" & CurrentDbDir() & "')"
@@ -256,7 +242,6 @@ End Function
 ' @return Boolean      True if successful, False if not
 '************************************************
 Public Function RenameTable(db As DAO.Database, strOldTableName As String, strNewTableName As String) As Boolean
-  Dim oDB As DAO.Database
   Dim td As DAO.TableDef
 
   On Error GoTo RenameTable_Err
