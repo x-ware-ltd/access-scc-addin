@@ -1457,6 +1457,7 @@ Public Sub asPopulateTmpObjectsExport(objType As asObjectDBType)
 End Sub
 
 Private Function EndsWith(strCheck As String, strMatch As String)
+  ' Returns true if strCheck ends with strMatch
   If Len(strCheck) < Len(strMatch) Then
     Exit Function
   End If
@@ -1465,6 +1466,7 @@ Private Function EndsWith(strCheck As String, strMatch As String)
 End Function
 
 Private Function StartsWith(strCheck As String, strMatch As String)
+  ' Returns true if strCheck starts with strMatch
   If Len(strCheck) < Len(strMatch) Then
     Exit Function
   End If
@@ -1501,7 +1503,6 @@ Private Sub asPopulateTmpObjectsImport(objType As asObjectDBType, strImportPath 
       
       If Not EndsWith(arrSVNItems(j).svName, strFileExtension) Then
         blnSkip = True
-      Else
         AddResult asGetObjectNiceName(objType) & """" & arrSVNItems(j).svName & """ &" _
                   & " skipped, as it does not end with expected extention """ & strFileExtension & """"
       End If
