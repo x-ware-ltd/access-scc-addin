@@ -41,6 +41,11 @@ Public Sub CreateLocalSCCTables()
   AddField db.TableDefs("MSysSCCPrefs"), "SccSystem", dbLong, 0, "The SCC system in use. From the SccSystem enum", , , , , , , , True
   AddField db.TableDefs("MSysSCCPrefs"), "Library", dbText, 100, "The library these preferences apply to", bRequired:=True, bAllowZeroLength:=True, vDefaultValue:=vbNullString
   AddField db.TableDefs("MSysSCCStatus"), "objSourceLibrary", dbText, 100, "The library these this object comes from", bRequired:=True, bAllowZeroLength:=True, vDefaultValue:=vbNullString
+  
+  ' The objSourceLibrary field does not allow null values, but for records
+  ' already in MSysSCCStatus when the field is added it was found to be Null.
+  CurrentDb.Execute "UPDATE MSysSCCStatus SET objSourceLibrary = """" WHERE objSourceLibrary IS NULL", dbFailOnError
+  
 
   
   db.Close: Set db = Nothing
