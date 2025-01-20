@@ -904,18 +904,32 @@ Private Sub asDeleteObject(objType As asObjectDBType, objName As String)
 End Sub
 
 Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As String, Optional ByRef strError As String, Optional strImportRootPath As String, Optional strLibrary As String)
-  On Error GoTo Err_asImportObjects
   
   Dim db As DAO.Database
   Dim rst As DAO.Recordset
   Dim rstObjProps As DAO.Recordset
   Dim accessObjType As asObjectType
+  Dim bln As Boolean
+  Const strOption As String = "Option to Enable Monaco SQL Editor"
+  
+  If objImportType = objQuery Then
+    ' Disable Monaco SQL Editor, to prevent lost focus errors when
+    ' converting text to queries
+    On Error Resume Next
+    bln = Application.GetOption(strOption)
+    If bln Then
+      Application.SetOption strOption, False
+    End If
+  End If
+
+  On Error GoTo Proc_Err
+  
   
   Set db = CurrentDb()
   Set rst = db.OpenRecordset("SELECT * FROM MSysSCCTmpObjects WHERE objType = " & objImportType & " AND selected = True", dbOpenDynaset)
   
   If rst.RecordCount = 0 Then
-    GoTo Exit_asImportObjects
+    GoTo Proc_Exit
   End If
   
   ' Import all the objects
@@ -940,16 +954,20 @@ Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As St
     rst.MoveNext
   Loop
 
-Exit_asImportObjects:
+Proc_Exit:
   Set db = Nothing
   Set rst = Nothing
+  If bln Then
+    ' Reset the Monaco SQL Editor setting
+    Application.SetOption strOption, True
+  End If
   Exit Sub
     
-Err_asImportObjects:
+Proc_Err:
   Echo True
   MsgBox Err.Number & " - " & Err.Description
   Echo False
-  Resume Exit_asImportObjects
+  Resume Proc_Exit
 End Sub
 
 
