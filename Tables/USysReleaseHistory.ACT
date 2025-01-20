@@ -266,5 +266,6 @@ Begin TableDef
         74• .74•#03/31/2024 00:00:00#•‡Automatically re-import broken references‡
         75• .75•#06/15/2023 00:00:00#•‡Add support for 64-bit Office‡
         76• .76•#03/27/2024 00:00:00#•‡Add support for importing multiple repositories‡
+        77• .76•#01/20/2024 00:00:00#•‡Fix form reference. Turn off Manaco when importing‡
     End
 End
