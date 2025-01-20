@@ -957,7 +957,7 @@ Private Sub asImportAllFromText(strExportPath As String)
     On Error GoTo Err_ImportAllFromText
     Dim frmOptions As [Form_Access SVN - Options]
     
-    Set frmOptions = Application.Forms![Access SVN - Options].chkTables.Value
+    Set frmOptions = Application.Forms![Access SVN - Options]
     If frmOptions.chkTables.Value = True Then asImportObjects objTable, strExportPath & "Tables\"             ' Tables
     If frmOptions.chkQueries.Value = True Then asImportObjects objQuery, strExportPath & "Queries\"           ' Queries
     If frmOptions.chkForms.Value = True Then asImportObjects objForm, strExportPath & "Forms\"                ' Forms
