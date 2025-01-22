@@ -220,52 +220,52 @@ Begin TableDef
         End
     End
     Begin Data
-        ‡Version_ID‡•‡Version_Number‡•‡Version_Date‡•‡Version_History‡
-        20• .2•#03/11/2008 00:00:00#•#NULL#
-        21• .21•#03/11/2008 00:00:00#•#NULL#
-        22• .22•#03/11/2008 00:00:00#•#NULL#
-        23• .23•#03/12/2008 00:00:00#•#NULL#
-        24• .24•#03/12/2008 00:00:00#•#NULL#
-        25• .25•#03/16/2008 00:00:00#•#NULL#
-        26• .26•#03/25/2008 00:00:00#•#NULL#
-        27• .27•#04/01/2008 00:00:00#•#NULL#
-        30• .3•#10/16/2008 00:00:00#•‡Tested against the subversion 1.5 libraries‡
-        31• .31•#01/28/2009 00:00:00#•‡Now handles import/export specs in subversion‡
-        32• .32•#04/06/2009 00:00:00#•‡Keeps SQL view for Queries imported from SVN‡
-        33• .33•#10/27/2009 00:00:00#•‡Now Saves and Loads Unicode table Data‡
-        34• .34•#11/10/2009 00:00:00#•‡Fixed issue exporting blank fields in tables‡
-        35• .35•#03/23/2010 00:00:00#•‡Now handles ODBC Linked Tables‡
-        36• .36•#03/23/2010 00:00:00#•‡Now deals with Toolbars from Macros‡
-        37• .37•#03/23/2010 00:00:00#•‡Handles import of popup commandbars‡
-        38• .38•#03/23/2010 00:00:00#•‡Fixed bug with commandbars import‡
-        39• .39•#03/23/2010 00:00:00#•‡Fixed bug with popup commandbars‡
-        40• .4•#04/07/2010 00:00:00#•‡Fixed bug with builtin controls in commandbars‡
-        41• .41•#05/24/2011 00:00:00#•‡Now works with 64 bit Tortoise SVN‡
-        42• .42•#06/15/2011 00:00:00#•‡Fixed bug exporting Table without Data‡
-        43• .43•#11/15/2011 00:00:00#•‡Various enhancements to committing data‡
-        44• .44•#04/23/2012 00:00:00#•‡Removed copyrights, improved performance‡
-        45• .45•#04/23/2012 00:00:00#•‡Fixed bug during identification of SVN folder‡
-        46• .46•#09/03/2012 00:00:00#•‡Option to stop re-import of external changes‡
-        47• .47•#09/04/2012 00:00:00#•‡Option to keep update and commit windows open‡
-        48• .48•#11/30/2012 00:00:00#•‡Added support for regional formatting‡
-        49• .49•#11/04/2013 00:00:00#•‡Tested against the subversion 1.8 libraries‡
-        50• .5•#03/18/2014 00:00:00#•‡Support for Null data in numeric data types‡
-        51• .51•#09/29/2015 00:00:00#•‡Tested against the subversion 1.9 libraries‡
-        52• .52•#07/08/2019 00:00:00#•‡Added support for automatted build tools‡
-        53• .53•#07/08/2019 00:00:00#•‡Add support for removing GUIDS‡
-        54• .54•#07/08/2019 00:00:00#•‡Add support for reencoding UCS2 files to UTF8‡
-        55• .55•#07/08/2019 00:00:00#•‡Fix bug when selected folder is not repository‡
-        56• .56•#07/08/2019 00:00:00#•‡Change Name to 'Subversion for MS Access'‡
-        57• .57•#07/08/2019 00:00:00#•‡Fix bug ignore .sccignore files‡
-        58• .58•#07/09/2019 00:00:00#•‡Fix bug allowing double encoding of UTF-8 files‡
-        59• .59•#07/09/2019 00:00:00#•‡Change to leave PrtDev sections in place‡
-        70• .7•#03/30/2021 00:00:00#•‡Github support: TEXT mode and UTF-8 support‡
-        71• .71•#06/05/2021 00:00:00#•‡Check form/report exists before deleting it‡
-        72• .72•#08/23/2021 00:00:00#•‡Fallback to finding references in Distributables‡
-        73• .73•#08/04/2021 00:00:00#•‡Remove outdated startup msgbox‡
-        74• .74•#03/31/2024 00:00:00#•‡Automatically re-import broken references‡
-        75• .75•#06/15/2023 00:00:00#•‡Add support for 64-bit Office‡
-        76• .76•#03/27/2024 00:00:00#•‡Add support for importing multiple repositories‡
-        77• .76•#01/20/2024 00:00:00#•‡Fix form reference. Turn off Manaco when importing‡
+        ï¿½Version_IDï¿½ï¿½ï¿½Version_Numberï¿½ï¿½ï¿½Version_Dateï¿½ï¿½ï¿½Version_Historyï¿½
+        20ï¿½ .2ï¿½#03/11/2008 00:00:00#ï¿½#NULL#
+        21ï¿½ .21ï¿½#03/11/2008 00:00:00#ï¿½#NULL#
+        22ï¿½ .22ï¿½#03/11/2008 00:00:00#ï¿½#NULL#
+        23ï¿½ .23ï¿½#03/12/2008 00:00:00#ï¿½#NULL#
+        24ï¿½ .24ï¿½#03/12/2008 00:00:00#ï¿½#NULL#
+        25ï¿½ .25ï¿½#03/16/2008 00:00:00#ï¿½#NULL#
+        26ï¿½ .26ï¿½#03/25/2008 00:00:00#ï¿½#NULL#
+        27ï¿½ .27ï¿½#04/01/2008 00:00:00#ï¿½#NULL#
+        30ï¿½ .3ï¿½#10/16/2008 00:00:00#ï¿½ï¿½Tested against the subversion 1.5 librariesï¿½
+        31ï¿½ .31ï¿½#01/28/2009 00:00:00#ï¿½ï¿½Now handles import/export specs in subversionï¿½
+        32ï¿½ .32ï¿½#04/06/2009 00:00:00#ï¿½ï¿½Keeps SQL view for Queries imported from SVNï¿½
+        33ï¿½ .33ï¿½#10/27/2009 00:00:00#ï¿½ï¿½Now Saves and Loads Unicode table Dataï¿½
+        34ï¿½ .34ï¿½#11/10/2009 00:00:00#ï¿½ï¿½Fixed issue exporting blank fields in tablesï¿½
+        35ï¿½ .35ï¿½#03/23/2010 00:00:00#ï¿½ï¿½Now handles ODBC Linked Tablesï¿½
+        36ï¿½ .36ï¿½#03/23/2010 00:00:00#ï¿½ï¿½Now deals with Toolbars from Macrosï¿½
+        37ï¿½ .37ï¿½#03/23/2010 00:00:00#ï¿½ï¿½Handles import of popup commandbarsï¿½
+        38ï¿½ .38ï¿½#03/23/2010 00:00:00#ï¿½ï¿½Fixed bug with commandbars importï¿½
+        39ï¿½ .39ï¿½#03/23/2010 00:00:00#ï¿½ï¿½Fixed bug with popup commandbarsï¿½
+        40ï¿½ .4ï¿½#04/07/2010 00:00:00#ï¿½ï¿½Fixed bug with builtin controls in commandbarsï¿½
+        41ï¿½ .41ï¿½#05/24/2011 00:00:00#ï¿½ï¿½Now works with 64 bit Tortoise SVNï¿½
+        42ï¿½ .42ï¿½#06/15/2011 00:00:00#ï¿½ï¿½Fixed bug exporting Table without Dataï¿½
+        43ï¿½ .43ï¿½#11/15/2011 00:00:00#ï¿½ï¿½Various enhancements to committing dataï¿½
+        44ï¿½ .44ï¿½#04/23/2012 00:00:00#ï¿½ï¿½Removed copyrights, improved performanceï¿½
+        45ï¿½ .45ï¿½#04/23/2012 00:00:00#ï¿½ï¿½Fixed bug during identification of SVN folderï¿½
+        46ï¿½ .46ï¿½#09/03/2012 00:00:00#ï¿½ï¿½Option to stop re-import of external changesï¿½
+        47ï¿½ .47ï¿½#09/04/2012 00:00:00#ï¿½ï¿½Option to keep update and commit windows openï¿½
+        48ï¿½ .48ï¿½#11/30/2012 00:00:00#ï¿½ï¿½Added support for regional formattingï¿½
+        49ï¿½ .49ï¿½#11/04/2013 00:00:00#ï¿½ï¿½Tested against the subversion 1.8 librariesï¿½
+        50ï¿½ .5ï¿½#03/18/2014 00:00:00#ï¿½ï¿½Support for Null data in numeric data typesï¿½
+        51ï¿½ .51ï¿½#09/29/2015 00:00:00#ï¿½ï¿½Tested against the subversion 1.9 librariesï¿½
+        52ï¿½ .52ï¿½#07/08/2019 00:00:00#ï¿½ï¿½Added support for automatted build toolsï¿½
+        53ï¿½ .53ï¿½#07/08/2019 00:00:00#ï¿½ï¿½Add support for removing GUIDSï¿½
+        54ï¿½ .54ï¿½#07/08/2019 00:00:00#ï¿½ï¿½Add support for reencoding UCS2 files to UTF8ï¿½
+        55ï¿½ .55ï¿½#07/08/2019 00:00:00#ï¿½ï¿½Fix bug when selected folder is not repositoryï¿½
+        56ï¿½ .56ï¿½#07/08/2019 00:00:00#ï¿½ï¿½Change Name to 'Subversion for MS Access'ï¿½
+        57ï¿½ .57ï¿½#07/08/2019 00:00:00#ï¿½ï¿½Fix bug ignore .sccignore filesï¿½
+        58ï¿½ .58ï¿½#07/09/2019 00:00:00#ï¿½ï¿½Fix bug allowing double encoding of UTF-8 filesï¿½
+        59ï¿½ .59ï¿½#07/09/2019 00:00:00#ï¿½ï¿½Change to leave PrtDev sections in placeï¿½
+        70ï¿½ .7ï¿½#03/30/2021 00:00:00#ï¿½ï¿½Github support: TEXT mode and UTF-8 supportï¿½
+        71ï¿½ .71ï¿½#06/05/2021 00:00:00#ï¿½ï¿½Check form/report exists before deleting itï¿½
+        72ï¿½ .72ï¿½#08/23/2021 00:00:00#ï¿½ï¿½Fallback to finding references in Distributablesï¿½
+        73ï¿½ .73ï¿½#08/04/2021 00:00:00#ï¿½ï¿½Remove outdated startup msgboxï¿½
+        74ï¿½ .74ï¿½#03/31/2024 00:00:00#ï¿½ï¿½Automatically re-import broken referencesï¿½
+        75ï¿½ .75ï¿½#06/15/2023 00:00:00#ï¿½ï¿½Add support for 64-bit Officeï¿½
+        76ï¿½ .76ï¿½#03/27/2024 00:00:00#ï¿½ï¿½Add support for importing multiple repositoriesï¿½
+        77ï¿½ .77ï¿½#01/20/2024 00:00:00#ï¿½ï¿½Fix form reference. Turn off Manaco when importingï¿½
     End
 End
