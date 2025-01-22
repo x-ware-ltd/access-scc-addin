@@ -914,7 +914,9 @@ Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As St
   
   If objImportType = objQuery Then
     ' Disable Monaco SQL Editor, to prevent lost focus errors when
-    ' converting text to queries
+    ' converting text to queries. 
+    ' Ignore errors here, in case option does not exist, as in older
+    ' Access versions.
     On Error Resume Next
     bln = Application.GetOption(strOption)
     If bln Then
