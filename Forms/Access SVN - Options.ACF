@@ -2657,13 +2657,13 @@ End Sub
 Private Sub cmdRemoveGUIDs_Click()
   
   DoCmd.Hourglass True
-  If CleanFormsReports(Me.txtOutputLocation.Value) Then
+  If CleanExports(Me.txtOutputLocation.Value) Then
     SetConfigValue "Remove GUIDs", True, Me.txtOutputLocation.Value
     DoCommit ' bring up SCC Commit window
     Me.cmdRun.SetFocus
     Me.cmdRemoveGUIDs.Enabled = False
   Else
-    MsgBox "Removing GUIDs from Forms and Reports has failed."
+    MsgBox "Cleaning Forms, Reports and Queries has failed."
   End If
   DoCmd.Hourglass False
 End Sub
