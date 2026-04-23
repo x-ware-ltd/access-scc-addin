@@ -91,7 +91,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport, asObjectType.acQuery, asObjectType.acMacro
       If FileExists(strFilename) Then
-        If IsUTF8(strFilename) Then
+        If DetectFileEncoding(strFilename) = enmFileEncoding_UTF8 Then
           ' File is already in the repository and it's in UTF8 so force save in that format irrespective of repository setting
           blnSaveAsUTF8 = True
         End If
@@ -101,7 +101,7 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      blnSourceIsUCS2 = IsUCS2(strFilename & ".tmp") ' so we know what format to ultimate output
+      blnSourceIsUCS2 = (DetectFileEncoding(strFilename & ".tmp") = enmFileEncoding_UCS2) ' so we know what format to ultimate output
       If Not ConvFile_to_UCS2(strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
       ' now we have a UCS2 file stored with .tmp suffix
       
@@ -145,7 +145,7 @@ End_Processing:
     Case asObjectType.acQuery, asObjectType.acMacro
       Application.SaveAsText objType, objName, strFilename
       blnSaveAsUTF8 = blnSaveAsUTF8 _
-        Or (enmEncode = asEncode_UCS2_to_UTF8 And IsUCS2(strFilename)) _
+        Or (enmEncode = asEncode_UCS2_to_UTF8 And DetectFileEncoding(strFilename) = enmFileEncoding_UCS2) _
         Or (enmEncode = asEncode_All_to_UTF8)
       
     Case asObjectType.acModule
@@ -187,7 +187,7 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
   ' These are re-encoded to UTF-8 on saving so that all SVN tools work
   ' Due to the historic files not having been converted we need to check whether these files are in UTF8 or UCS2 format and convert if required
   
-  blnUTF8 = IsUTF8(strFilename)
+  blnUTF8 = (DetectFileEncoding(strFilename) = enmFileEncoding_UTF8)
   
   If blnUTF8 Then
     Select Case objType
@@ -665,7 +665,6 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
   Dim strDumpSQLQuery As String
   Dim sDelimiter As String
   Dim sSEPERATOR As String
-  Dim b() As Byte
   Dim strIgnoredPrpTables As String
   Dim strIgnoredPrpFields As String
   Dim strIgnoredPrpIndexes As String
@@ -777,39 +776,69 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
         'Now write the data
         Close #f 'We have to close the file becasue we now want to write in Binary Mode
         Open FileName For Binary As #f
+        Seek #f, LOF(f) + 1 'position once at end-of-file so subsequent Puts can omit the recnumber
+        'Pre-convert repeated tokens once so we don't call StrConv per field per row.
+        'The row is built into a single growing byte buffer (amortized O(total bytes))
+        'rather than re-allocating the whole accumulator for every field.
+        Dim bytsRowPrefix() As Byte
+        Dim bytsSep() As Byte
+        Dim bytsDelim() As Byte
+        Dim bytsDelimSep() As Byte
+        Dim bytsNullSep() As Byte
+        Dim bytsCrLf() As Byte
+        Dim bytsEnd() As Byte
+        bytsRowPrefix = StrConv("        ", vbFromUnicode)
+        bytsSep = StrConv(sSEPERATOR, vbFromUnicode)
+        bytsDelim = StrConv(sDelimiter, vbFromUnicode)
+        bytsDelimSep = StrConv(sDelimiter & sSEPERATOR, vbFromUnicode)
+        bytsNullSep = StrConv("#NULL#" & sSEPERATOR, vbFromUnicode)
+        bytsCrLf = StrConv(vbCrLf, vbFromUnicode)
+        bytsEnd = StrConv("    End" & vbCrLf, vbFromUnicode)
+        Dim sepLen As Long
+        sepLen = UBound(bytsSep) - LBound(bytsSep) + 1
+        Dim rowBuf() As Byte
+        Dim rowCap As Long
+        Dim rowUsed As Long
+        Dim outBuf() As Byte
+        rowCap = 1024
+        ReDim rowBuf(0 To rowCap - 1)
         Do While Not rs.EOF
-          'strOut = ""
-          b() = StrConv("        ", vbFromUnicode)
+          rowUsed = 0
+          AppendBytes rowBuf, rowCap, rowUsed, bytsRowPrefix
           For Each fld In rs.Fields
             Select Case fld.Type
               Case dbText, dbMemo ' Null is handled explicitly
                 If IsNull(fld.Value) Or (Not fld.AllowZeroLength And fld.Value = vbNullString) Then
-                  b = ConcatByteArr(b, StrConv("#NULL#" & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsNullSep
                 ElseIf LenB(fld.Value) = 0 Then
-                  b = ConcatByteArr(b, StrConv(vbNullString & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsSep
                 Else
-                  b = ConcatByteArr(b, StrConv(sDelimiter, vbFromUnicode), EncodeText(Replace(Replace(fld.Value, vbCrLf, CRSPLF, 1), sDelimiter, DLMTR, 1)), StrConv(sDelimiter & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsDelim
+                  AppendBytes rowBuf, rowCap, rowUsed, EncodeText(Replace(Replace(fld.Value, vbCrLf, CRSPLF, 1), sDelimiter, DLMTR, 1))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsDelimSep
                 End If
               Case dbDate, dbTime ' Null is handled indirectly and is outputted as ##
-                b = ConcatByteArr(b, StrConv("#" & Format(fld.Value, "mm/dd/yyyy hh:mm:ss") & "#" & sSEPERATOR, vbFromUnicode))
+                AppendBytes rowBuf, rowCap, rowUsed, StrConv("#" & Format(fld.Value, "mm/dd/yyyy hh:mm:ss") & "#" & sSEPERATOR, vbFromUnicode)
               Case dbLongBinary ' Null is handled indeirectly and is outputted as an empty string (vbNullString)
-                b = ConcatByteArr(b, StrConv(VarByteArrToHexString(fld.Value) & sSEPERATOR, vbFromUnicode))
+                AppendBytes rowBuf, rowCap, rowUsed, StrConv(VarByteArrToHexString(fld.Value) & sSEPERATOR, vbFromUnicode)
               Case dbDouble, dbSingle ' store decimal places using dot notation rather than regional formatting
                 If IsNull(fld.Value) Then ' Need to handle Null data specifically
-                  b = ConcatByteArr(b, StrConv(vbNullString & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsSep
                 Else
-                  b = ConcatByteArr(b, StrConv(str$(fld.Value) & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, StrConv(str$(fld.Value) & sSEPERATOR, vbFromUnicode)
                 End If
               Case Else
-                b = ConcatByteArr(b, StrConv(fld.Value & sSEPERATOR, vbFromUnicode))
+                AppendBytes rowBuf, rowCap, rowUsed, StrConv(fld.Value & sSEPERATOR, vbFromUnicode)
             End Select
           Next
-          ReDim Preserve b(LBound(b) To UBound(b) - Len(sSEPERATOR))
-          Put #f, LOF(f) + 1, b
-          Put #f, LOF(f) + 1, vbCrLf
+          rowUsed = rowUsed - sepLen 'drop the trailing separator written by the last field
+          AppendBytes rowBuf, rowCap, rowUsed, bytsCrLf
+          ReDim outBuf(0 To rowUsed - 1)
+          CopyMemory VarPtr(outBuf(0)), VarPtr(rowBuf(0)), rowUsed
+          Put #f, , outBuf
           rs.MoveNext
         Loop
-        Put #f, LOF(f) + 1, "    End" & vbCrLf
+        Put #f, , bytsEnd
         Close #f
         Open FileName For Append As #f 're-open file in Append Mode
       End If
@@ -1123,11 +1152,10 @@ Private Function WriteProperties(obj As Object, fNum As Integer, intOffset As In
   Dim varPropNames() As Variant
 
   ReDim varPropNames(0 To obj.Properties.Count - 1)
+  i = 0
   For Each prp In obj.Properties
-    For i = 0 To obj.Properties.Count - 1
-      varPropNames(i) = obj.Properties(i).Name
-    Next i
-
+    varPropNames(i) = prp.Name
+    i = i + 1
   Next prp
   If blnSort Then
     QuickSort varPropNames, 0, obj.Properties.Count - 1
@@ -1265,33 +1293,23 @@ End Function
 
 Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
   ' As CleanFormReportFile but accepts any form encoding
-  
-  Dim strEncoding As String
-  
+
+  Dim enmEncoding As enmFileEncoding
+
   CleanFormReportFileEx = False ' intially set to indicate failure
-  
-  If IsUTF8(strFilename) Then
-    strEncoding = "UTF8"
-  ElseIf IsUCS2(strFilename) Then
-    strEncoding = "UCS2"
-  ElseIf IsANSI(strFilename) Then
-    strEncoding = "ANSI"
-  Else
-    Exit Function
-  End If
-  
+
+  enmEncoding = DetectFileEncoding(strFilename)
+  If enmEncoding = enmFileEncoding_Missing Then Exit Function
+
   If Not ConvFile_to_UCS2(strFilename, strFilenameNew) Then Exit Function
   If Not CleanFormReportFile(strFilenameNew, strFilenameNew, Ignores) Then Exit Function
-  
-  Select Case strEncoding
-    Case "UTF8":
-      CleanFormReportFileEx = ConvFileUCS2_to_UTF8(strFilenameNew)
-    Case "UCS2"
-      CleanFormReportFileEx = True
-    Case "ANSI":
-      CleanFormReportFileEx = ConvFileUCS2_to_ANSI(strFilenameNew)
+
+  Select Case enmEncoding
+    Case enmFileEncoding_UTF8: CleanFormReportFileEx = ConvFileUCS2_to_UTF8(strFilenameNew)
+    Case enmFileEncoding_UCS2: CleanFormReportFileEx = True
+    Case enmFileEncoding_ANSI: CleanFormReportFileEx = ConvFileUCS2_to_ANSI(strFilenameNew)
   End Select
-  
+
 End Function
 Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
   ' This function takes a UCS2 encoded file and cleans out the lines (Sections) specified in the Ignores Array
@@ -1420,8 +1438,8 @@ Public Function ReplaceCodeSection(strOrigFilename As String, strNewCodeFilename
   bytsCodeBehind = "CodeBehind" ' The text which indicates the start of the code section
   bytsCrLf() = vbCrLf
   
-  If Not IsUCS2(strOrigFilename) Then Exit Function
-  If Not IsUCS2(strNewCodeFilename) Then Exit Function
+  If DetectFileEncoding(strOrigFilename) <> enmFileEncoding_UCS2 Then Exit Function
+  If DetectFileEncoding(strNewCodeFilename) <> enmFileEncoding_UCS2 Then Exit Function
   
   ' Load file containing code into Byte Array
   f = FreeFile()
@@ -1558,11 +1576,27 @@ Private Sub QuickSort(ByRef MyArray() As Variant, ByVal lngLBound As Long, ByVal
     Dim k As Long
     Dim P As Long
     Dim varTemp As Variant
-    
+
     If lngLBound >= lngUBound Then
         Exit Sub
     End If
-    
+
+    ' For small ranges, insertion sort beats recursive partitioning
+    If lngUBound - lngLBound < 16 Then
+        Dim insI As Long, insJ As Long
+        For insI = lngLBound + 1 To lngUBound
+            varTemp = MyArray(insI)
+            insJ = insI - 1
+            Do While insJ >= lngLBound
+                If MyArray(insJ) <= varTemp Then Exit Do
+                MyArray(insJ + 1) = MyArray(insJ)
+                insJ = insJ - 1
+            Loop
+            MyArray(insJ + 1) = varTemp
+        Next insI
+        Exit Sub
+    End If
+
     k = lngLBound + 1
     
     If lngUBound = k Then
@@ -1676,34 +1710,68 @@ End Function
 Private Function InBytArr(ByVal lngStart As Long, arr1() As Byte, arr2() As Byte) As Long
   'Returns the position of ByteArray 2 within BytArray 1
   'If not found it returns clngNOTFOUND (-2147483648)
+  'Hot path: used by the line-by-line parse loops with a 2-byte CrLf needle,
+  'so 1- and 2-byte needles are specialized to skip the generic inner loop.
   Dim i As Long
   Dim j As Long
   Dim lngLBound2 As Long
-  Dim lngUBound2 As Long
-  Dim byt1 As Byte       'The first Byte of the second array
-  Dim blnFound As Boolean
-  
+  Dim lngLen2 As Long    'needle length minus 1 (UBound - LBound)
+  Dim lngEnd As Long     'last starting position where the needle can still fit
+  Dim byt1 As Byte       'first byte of needle (fast prefilter)
+  Dim byt2 As Byte       'second byte of needle, used when lngLen2 = 1
+
   InBytArr = clngNOTFOUND
-  
+
   If (Not arr1) = -1 Then Exit Function
   If (Not arr2) = -1 Then Exit Function
   lngLBound2 = LBound(arr2)
-  lngUBound2 = UBound(arr2)
+  lngLen2 = UBound(arr2) - lngLBound2
   byt1 = arr2(lngLBound2)
   If lngStart < LBound(arr1) Then lngStart = LBound(arr1)
-  For i = lngStart To UBound(arr1) - (lngUBound2 - lngLBound2)
-    If arr1(i) = byt1 Then
-      blnFound = True
-      For j = 1 To (lngUBound2 - lngLBound2)
-        If arr1(i + j) <> arr2(lngLBound2 + j) Then
-          blnFound = False
-          Exit For
+  lngEnd = UBound(arr1) - lngLen2
+
+  Select Case lngLen2
+    Case 0 '1-byte needle
+      For i = lngStart To lngEnd
+        If arr1(i) = byt1 Then InBytArr = i: Exit Function
+      Next
+    Case 1 '2-byte needle (CrLf is the hot path)
+      byt2 = arr2(lngLBound2 + 1)
+      For i = lngStart To lngEnd
+        If arr1(i) = byt1 Then
+          If arr1(i + 1) = byt2 Then InBytArr = i: Exit Function
         End If
       Next
-      If blnFound Then InBytArr = i: Exit Function
-    End If
-  Next
+    Case Else 'generic n-byte needle
+      For i = lngStart To lngEnd
+        If arr1(i) = byt1 Then
+          For j = 1 To lngLen2
+            If arr1(i + j) <> arr2(lngLBound2 + j) Then Exit For
+          Next
+          If j > lngLen2 Then InBytArr = i: Exit Function 'inner For ran to completion
+        End If
+      Next
+  End Select
 End Function
+Private Sub AppendBytes(ByRef buf() As Byte, ByRef cap As Long, ByRef used As Long, src() As Byte)
+  'Appends src into buf starting at offset `used`, doubling `cap` as needed.
+  '`used` tracks the actual byte count (buf may be oversized); the caller is
+  'responsible for copying the first `used` bytes out before writing.
+  'Why: per-field ConcatByteArr reallocated the full row accumulator for every
+  'field, giving O(fields^2) work per row. A growing buffer is amortized O(n).
+  If (Not src) = -1 Then Exit Sub
+  Dim sLen As Long
+  sLen = UBound(src) - LBound(src) + 1
+  If sLen <= 0 Then Exit Sub
+  If used + sLen > cap Then
+    Do While cap < used + sLen
+      cap = cap * 2
+    Loop
+    ReDim Preserve buf(0 To cap - 1)
+  End If
+  CopyMemory VarPtr(buf(used)), VarPtr(src(LBound(src))), sLen
+  used = used + sLen
+End Sub
 Private Function ConcatByteArr(ParamArray arr()) As Byte()
 
 'This function concatenates byte arrays.  The LBound of the result will be the same as the LBound of the first array passed
