@@ -661,7 +661,6 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
   Dim Idx As DAO.Index
   Dim rs As DAO.Recordset
   Dim strOut As String
-  Dim booContainsIndex As Boolean
   Dim strPrimaryIndex As String
   Dim strSortString As String
   Dim strDumpSQLQuery As String
@@ -672,6 +671,9 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
   Dim strIgnoredPrpIndexes As String
   Dim blnSort As Boolean
   Dim arrNames() As Variant
+  Dim arrUniqueIdx() As Variant
+  Dim cntUniqueIdx As Long
+  Dim strLeadingIdx As String
   Dim i As Long
   
   sDelimiter = Chr(135)
@@ -732,7 +734,6 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
         If blnSort Then QuickSort arrNames(), 0, tdf.Indexes.Count - 1
         For i = 0 To tdf.Indexes.Count - 1
           Set Idx = tdf.Indexes(i)
-          booContainsIndex = True
           If Idx.Primary = True Then strPrimaryIndex = Idx.Name
           Print #f, "    Begin Index"
             Call WriteProperties(Idx, f, 8, strIgnoredPrpIndexes, blnSort)
@@ -747,24 +748,51 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
 
       'Now Data
       If enmMode = asFullWithData Then
-        If booContainsIndex Then
-          If strPrimaryIndex <> "" Then
-            Set Idx = tdf.Indexes(strPrimaryIndex)
-          Else
-            Set Idx = tdf.Indexes.Item(0)
-          End If
-          For Each fld In Idx.Fields
-            If strSortString <> "" Then
-              strSortString = strSortString & ", [" & fld.Name & "]"
-            Else
-              strSortString = "[" & fld.Name & "]"
+        ' Build a deterministic ORDER BY. Prefer Primary Index -> else alphabetically-first
+        ' Unique index (both are sufficient on their own); only when neither exists do we
+        ' fall back to sorting by every sortable field to force a total order.
+        ' dbMemo/dbLongBinary are excluded from the fallback: Jet cannot ORDER BY them,
+        ' so rows byte-identical except in those fields remain ambiguous.
+        strSortString = ""
+        strLeadingIdx = ""
+        If strPrimaryIndex <> "" Then
+          strLeadingIdx = strPrimaryIndex
+        ElseIf tdf.Indexes.Count > 0 Then
+          ReDim arrUniqueIdx(0 To tdf.Indexes.Count - 1)
+          cntUniqueIdx = 0
+          For i = 0 To tdf.Indexes.Count - 1
+            If tdf.Indexes(i).Unique Then
+              arrUniqueIdx(cntUniqueIdx) = tdf.Indexes(i).Name
+              cntUniqueIdx = cntUniqueIdx + 1
             End If
           Next
-        Else
-          Set fld = tdf.Fields.Item(0)
-          strSortString = "[" & fld.Name & "]"
+          If cntUniqueIdx > 0 Then
+            QuickSort arrUniqueIdx(), 0, cntUniqueIdx - 1
+            strLeadingIdx = arrUniqueIdx(0)
+          End If
         End If
-        strDumpSQLQuery = "SELECT * FROM [" & TableName & "] ORDER BY " & strSortString & " ASC"
+        If strLeadingIdx <> "" Then
+          For Each fld In tdf.Indexes(strLeadingIdx).Fields
+            If strSortString <> "" Then strSortString = strSortString & ", "
+            strSortString = strSortString & "[" & fld.Name & "]"
+          Next
+        Else
+          For i = 0 To tdf.Fields.Count - 1
+            Set fld = tdf.Fields(i)
+            Select Case fld.Type
+              Case dbMemo, dbLongBinary
+                ' unsortable in Jet ORDER BY
+              Case Else
+                If strSortString <> "" Then strSortString = strSortString & ", "
+                strSortString = strSortString & "[" & fld.Name & "]"
+            End Select
+          Next
+        End If
+        If strSortString <> "" Then
+          strDumpSQLQuery = "SELECT * FROM [" & TableName & "] ORDER BY " & strSortString & " ASC"
+        Else
+          strDumpSQLQuery = "SELECT * FROM [" & TableName & "]"
+        End If
         Set rs = dbSource.OpenRecordset(strDumpSQLQuery, dbOpenDynaset, dbReadOnly)
         Print #f, "    Begin Data"
         'Write the field names
