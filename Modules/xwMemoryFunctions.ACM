@@ -1,0 +1,89 @@
+Option Compare Database
+Option Explicit
+
+#If VBA7 Then
+    Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" _
+        (Destination As Any, Source As Any, ByVal Length As LongPtr)
+#Else
+    Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" _
+        (Destination As Any, Source As Any, ByVal Length As Long)
+#End If
+
+'==========================================================================
+'  SwapByteArrays
+'  ------------------------------------------------------------------------
+'  O(1) swap of two dynamic Byte arrays of ANY rank, provided both arrays
+'  have the SAME number of dimensions.  No elements are copied; only the
+'  SAFEARRAY's pvData pointer and its rgsabound[] tail are exchanged.
+'
+'  SAFEARRAY layout:
+'      Offset  Field                    Bytes
+'        0     cDims                      2
+'        2     fFeatures                  2
+'        4     cbElements                 4
+'        8     cLocks                     4
+'        (+4 pad on x64)
+'     OFF_PV   pvData                    PTR_SIZE
+'     OFF_PV+P rgsabound[0..cDims-1]     cDims * 8
+'==========================================================================
+Public Sub SwapByteArrays(ByRef a() As Byte, ByRef b() As Byte)
+
+    #If Win64 Then
+        Const PTR_SIZE   As Long = 8
+        Const OFF_PVDATA As Long = 16
+    #Else
+        Const PTR_SIZE   As Long = 4
+        Const OFF_PVDATA As Long = 12
+    #End If
+
+    #If VBA7 Then
+        Dim pSaA As LongPtr, pSaB As LongPtr
+        Dim addrA_pv As LongPtr, addrB_pv As LongPtr
+        Dim addrA_bd As LongPtr, addrB_bd As LongPtr
+        Dim tmpPtr As LongPtr
+    #Else
+        Dim pSaA As Long, pSaB As Long
+        Dim addrA_pv As Long, addrB_pv As Long
+        Dim addrA_bd As Long, addrB_bd As Long
+        Dim tmpPtr As Long
+    #End If
+
+    '--- 1. SAFEARRAY* via Not Not ------------------------------------------
+    pSaA = Not Not a
+    pSaB = Not Not b
+    If pSaA = 0 Or pSaB = 0 Then
+        Err.Raise 9, "SwapByteArrays", "One or both arrays are not dimensioned."
+    End If
+
+    '--- 2. Read cDims (2 bytes at offset 0) from each header ---------------
+    Dim cDimsA As Integer, cDimsB As Integer
+    CopyMemory cDimsA, ByVal pSaA, 2
+    CopyMemory cDimsB, ByVal pSaB, 2
+
+    If cDimsA <> cDimsB Then
+        Err.Raise 5, "SwapByteArrays", _
+            "Arrays must have the same rank (got " & cDimsA & " vs " & cDimsB & ")."
+    End If
+
+    '--- 3. Field addresses -------------------------------------------------
+    addrA_pv = pSaA + OFF_PVDATA
+    addrB_pv = pSaB + OFF_PVDATA
+    addrA_bd = addrA_pv + PTR_SIZE
+    addrB_bd = addrB_pv + PTR_SIZE
+
+    '--- 4. Swap pvData -----------------------------------------------------
+    CopyMemory tmpPtr,         ByVal addrA_pv, PTR_SIZE
+    CopyMemory ByVal addrA_pv, ByVal addrB_pv, PTR_SIZE
+    CopyMemory ByVal addrB_pv, tmpPtr,         PTR_SIZE
+
+    '--- 5. Swap all rgsabound entries (cDims * 8 bytes) --------------------
+    Dim boundBytes As Long
+    boundBytes = CLng(cDimsA) * 8          ' 4 bytes cElements + 4 bytes lLbound per dim
+
+    Dim tmpBound() As Byte
+    ReDim tmpBound(0 To boundBytes - 1)
+    CopyMemory tmpBound(0),    ByVal addrA_bd, boundBytes
+    CopyMemory ByVal addrA_bd, ByVal addrB_bd, boundBytes
+    CopyMemory ByVal addrB_bd, tmpBound(0),    boundBytes
+End Sub
+

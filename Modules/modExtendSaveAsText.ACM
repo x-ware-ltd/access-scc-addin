@@ -82,12 +82,9 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
   Dim blnSaveAsUTF8 As Boolean
-  Dim bytsTmp() As Byte
-  Dim bytsUCS2() As Byte
-  Dim bytsOrig() As Byte
+  Dim byts() As Byte
   Dim bytsOrigUCS2() As Byte
   Dim bytsMerged() As Byte
-  Dim bytsOut() As Byte
 
   PopulateIgnoreArr Ignores
 
@@ -109,39 +106,35 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
       Application.SaveAsText objType, objName, strFilename & ".tmp"
 
       ' Load the Access output once and perform every conversion and transformation in memory
-      If Not ReadFromFile(strFilename & ".tmp", bytsTmp) Then blnFail = True: GoTo End_Processing
-      blnSourceIsUCS2 = (DetectEncoding(bytsTmp) = enmFileEncoding_UCS2) ' so we know what format to ultimately output
-      If Not Conv_to_UCS2(bytsTmp, bytsUCS2) Then blnFail = True: GoTo End_Processing
+      If Not ReadFromFile(strFilename & ".tmp", byts) Then blnFail = True: GoTo End_Processing
+      blnSourceIsUCS2 = (DetectEncoding(byts) = enmFileEncoding_UCS2) ' so we know what format to ultimately output
+      If Not Conv_to_UCS2(byts) Then blnFail = True: GoTo End_Processing
 
       If Forms("Access SVN - Options").chkReplaceCodeOnly Then
         ' Replacing code only so there is no requirement to Clean the Form/Report Layout section
         ' we need to use the existing file as well - promote it to UCS2 in memory
-        If Not ReadFromFile(strFilename, bytsOrig) Then blnFail = True: GoTo End_Processing
-        If Not Conv_to_UCS2(bytsOrig, bytsOrigUCS2) Then blnFail = True: GoTo End_Processing
+        If Not ReadFromFile(strFilename, bytsOrigUCS2) Then blnFail = True: GoTo End_Processing
+        If Not Conv_to_UCS2(bytsOrigUCS2) Then blnFail = True: GoTo End_Processing
 
         ' Both buffers are UCS2 so we can merge in the new code section
-        If Not ReplaceCodeSectionBytes(bytsOrigUCS2, bytsUCS2, bytsMerged) Then blnFail = True: GoTo End_Processing
-      Else
-        If blnRemoveGUIDs Then
-          If Not CleanFormReportBytes(bytsUCS2, bytsMerged, Ignores) Then blnFail = True: GoTo End_Processing
-        Else
-          bytsMerged = bytsUCS2
-        End If
+        If Not ReplaceCodeSectionBytes(bytsOrigUCS2, byts, bytsMerged) Then blnFail = True: GoTo End_Processing
+        ' Move the merged result back into byts so the pipeline continues in a single buffer
+        SwapByteArrays byts, bytsMerged
+      ElseIf blnRemoveGUIDs Then
+        If Not CleanFormReportBytes(byts, Ignores) Then blnFail = True: GoTo End_Processing
       End If
 
-      ' The merged buffer is UCS-2. Encode it according to the caller's preference before the single write.
+      ' byts now holds the merged UCS-2 content. Encode it according to the caller's preference before the single write.
       blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_UCS2_to_UTF8) Or (enmEncode = asEncode_All_to_UTF8)
 
       If blnSaveAsUTF8 Then
-        If Not UCS2_to_UTF8(bytsMerged, bytsOut) Then blnFail = True: GoTo End_Processing
+        If Not UCS2_to_UTF8(byts) Then blnFail = True: GoTo End_Processing
       ElseIf Not blnSourceIsUCS2 Then
         ' MS Access originally produced a non-UCS2 file so convert the output back to ANSI
-        If Not UCS2_to_ANSI(bytsMerged, bytsOut) Then blnFail = True: GoTo End_Processing
-      Else
-        bytsOut = bytsMerged
+        If Not UCS2_to_ANSI(byts) Then blnFail = True: GoTo End_Processing
       End If
 
-      If Not WriteToFile(bytsOut, strFilename) Then blnFail = True: GoTo End_Processing
+      If Not WriteToFile(byts, strFilename) Then blnFail = True: GoTo End_Processing
 
       ' UTF-8 has already been handled inline so suppress the trailing conversion below
       blnSaveAsUTF8 = False
@@ -1305,47 +1298,44 @@ Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As 
   ' Loads the file once, performs every conversion and cleaning step in memory,
   ' then writes the result back to disk in a single write.
 
-  Dim bytsIn() As Byte
-  Dim bytsUCS2() As Byte
-  Dim bytsClean() As Byte
-  Dim bytsOut() As Byte
+  Dim byts() As Byte
   Dim enmEncoding As enmFileEncoding
 
   CleanFormReportFileEx = False ' intially set to indicate failure
 
-  If Not ReadFromFile(strFilename, bytsIn) Then Exit Function
+  If Not ReadFromFile(strFilename, byts) Then Exit Function
 
-  enmEncoding = DetectEncoding(bytsIn)
+  enmEncoding = DetectEncoding(byts)
 
   Select Case enmEncoding
     Case enmFileEncoding_UCS2
-      bytsUCS2 = bytsIn
+      ' already UCS-2
     Case enmFileEncoding_UTF8
-      If Not UTF8_to_UCS2(bytsIn, bytsUCS2) Then Exit Function
+      If Not UTF8_to_UCS2(byts) Then Exit Function
     Case enmFileEncoding_ANSI
-      If Not ANSI_to_UCS2(bytsIn, bytsUCS2) Then Exit Function
+      If Not ANSI_to_UCS2(byts) Then Exit Function
     Case Else
       Exit Function
   End Select
 
-  If Not CleanFormReportBytes(bytsUCS2, bytsClean, Ignores) Then Exit Function
+  If Not CleanFormReportBytes(byts, Ignores) Then Exit Function
 
   Select Case enmEncoding
     Case enmFileEncoding_UCS2
-      bytsOut = bytsClean
+      ' stay in UCS-2
     Case enmFileEncoding_UTF8
-      If Not UCS2_to_UTF8(bytsClean, bytsOut) Then Exit Function
+      If Not UCS2_to_UTF8(byts) Then Exit Function
     Case enmFileEncoding_ANSI
-      If Not UCS2_to_ANSI(bytsClean, bytsOut) Then Exit Function
+      If Not UCS2_to_ANSI(byts) Then Exit Function
   End Select
 
-  CleanFormReportFileEx = WriteToFile(bytsOut, strFilenameNew)
+  CleanFormReportFileEx = WriteToFile(byts, strFilenameNew)
 
 End Function
 
-Private Function CleanFormReportBytes(bytsIn() As Byte, ByRef bytsOut() As Byte, Ignores() As Ignore) As Boolean
-  ' Takes a UCS-2 byte array and produces a cleaned UCS-2 byte array in bytsOut
-  ' with the sections specified in Ignores removed.
+Private Function CleanFormReportBytes(ByRef byts() As Byte, Ignores() As Ignore) As Boolean
+  ' Cleans the UCS-2 byte array in place, removing the sections specified in
+  ' Ignores. The caller's buffer is consumed and replaced with the result.
 
   Dim bytsLine() As Byte
   Dim lngStartPos As Long
@@ -1357,38 +1347,39 @@ Private Function CleanFormReportBytes(bytsIn() As Byte, ByRef bytsOut() As Byte,
   Dim blnEOF As Boolean
   Dim blnCodeBehind As Boolean
   Dim bytsCodeBehind() As Byte
+  Dim bytsResult() As Byte
 
   CleanFormReportBytes = False
 
-  If (Not bytsIn) = -1 Then Exit Function
+  If (Not byts) = -1 Then Exit Function
 
   bytsCodeBehind = "CodeBehind" ' The text which indicates the start of the code section
   blnCodeBehind = False
   bytsCrLf() = vbCrLf
 
   ' The cleaned output can never be larger than the input
-  ReDim bytsOut(UBound(bytsIn) - LBound(bytsIn))
+  ReDim bytsResult(UBound(byts) - LBound(byts))
 
   lngWritePos = 0
-  lngStartPos = LBound(bytsIn)
+  lngStartPos = LBound(byts)
   blnEOF = False
 
   ' Loop through line by line
   Do
-    x = InBytArr(lngStartPos, bytsIn, bytsCrLf) ' look for end of line (CrLf)
+    x = InBytArr(lngStartPos, byts, bytsCrLf) ' look for end of line (CrLf)
     If x = clngNOTFOUND Then
       ' we did not find an end of line so we must now be at the end of the file
-      lngNextStartPos = UBound(bytsIn) + 1
+      lngNextStartPos = UBound(byts) + 1
       blnEOF = True
     Else
       lngNextStartPos = x + 4 'to allow for the CrLf we found (2 bytes per character)
-      If lngNextStartPos = UBound(bytsIn) + 1 Then blnEOF = True ' File ends with CrLf
+      If lngNextStartPos = UBound(byts) + 1 Then blnEOF = True ' File ends with CrLf
     End If
 
     ' extract the line we are looking at into bytsLine
     lngLineLen = lngNextStartPos - lngStartPos
     ReDim bytsLine(lngLineLen - 1)
-    CopyMemory VarPtr(bytsLine(0)), VarPtr(bytsIn(lngStartPos)), lngLineLen
+    CopyMemory VarPtr(bytsLine(0)), VarPtr(byts(lngStartPos)), lngLineLen
 
     If Not blnCodeBehind Then
       'look to see if we are at the codebehind line
@@ -1397,12 +1388,12 @@ Private Function CleanFormReportBytes(bytsIn() As Byte, ByRef bytsOut() As Byte,
 
     If blnCodeBehind Then 'NB we need to do this in 2 sections of the IF because we dont want IgnoreSection to run if blnCodeBehind is true
       ' Always write line if we are in the code section
-      CopyMemory VarPtr(bytsOut(lngWritePos)), VarPtr(bytsLine(0)), lngLineLen
+      CopyMemory VarPtr(bytsResult(lngWritePos)), VarPtr(bytsLine(0)), lngLineLen
       lngWritePos = lngWritePos + lngLineLen
-    ElseIf Not IgnoreSection(bytsIn, bytsLine, lngStartPos, lngNextStartPos, Ignores) Then
+    ElseIf Not IgnoreSection(byts, bytsLine, lngStartPos, lngNextStartPos, Ignores) Then
       ' Write the line if it is not part of a section we need to ignore
       If UBound(bytsLine) > 3 Then ' only write the line if it is not blank
-        CopyMemory VarPtr(bytsOut(lngWritePos)), VarPtr(bytsLine(0)), lngLineLen
+        CopyMemory VarPtr(bytsResult(lngWritePos)), VarPtr(bytsLine(0)), lngLineLen
         lngWritePos = lngWritePos + lngLineLen
       End If
     End If
@@ -1411,11 +1402,12 @@ Private Function CleanFormReportBytes(bytsIn() As Byte, ByRef bytsOut() As Byte,
   Loop While Not blnEOF
 
   If lngWritePos > 0 Then
-    ReDim Preserve bytsOut(lngWritePos - 1)
+    ReDim Preserve bytsResult(lngWritePos - 1)
   Else
-    Erase bytsOut
+    Erase bytsResult
   End If
 
+  SwapByteArrays byts, bytsResult
   CleanFormReportBytes = True
 End Function
 
