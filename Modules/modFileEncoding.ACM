@@ -99,6 +99,24 @@ Function ConvFile_to_UCS2(strFilename As String, Optional strNewFilename As Stri
   End Select
 End Function
 
+Function Conv_to_UCS2(byts() As Byte, ByRef bytsUCS2() As Byte) As Boolean
+  ' In-memory equivalent of ConvFile_to_UCS2: detects the encoding of byts and
+  ' promotes the content to UCS-2 LE.
+
+  Conv_to_UCS2 = False
+  If (Not byts) = -1 Then Exit Function
+
+  Select Case DetectEncoding(byts)
+    Case enmFileEncoding_UCS2
+      bytsUCS2 = byts
+      Conv_to_UCS2 = True
+    Case enmFileEncoding_UTF8
+      Conv_to_UCS2 = UTF8_to_UCS2(byts, bytsUCS2)
+    Case enmFileEncoding_ANSI
+      Conv_to_UCS2 = ANSI_to_UCS2(byts, bytsUCS2)
+  End Select
+End Function
+
 Function ConvFileANSI_to_UCS2(strFilename As String, Optional strNewFilename As String) As Boolean
   ' Converts the supplied file from ANSI (8 bit) to UCS2 format
   
@@ -287,6 +305,28 @@ Function UTF8_to_UCS2(bytsUTF8() As Byte, ByRef bytsUCS2() As Byte) As Boolean
   ReDim Preserve bytsUCS2(b - 1)
   UTF8_to_UCS2 = True
 
+End Function
+
+Function ANSI_to_UCS2(bytsANSI() As Byte, ByRef bytsUCS2() As Byte) As Boolean
+  ' Converts an ANSI byte array into a UCS-2 LE byte array (with BOM).
+  ' Returns True on success, False if any ANSI byte cannot be mapped.
+
+  Dim lngLen As Long
+  Dim i As Long
+  Dim j As Long
+
+  ANSI_to_UCS2 = False
+  If (Not bytsANSI) = -1 Then Exit Function
+  lngLen = UBound(bytsANSI) - LBound(bytsANSI) + 1
+  ReDim bytsUCS2(lngLen * 2 + 1) ' BOM (2 bytes) + 2 bytes per ANSI byte
+  bytsUCS2(0) = 255 ' &HFF
+  bytsUCS2(1) = 254 ' &HFE
+  j = 2
+  For i = LBound(bytsANSI) To UBound(bytsANSI)
+    If Not ANSICP_to_UnicodeCP(bytsANSI(i), bytsUCS2(j + 1), bytsUCS2(j)) Then Exit Function
+    j = j + 2
+  Next i
+  ANSI_to_UCS2 = True
 End Function
 
 Function UCS2_to_ANSI(bytsUCS2() As Byte, ByRef bytsANSI() As Byte) As Boolean

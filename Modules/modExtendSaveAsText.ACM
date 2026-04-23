@@ -82,9 +82,15 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
   Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
   Dim blnSaveAsUTF8 As Boolean
+  Dim bytsTmp() As Byte
+  Dim bytsUCS2() As Byte
+  Dim bytsOrig() As Byte
+  Dim bytsOrigUCS2() As Byte
+  Dim bytsMerged() As Byte
+  Dim bytsOut() As Byte
 
   PopulateIgnoreArr Ignores
-  
+
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
   ' If we already have this file in the repository and it is in UTF-8 we should save it as UTF-8 anyway
@@ -97,49 +103,52 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
         End If
       End If
   End Select
-      
+
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      blnSourceIsUCS2 = (DetectFileEncoding(strFilename & ".tmp") = enmFileEncoding_UCS2) ' so we know what format to ultimate output
-      If Not ConvFile_to_UCS2(strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
-      ' now we have a UCS2 file stored with .tmp suffix
-      
+
+      ' Load the Access output once and perform every conversion and transformation in memory
+      If Not ReadFromFile(strFilename & ".tmp", bytsTmp) Then blnFail = True: GoTo End_Processing
+      blnSourceIsUCS2 = (DetectEncoding(bytsTmp) = enmFileEncoding_UCS2) ' so we know what format to ultimately output
+      If Not Conv_to_UCS2(bytsTmp, bytsUCS2) Then blnFail = True: GoTo End_Processing
+
       If Forms("Access SVN - Options").chkReplaceCodeOnly Then
         ' Replacing code only so there is no requirement to Clean the Form/Report Layout section
-        ' we need to use the existing file as well - ensure it is in UCS2 format
-        If Not ConvFile_to_UCS2(strFilename) Then blnFail = True: GoTo End_Processing
-        
-        ' now both files are in UCS2 we can replace the code section
-        If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
+        ' we need to use the existing file as well - promote it to UCS2 in memory
+        If Not ReadFromFile(strFilename, bytsOrig) Then blnFail = True: GoTo End_Processing
+        If Not Conv_to_UCS2(bytsOrig, bytsOrigUCS2) Then blnFail = True: GoTo End_Processing
+
+        ' Both buffers are UCS2 so we can merge in the new code section
+        If Not ReplaceCodeSectionBytes(bytsOrigUCS2, bytsUCS2, bytsMerged) Then blnFail = True: GoTo End_Processing
       Else
         If blnRemoveGUIDs Then
-          If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
+          If Not CleanFormReportBytes(bytsUCS2, bytsMerged, Ignores) Then blnFail = True: GoTo End_Processing
         Else
-          If FileExists(strFilename) Then
-            Kill strFilename
-          End If
-          Name strFilename & ".tmp" As strFilename
+          bytsMerged = bytsUCS2
         End If
       End If
-          
-      ' we now have the file but it is in UCS2 format
-      ' we may want to convert this to UTF-8
+
+      ' The merged buffer is UCS-2. Encode it according to the caller's preference before the single write.
       blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_UCS2_to_UTF8) Or (enmEncode = asEncode_All_to_UTF8)
-      
-      If Not blnSaveAsUTF8 And Not blnSourceIsUCS2 Then
-        ' we don't want to output in UTF-8 encoding and MS Access originally produced a file which is not UCS2 encoded
-        ' so convert it back to ANSI
-        If ConvFileUCS2_to_ANSI(strFilename, strFilename & ".tmp") Then
-          ' conversion completed successfully so copy file over
-          Kill strFilename
-          Name strFilename & ".tmp" As strFilename
-        End If
+
+      If blnSaveAsUTF8 Then
+        If Not UCS2_to_UTF8(bytsMerged, bytsOut) Then blnFail = True: GoTo End_Processing
+      ElseIf Not blnSourceIsUCS2 Then
+        ' MS Access originally produced a non-UCS2 file so convert the output back to ANSI
+        If Not UCS2_to_ANSI(bytsMerged, bytsOut) Then blnFail = True: GoTo End_Processing
+      Else
+        bytsOut = bytsMerged
       End If
-      
+
+      If Not WriteToFile(bytsOut, strFilename) Then blnFail = True: GoTo End_Processing
+
+      ' UTF-8 has already been handled inline so suppress the trailing conversion below
+      blnSaveAsUTF8 = False
+
 End_Processing:
       If blnFail Then MsgBox "Processing of '" & objName & "' failed."
-          
+
       If FileExists(strFilename & ".tmp") Then Kill strFilename & ".tmp"
     
     Case asObjectType.acQuery, asObjectType.acMacro
@@ -1292,100 +1301,122 @@ Public Function CleanFormsReports(strImportPath As String) As Boolean
 End Function
 
 Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
-  ' As CleanFormReportFile but accepts any form encoding
+  ' Cleans a form/report export file (accepts any form encoding).
+  ' Loads the file once, performs every conversion and cleaning step in memory,
+  ' then writes the result back to disk in a single write.
 
+  Dim bytsIn() As Byte
+  Dim bytsUCS2() As Byte
+  Dim bytsClean() As Byte
+  Dim bytsOut() As Byte
   Dim enmEncoding As enmFileEncoding
 
   CleanFormReportFileEx = False ' intially set to indicate failure
 
-  enmEncoding = DetectFileEncoding(strFilename)
-  If enmEncoding = enmFileEncoding_Missing Then Exit Function
+  If Not ReadFromFile(strFilename, bytsIn) Then Exit Function
 
-  If Not ConvFile_to_UCS2(strFilename, strFilenameNew) Then Exit Function
-  If Not CleanFormReportFile(strFilenameNew, strFilenameNew, Ignores) Then Exit Function
+  enmEncoding = DetectEncoding(bytsIn)
 
   Select Case enmEncoding
-    Case enmFileEncoding_UTF8: CleanFormReportFileEx = ConvFileUCS2_to_UTF8(strFilenameNew)
-    Case enmFileEncoding_UCS2: CleanFormReportFileEx = True
-    Case enmFileEncoding_ANSI: CleanFormReportFileEx = ConvFileUCS2_to_ANSI(strFilenameNew)
+    Case enmFileEncoding_UCS2
+      bytsUCS2 = bytsIn
+    Case enmFileEncoding_UTF8
+      If Not UTF8_to_UCS2(bytsIn, bytsUCS2) Then Exit Function
+    Case enmFileEncoding_ANSI
+      If Not ANSI_to_UCS2(bytsIn, bytsUCS2) Then Exit Function
+    Case Else
+      Exit Function
   End Select
 
+  If Not CleanFormReportBytes(bytsUCS2, bytsClean, Ignores) Then Exit Function
+
+  Select Case enmEncoding
+    Case enmFileEncoding_UCS2
+      bytsOut = bytsClean
+    Case enmFileEncoding_UTF8
+      If Not UCS2_to_UTF8(bytsClean, bytsOut) Then Exit Function
+    Case enmFileEncoding_ANSI
+      If Not UCS2_to_ANSI(bytsClean, bytsOut) Then Exit Function
+  End Select
+
+  CleanFormReportFileEx = WriteToFile(bytsOut, strFilenameNew)
+
 End Function
-Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
-  ' This function takes a UCS2 encoded file and cleans out the lines (Sections) specified in the Ignores Array
-  
-  Dim bytsFile() As Byte
+
+Private Function CleanFormReportBytes(bytsIn() As Byte, ByRef bytsOut() As Byte, Ignores() As Ignore) As Boolean
+  ' Takes a UCS-2 byte array and produces a cleaned UCS-2 byte array in bytsOut
+  ' with the sections specified in Ignores removed.
+
   Dim bytsLine() As Byte
-  Dim f As Long
-  Dim lngStartPos As Long ' the start position of the line we are looking at
-  Dim lngNextStartPos As Long ' the start position of the next line we need to look at
-  Dim lngWritePos As Long ' the byte position in the output file for the write
+  Dim lngStartPos As Long
+  Dim lngNextStartPos As Long
+  Dim lngWritePos As Long
   Dim lngLineLen As Long
   Dim x As Long
   Dim bytsCrLf() As Byte
   Dim blnEOF As Boolean
-  Dim blnCodeBehind As Boolean ' indicates that we are in the CodeBehind section of the file
+  Dim blnCodeBehind As Boolean
   Dim bytsCodeBehind() As Byte
-  
+
+  CleanFormReportBytes = False
+
+  If (Not bytsIn) = -1 Then Exit Function
+
   bytsCodeBehind = "CodeBehind" ' The text which indicates the start of the code section
   blnCodeBehind = False
   bytsCrLf() = vbCrLf
-  
-  ' load the file into the bytsFile array
-  f = FreeFile()
-  Open strFilename For Binary Access Read As #f
-  ReDim bytsFile(LOF(f) - 1)
-  Get #f, , bytsFile()
-  Close #f
-    
-  lngWritePos = 1 ' The next location to write into the output file (starts at 1 ie not zero based)
-  lngStartPos = 0 ' The initial start location (0 based)
+
+  ' The cleaned output can never be larger than the input
+  ReDim bytsOut(UBound(bytsIn) - LBound(bytsIn))
+
+  lngWritePos = 0
+  lngStartPos = LBound(bytsIn)
   blnEOF = False
-  
-  ' Open file ready for output
-  f = FreeFile()
-  If FileExists(strFilenameNew) Then Kill strFilenameNew
-  Open strFilenameNew For Binary Access Write As #f
-  
+
   ' Loop through line by line
   Do
-    x = InBytArr(lngStartPos, bytsFile, bytsCrLf) ' look for end of line (CrLf)
+    x = InBytArr(lngStartPos, bytsIn, bytsCrLf) ' look for end of line (CrLf)
     If x = clngNOTFOUND Then
       ' we did not find an end of line so we must now be at the end of the file
-      lngNextStartPos = UBound(bytsFile) + 1
+      lngNextStartPos = UBound(bytsIn) + 1
       blnEOF = True
     Else
       lngNextStartPos = x + 4 'to allow for the CrLf we found (2 bytes per character)
-      If lngNextStartPos = UBound(bytsFile) + 1 Then blnEOF = True ' File ends with CrLf
+      If lngNextStartPos = UBound(bytsIn) + 1 Then blnEOF = True ' File ends with CrLf
     End If
-    
+
     ' extract the line we are looking at into bytsLine
     lngLineLen = lngNextStartPos - lngStartPos
     ReDim bytsLine(lngLineLen - 1)
-    CopyMemory VarPtr(bytsLine(0)), VarPtr(bytsFile(lngStartPos)), lngLineLen
-    
+    CopyMemory VarPtr(bytsLine(0)), VarPtr(bytsIn(lngStartPos)), lngLineLen
+
     If Not blnCodeBehind Then
       'look to see if we are at the codebehind line
       If InBytArr(0, bytsLine, bytsCodeBehind) = 0 Then blnCodeBehind = True
     End If
-    
+
     If blnCodeBehind Then 'NB we need to do this in 2 sections of the IF because we dont want IgnoreSection to run if blnCodeBehind is true
       ' Always write line if we are in the code section
-      Put #f, lngWritePos, bytsLine
-      lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
-    ElseIf Not IgnoreSection(bytsFile, bytsLine, lngStartPos, lngNextStartPos, Ignores) Then
+      CopyMemory VarPtr(bytsOut(lngWritePos)), VarPtr(bytsLine(0)), lngLineLen
+      lngWritePos = lngWritePos + lngLineLen
+    ElseIf Not IgnoreSection(bytsIn, bytsLine, lngStartPos, lngNextStartPos, Ignores) Then
       ' Write the line if it is not part of a section we need to ignore
       If UBound(bytsLine) > 3 Then ' only write the line if it is not blank
-        Put #f, lngWritePos, bytsLine
-        lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
+        CopyMemory VarPtr(bytsOut(lngWritePos)), VarPtr(bytsLine(0)), lngLineLen
+        lngWritePos = lngWritePos + lngLineLen
       End If
     End If
-    
+
     lngStartPos = lngNextStartPos ' move on to the next line
   Loop While Not blnEOF
-  Close #f
-  
-  CleanFormReportFile = True
+
+  If lngWritePos > 0 Then
+    ReDim Preserve bytsOut(lngWritePos - 1)
+  Else
+    Erase bytsOut
+  End If
+
+  CleanFormReportBytes = True
 End Function
 
 Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartPos As Long, ByRef lngNextStartPos As Long, Ignores() As Ignore) As Boolean
@@ -1419,78 +1450,68 @@ Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartP
   
 End Function
 
-Public Function ReplaceCodeSection(strOrigFilename As String, strNewCodeFilename As String) As Boolean
-  ' Takes 2 files and puts the code section from the second into the first
-  ' Both file can contain both Form/Report design sections AND code sections
-  ' This only works if both files are UCS2 (2-byte) encoded
-  
-  Dim f As Long
-  Dim bytsFileOrig() As Byte
-  Dim bytsCodeFile() As Byte
+Private Function ReplaceCodeSectionBytes(bytsOrig() As Byte, bytsCode() As Byte, ByRef bytsOut() As Byte) As Boolean
+  ' Replaces the CodeBehind section in bytsOrig with the one from bytsCode.
+  ' Both inputs must be UCS-2 encoded; the merged result is returned in bytsOut.
+
   Dim bytsCodeBehind() As Byte
+  Dim bytsCrLf() As Byte
   Dim lngCodeStart As Long
   Dim lngCodeStartOrig As Long
   Dim lngNewCodeLength As Long
-  Dim bytsCrLf() As Byte
-    
-  ReplaceCodeSection = False ' initially set to indicate fail
-  
+  Dim lngOrigLen As Long
+  Dim lngOutLen As Long
+
+  ReplaceCodeSectionBytes = False
+
+  If DetectEncoding(bytsOrig) <> enmFileEncoding_UCS2 Then Exit Function
+  If DetectEncoding(bytsCode) <> enmFileEncoding_UCS2 Then Exit Function
+
   bytsCodeBehind = "CodeBehind" ' The text which indicates the start of the code section
   bytsCrLf() = vbCrLf
-  
-  If DetectFileEncoding(strOrigFilename) <> enmFileEncoding_UCS2 Then Exit Function
-  If DetectFileEncoding(strNewCodeFilename) <> enmFileEncoding_UCS2 Then Exit Function
-  
-  ' Load file containing code into Byte Array
-  f = FreeFile()
-  Open strNewCodeFilename For Binary Access Read As #f
-  ReDim bytsCodeFile(LOF(f) - 1)
-  Get #f, , bytsCodeFile()
-  Close #f
-  
-  lngCodeStart = InBytArr(0, bytsCodeFile, bytsCodeBehind)
+
+  lngCodeStart = InBytArr(0, bytsCode, bytsCodeBehind)
   If lngCodeStart = clngNOTFOUND Then
-    ' there is no code section in the code file supplied
+    ' there is no code section in the code byte array supplied
     lngNewCodeLength = 0
   Else
-    lngNewCodeLength = UBound(bytsCodeFile) - lngCodeStart + 1
+    lngNewCodeLength = UBound(bytsCode) - lngCodeStart + 1
   End If
-  
-  ' Load original file into Byte Array
-  f = FreeFile()
-  Open strOrigFilename For Binary Access Read As #f
-  ReDim bytsFileOrig(LOF(f) - 1)
-  Get #f, , bytsFileOrig()
-  Close #f
-  
-  lngCodeStartOrig = InBytArr(0, bytsFileOrig, bytsCodeBehind)
-  
+
+  lngOrigLen = UBound(bytsOrig) + 1
+  lngCodeStartOrig = InBytArr(0, bytsOrig, bytsCodeBehind)
+
   If lngCodeStartOrig = clngNOTFOUND Then
-    ' There is no new code section in the source file at present so add one
-    If lngNewCodeLength <> 0 Then
-      lngCodeStartOrig = UBound(bytsFileOrig) + 1
-      ReDim Preserve bytsFileOrig(UBound(bytsFileOrig) + lngNewCodeLength + 4)
-      ' Copy in a CrLf before adding the new code section
-      CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCrLf(0)), 4
-      lngCodeStartOrig = lngCodeStartOrig + 4 ' to allow for CrLf added
+    ' There is no existing code section in the original, so append the new one
+    If lngNewCodeLength = 0 Then
+      ' Nothing to merge: output matches original
+      bytsOut = bytsOrig
+      ReplaceCodeSectionBytes = True
+      Exit Function
     End If
+    lngOutLen = lngOrigLen + 4 + lngNewCodeLength ' +4 for CrLf separator
+    ReDim bytsOut(lngOutLen - 1)
+    CopyMemory VarPtr(bytsOut(0)), VarPtr(bytsOrig(0)), lngOrigLen
+    CopyMemory VarPtr(bytsOut(lngOrigLen)), VarPtr(bytsCrLf(0)), 4
+    CopyMemory VarPtr(bytsOut(lngOrigLen + 4)), VarPtr(bytsCode(lngCodeStart)), lngNewCodeLength
   Else
-    ' There is a code section in the source file so we will overwrite it
-    ReDim Preserve bytsFileOrig(lngCodeStartOrig + lngNewCodeLength - 1)
+    ' There is an existing code section; truncate original before it and append the new one
+    lngOutLen = lngCodeStartOrig + lngNewCodeLength
+    If lngOutLen = 0 Then
+      Erase bytsOut
+      ReplaceCodeSectionBytes = True
+      Exit Function
+    End If
+    ReDim bytsOut(lngOutLen - 1)
+    If lngCodeStartOrig > 0 Then
+      CopyMemory VarPtr(bytsOut(0)), VarPtr(bytsOrig(0)), lngCodeStartOrig
+    End If
+    If lngNewCodeLength > 0 Then
+      CopyMemory VarPtr(bytsOut(lngCodeStartOrig)), VarPtr(bytsCode(lngCodeStart)), lngNewCodeLength
+    End If
   End If
-  
-  ' Copy the new code section into orig array
-  If lngNewCodeLength <> 0 Then CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCodeFile(lngCodeStart)), lngNewCodeLength
-  
-  Kill strOrigFilename
-  
-  f = FreeFile()
-  Open strOrigFilename For Binary Access Write As #f
-  Put #f, 1, bytsFileOrig
-  Close #f
-  
-  ReplaceCodeSection = True
-  
+
+  ReplaceCodeSectionBytes = True
 End Function
 
 '************************************************
