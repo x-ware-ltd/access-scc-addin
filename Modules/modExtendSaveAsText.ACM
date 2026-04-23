@@ -43,24 +43,28 @@ Private Const clngNOTFOUND = -2147483648#
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As LongPtr)
 
 Private Sub PopulateIgnoreArr(ByRef Ignores() As Ignore)
-  ReDim Ignores(1) As Ignore
+  ReDim Ignores(9) As Ignore
   
   Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
   Ignores(0).bytsEnd = "End" & vbCrLf
   Ignores(1).bytsStart = "Checksum ="
   Ignores(1).bytsEnd = vbCrLf
-  'Ignores(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
-  'Ignores(2).bytsEnd = "End" & vbCrLf
-  'Ignores(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
-  'Ignores(3).bytsEnd = "End" & vbCrLf
-  'Ignores(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
-  'Ignores(4).bytsEnd = "End" & vbCrLf
-  'Ignores(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
-  'Ignores(5).bytsEnd = "End" & vbCrLf
-  'Ignores(6).bytsStart = "PrtMip = Begin" & vbCrLf
-  'Ignores(6).bytsEnd = "End" & vbCrLf
-  'Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
-  'Ignores(7).bytsEnd = "End" & vbCrLf
+  Ignores(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
+  Ignores(2).bytsEnd = "End" & vbCrLf
+  Ignores(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
+  Ignores(3).bytsEnd = "End" & vbCrLf
+  Ignores(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
+  Ignores(4).bytsEnd = "End" & vbCrLf
+  Ignores(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
+  Ignores(5).bytsEnd = "End" & vbCrLf
+  Ignores(6).bytsStart = "PrtMip = Begin" & vbCrLf
+  Ignores(6).bytsEnd = "End" & vbCrLf
+  Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
+  Ignores(7).bytsEnd = "End" & vbCrLf
+  Ignores(8).bytsStart = "LayoutCached"
+  Ignores(8).bytsEnd = vbCrLf
+  Ignores(9).bytsStart = "NoSaveCTIWhenDisabled"
+  Ignores(9).bytsEnd = vbCrLf
 End Sub
 
 
@@ -853,8 +857,8 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
   
   sDelimiterOld = Chr(44)  '  ,
   sSeperatorOld = Chr(34)  '  "
-  sDelimiter = Chr(135)    '  ‡
-  sSEPERATOR = Chr(149)    '  •
+  sDelimiter = Chr(135)    '  â€¡
+  sSEPERATOR = Chr(149)    '  â€¢
   CRSPLF = Chr(213) & Chr(214) & Chr(210) 'This is used as an alternative to vbCRLF where ir is itself found in a field
   DLMTR = Chr(243) & Chr(242) & Chr(241) 'This is used as an alternative to sDelimiter where it is itself found in a field
   
