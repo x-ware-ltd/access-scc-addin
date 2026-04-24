@@ -1,0 +1,473 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' PrtMip Parser
+'
+' Parses an Access PrtMip structure stored as the hex blob found
+' inside a form's .ACF or report's .ACR source file (the
+' PrtMip = Begin ... End block) and produces a human-readable
+' representation suitable for storing in source control.
+'
+' Typical use from the Immediate window:
+'
+'   Dim s As String
+'   s = "0xa7050000a2050000a2050000a205000000000000201c0000e010000001000000 , " _
+'     & "0x010000006801000000000000a10700000100000001000000"
+'   Debug.Print PrtMipToText(s)
+'
+' The input is tolerant: it accepts either the raw block copied from
+' an .ACF/.ACR (0x..... , 0x..... , lines), or a bare hex string.
+'
+' PrtMip is a fixed 56-byte structure consisting of 14 little-endian
+' 32-bit values (margins + page size + column layout + flags). All
+' linear measurements are in twips (1440 twips = 1 inch).
+'
+' @Version      1.00
+'************************************************
+
+' Windows PrtMip layout is 14 DWORDs (4 bytes each).
+Private Const PRTMIP_FIXED_SIZE As Long = 56
+
+' ItemLayout values (matches Access acPR* constants).
+Private Const acPRVerticalColumnLayout   As Long = 1953   ' Down, then across
+Private Const acPRHorizontalColumnLayout As Long = 1954   ' Across, then down
+
+
+'************************************************
+' tPrtMip
+'
+' Decoded view of the PrtMip structure.
+'************************************************
+Public Type tPrtMip
+  LeftMargin    As Long   ' twips
+  TopMargin     As Long   ' twips
+  RightMargin   As Long   ' twips
+  BottomMargin  As Long   ' twips
+  DataOnly      As Long   ' 0 = No, -1/1 = Yes
+  Width         As Long   ' twips (detail section width)
+  Height        As Long   ' twips (detail section height)
+  DefaultSize   As Long   ' 0 = No, -1/1 = Yes (use default item size)
+  Columns       As Long   ' items across
+  ColumnSpacing As Long   ' twips
+  RowSpacing    As Long   ' twips
+  ItemLayout    As Long   ' 1953 = DownThenAcross, 1954 = AcrossThenDown
+  FastPrint     As Long   ' 0 = No, -1/1 = Yes (FastLaserPrinting)
+  Datasheet     As Long   ' 0 = No, -1/1 = Yes
+End Type
+
+
+'************************************************
+' PrtMipToText
+'
+' Convenience: parse the hex blob and format it.
+'************************************************
+Public Function PrtMipToText(ByVal sBlob As String) As String
+  Dim mip As tPrtMip
+  mip = ParsePrtMip(sBlob)
+  PrtMipToText = FormatPrtMip(mip)
+End Function
+
+
+'************************************************
+' ParsePrtMip
+'
+' Parse a PrtMip hex blob into a populated tPrtMip.
+'************************************************
+Public Function ParsePrtMip(ByVal sBlob As String) As tPrtMip
+  Dim b()   As Byte
+  Dim mip   As tPrtMip
+  Dim total As Long
+
+  b = HexBlobToBytes(sBlob)
+  total = UBound(b) - LBound(b) + 1
+
+  If total < PRTMIP_FIXED_SIZE Then
+    Err.Raise vbObjectError + 1002, "ParsePrtMip", _
+              "PrtMip blob is too short: got " & total _
+              & " bytes, need " & PRTMIP_FIXED_SIZE & "."
+  End If
+
+  mip.LeftMargin = ReadS32(b, 0)
+  mip.TopMargin = ReadS32(b, 4)
+  mip.RightMargin = ReadS32(b, 8)
+  mip.BottomMargin = ReadS32(b, 12)
+  mip.DataOnly = ReadS32(b, 16)
+  mip.Width = ReadS32(b, 20)
+  mip.Height = ReadS32(b, 24)
+  mip.DefaultSize = ReadS32(b, 28)
+  mip.Columns = ReadS32(b, 32)
+  mip.ColumnSpacing = ReadS32(b, 36)
+  mip.RowSpacing = ReadS32(b, 40)
+  mip.ItemLayout = ReadS32(b, 44)
+  mip.FastPrint = ReadS32(b, 48)
+  mip.Datasheet = ReadS32(b, 52)
+
+  ParsePrtMip = mip
+End Function
+
+
+'************************************************
+' FormatPrtMip
+'
+' Render a tPrtMip as a multi-line, ACF-style text representation
+' (Name =Value).
+'************************************************
+Public Function FormatPrtMip(ByRef mip As tPrtMip) As String
+  Dim s As String
+  Const NL As String = vbCrLf
+
+  s = s & "LeftMargin =" & mip.LeftMargin & NL
+  s = s & "TopMargin =" & mip.TopMargin & NL
+  s = s & "RightMargin =" & mip.RightMargin & NL
+  s = s & "BottomMargin =" & mip.BottomMargin & NL
+  s = s & "DataOnly =" & NameBool(mip.DataOnly) & NL
+  s = s & "Width =" & mip.Width & NL
+  s = s & "Height =" & mip.Height & NL
+  s = s & "DefaultSize =" & NameBool(mip.DefaultSize) & NL
+  s = s & "Columns =" & mip.Columns & NL
+  s = s & "ColumnSpacing =" & mip.ColumnSpacing & NL
+  s = s & "RowSpacing =" & mip.RowSpacing & NL
+  s = s & "ItemLayout =" & NameItemLayout(mip.ItemLayout) & NL
+  s = s & "FastPrint =" & NameBool(mip.FastPrint) & NL
+  s = s & "Datasheet =" & NameBool(mip.Datasheet) & NL
+
+  FormatPrtMip = s
+End Function
+
+
+'************************************************
+' HexBlobToBytes
+'
+' Turn a hex string into a byte array. Accepts:
+'   - The block of 0x.... , 0x.... , lines as found in .ACF/.ACR
+'     files (the "Begin"/"End" keywords and commas are ignored safely).
+'   - A bare hex string with arbitrary whitespace.
+'
+' When 0x markers are present the scan restarts at each marker and
+' stops at the first non-hex, non-whitespace character (so the "B"
+' and "E" in "Begin"/"End" are not consumed as hex digits).
+'************************************************
+Public Function HexBlobToBytes(ByVal sBlob As String) As Byte()
+  Dim sUpper As String
+  Dim sb     As String
+  Dim i      As Long
+  Dim n      As Long
+  Dim ca     As Long
+  Dim out()  As Byte
+
+  sUpper = UCase$(sBlob)
+  sb = String$(Len(sUpper), " ")
+  n = 0
+
+  If InStr(1, sUpper, "0X") > 0 Then
+    i = 1
+    Do While i <= Len(sUpper) - 1
+      If Mid$(sUpper, i, 2) = "0X" Then
+        i = i + 2
+        Do While i <= Len(sUpper)
+          ca = Asc(Mid$(sUpper, i, 1))
+          Select Case ca
+            Case 48 To 57, 65 To 70        ' 0-9, A-F
+              n = n + 1
+              Mid$(sb, n, 1) = Chr$(ca)
+              i = i + 1
+            Case Else
+              Exit Do                        ' any other char ends the run
+          End Select                         ' - CRITICAL: newline must end
+        Loop                                 '   the run, otherwise we would
+      Else                                   '   swallow the '0' from the
+        i = i + 1                            '   next line's "0x" prefix
+      End If                                 '   and treat its 'x' as a
+    Loop                                     '   terminator, losing data.
+  Else
+    For i = 1 To Len(sUpper)
+      ca = Asc(Mid$(sUpper, i, 1))
+      If (ca >= 48 And ca <= 57) Or (ca >= 65 And ca <= 70) Then
+        n = n + 1
+        Mid$(sb, n, 1) = Chr$(ca)
+      End If
+    Next i
+  End If
+
+  If n = 0 Then
+    HexBlobToBytes = out
+    Exit Function
+  End If
+
+  If n Mod 2 <> 0 Then
+    Err.Raise vbObjectError + 1001, "HexBlobToBytes", _
+              "Hex blob has an odd number of nibbles: " & n
+  End If
+
+  sb = Left$(sb, n)
+  ReDim out(0 To n \ 2 - 1)
+  For i = 0 To UBound(out)
+    out(i) = CByte("&H" & Mid$(sb, i * 2 + 1, 2))
+  Next i
+  HexBlobToBytes = out
+End Function
+
+
+' ---- Byte-array read primitives -------------------------------------------
+
+' 32-bit little-endian, bit-preserving into a signed Long.
+' 0xFFFFFFFF round-trips as -1; Hex$(result) reproduces the bit pattern.
+Private Function ReadS32(ByRef b() As Byte, ByVal off As Long) As Long
+  Dim r  As Long
+  Dim hi As Byte
+  r = CLng(b(off)) _
+    Or (CLng(b(off + 1)) * &H100&) _
+    Or (CLng(b(off + 2)) * &H10000)
+  hi = b(off + 3)
+  If hi < &H80 Then
+    r = r Or (CLng(hi) * &H1000000)
+  Else
+    r = r Or (CLng(hi And &H7F) * &H1000000) Or &H80000000
+  End If
+  ReadS32 = r
+End Function
+
+' Lowercase, contiguous hex of a byte range (e.g. "a7050000...").
+Private Function BytesToHex(ByRef b() As Byte, ByVal off As Long, ByVal nBytes As Long) As String
+  Dim i As Long
+  Dim s As String
+  Dim t As String
+  s = String$(nBytes * 2, "0")
+  For i = 0 To nBytes - 1
+    t = Hex$(b(off + i))
+    If Len(t) = 1 Then
+      Mid$(s, i * 2 + 2, 1) = t
+    Else
+      Mid$(s, i * 2 + 1, 2) = t
+    End If
+  Next i
+  BytesToHex = LCase$(s)
+End Function
+
+
+' ---- Friendly names for enumerated PrtMip values --------------------------
+
+' Access stores boolean "Yes" as either 1 (common in ACF blobs) or -1
+' (VBA's canonical True). Map both to "Yes"; preserve anything else as-is
+' so round-trips are byte-perfect.
+Private Function NameBool(ByVal v As Long) As String
+  Select Case v
+    Case 0:         NameBool = "No"
+    Case -1:        NameBool = "Yes"
+    Case 1:         NameBool = "Yes(1)"
+    Case Else:      NameBool = CStr(v)
+  End Select
+End Function
+
+Private Function NameItemLayout(ByVal v As Long) As String
+  Select Case v
+    Case acPRVerticalColumnLayout:   NameItemLayout = "DownThenAcross"
+    Case acPRHorizontalColumnLayout: NameItemLayout = "AcrossThenDown"
+    Case Else:                       NameItemLayout = CStr(v)
+  End Select
+End Function
+
+
+'************************************************
+' TextToPrtMip
+'
+' Reverse of PrtMipToText. Takes the human-readable
+'   FieldName =Value
+' representation and returns the hex lines exactly as they appear
+' inside a PrtMip = Begin ... End block in an .ACF/.ACR file
+' (8-space indent, 32 bytes per line, trailing " ," on every line
+' except the last, lowercase hex).
+'************************************************
+Public Function TextToPrtMip(ByVal sText As String) As String
+  Dim mip As tPrtMip
+  mip = ParsePrtMipText(sText)
+  TextToPrtMip = PrtMipToHexBlock(mip)
+End Function
+
+
+'************************************************
+' ParsePrtMipText
+'
+' Parse a multi-line "FieldName =Value" text representation into a
+' tPrtMip. Blank lines, VB-style ' comments, and unrecognised field
+' names are ignored.
+'************************************************
+Public Function ParsePrtMipText(ByVal sText As String) As tPrtMip
+  Dim mip      As tPrtMip
+  Dim lines()  As String
+  Dim ln       As String
+  Dim i        As Long
+  Dim eqPos    As Long
+  Dim fldName  As String
+  Dim fldValue As String
+
+  sText = Replace$(sText, vbCrLf, vbLf)
+  sText = Replace$(sText, vbCr, vbLf)
+  lines = Split(sText, vbLf)
+
+  For i = LBound(lines) To UBound(lines)
+    ln = Trim$(CStr(lines(i)))
+    If LenB(ln) = 0 Then
+      ' skip
+    ElseIf Left$(ln, 1) = "'" Then
+      ' VB-style line comment, skip
+    Else
+      eqPos = InStr(1, ln, "=")
+      If eqPos > 0 Then
+        fldName = Trim$(Left$(ln, eqPos - 1))
+        fldValue = Trim$(Mid$(ln, eqPos + 1))
+        AssignPrtMipField mip, fldName, fldValue
+      End If
+    End If
+  Next i
+
+  ParsePrtMipText = mip
+End Function
+
+
+'************************************************
+' PrtMipToHexBlock
+'
+' Serialise a tPrtMip as the hex lines exactly as they appear in an
+' .ACF/.ACR file (8-space indent, 32 bytes per line, trailing " ,"
+' on every line except the last).
+'************************************************
+Public Function PrtMipToHexBlock(ByRef mip As tPrtMip) As String
+  Dim b() As Byte
+  b = PrtMipToBytes(mip)
+  PrtMipToHexBlock = BytesToHexBlock(b)
+End Function
+
+
+'------------------------------------------------------------------
+' Serialise a tPrtMip to raw little-endian bytes (fixed 56-byte
+' structure).
+'------------------------------------------------------------------
+Private Function PrtMipToBytes(ByRef mip As tPrtMip) As Byte()
+  Dim b() As Byte
+  ReDim b(0 To PRTMIP_FIXED_SIZE - 1)
+
+  WriteS32 b, 0, mip.LeftMargin
+  WriteS32 b, 4, mip.TopMargin
+  WriteS32 b, 8, mip.RightMargin
+  WriteS32 b, 12, mip.BottomMargin
+  WriteS32 b, 16, mip.DataOnly
+  WriteS32 b, 20, mip.Width
+  WriteS32 b, 24, mip.Height
+  WriteS32 b, 28, mip.DefaultSize
+  WriteS32 b, 32, mip.Columns
+  WriteS32 b, 36, mip.ColumnSpacing
+  WriteS32 b, 40, mip.RowSpacing
+  WriteS32 b, 44, mip.ItemLayout
+  WriteS32 b, 48, mip.FastPrint
+  WriteS32 b, 52, mip.Datasheet
+
+  PrtMipToBytes = b
+End Function
+
+
+'------------------------------------------------------------------
+' Format a byte array as the 8-space-indented, 32-bytes-per-line,
+' trailing-" ," ACF hex block. Last line has no trailing comma.
+'------------------------------------------------------------------
+Private Function BytesToHexBlock(ByRef b() As Byte) As String
+  Const BYTES_PER_LINE As Long = 32
+  Const INDENT         As String = "        "
+  Dim total  As Long
+  Dim off    As Long
+  Dim chunk  As Long
+  Dim sb     As String
+
+  total = UBound(b) - LBound(b) + 1
+  off = 0
+  Do While off < total
+    chunk = total - off
+    If chunk > BYTES_PER_LINE Then chunk = BYTES_PER_LINE
+    sb = sb & INDENT & "0x" & BytesToHex(b, off, chunk)
+    If off + chunk < total Then sb = sb & " ,"
+    sb = sb & vbCrLf
+    off = off + chunk
+  Loop
+
+  BytesToHexBlock = sb
+End Function
+
+
+' ---- Byte-array write primitives -----------------------------------
+
+' Bit-preserving write of a Long as 4 LE bytes (handles negatives).
+Private Sub WriteS32(ByRef b() As Byte, ByVal off As Long, ByVal v As Long)
+  Dim h As String
+  h = Right$("00000000" & Hex$(v), 8)
+  b(off + 0) = CByte("&H" & Mid$(h, 7, 2))
+  b(off + 1) = CByte("&H" & Mid$(h, 5, 2))
+  b(off + 2) = CByte("&H" & Mid$(h, 3, 2))
+  b(off + 3) = CByte("&H" & Mid$(h, 1, 2))
+End Sub
+
+
+' ---- Scalar / enum parsers (reverses of the Name* helpers) ---------
+
+Private Sub AssignPrtMipField(ByRef mip As tPrtMip, ByVal fldName As String, ByVal fldValue As String)
+  Select Case fldName
+    Case "LeftMargin":    mip.LeftMargin = ParseLongVal(fldValue)
+    Case "TopMargin":     mip.TopMargin = ParseLongVal(fldValue)
+    Case "RightMargin":   mip.RightMargin = ParseLongVal(fldValue)
+    Case "BottomMargin":  mip.BottomMargin = ParseLongVal(fldValue)
+    Case "DataOnly":      mip.DataOnly = ParseBool(fldValue)
+    Case "Width":         mip.Width = ParseLongVal(fldValue)
+    Case "Height":        mip.Height = ParseLongVal(fldValue)
+    Case "DefaultSize":   mip.DefaultSize = ParseBool(fldValue)
+    Case "Columns":       mip.Columns = ParseLongVal(fldValue)
+    Case "ColumnSpacing": mip.ColumnSpacing = ParseLongVal(fldValue)
+    Case "RowSpacing":    mip.RowSpacing = ParseLongVal(fldValue)
+    Case "ItemLayout":    mip.ItemLayout = ParseItemLayout(fldValue)
+    Case "FastPrint":     mip.FastPrint = ParseBool(fldValue)
+    Case "Datasheet":     mip.Datasheet = ParseBool(fldValue)
+  End Select
+End Sub
+
+' Parse a decimal or 0x-prefixed hex integer into a Long (bit-preserving).
+Private Function ParseLongVal(ByVal s As String) As Long
+  s = Trim$(s)
+  If Len(s) >= 2 And StrComp(Left$(s, 2), "0x", vbTextCompare) = 0 Then
+    ParseLongVal = HexStrToLong(Mid$(s, 3))
+  Else
+    ParseLongVal = CLng(s)
+  End If
+End Function
+
+' Parse up to 8 hex digits into a Long, preserving the bit pattern
+' (so "FFFFFFFF" yields -1 rather than overflowing).
+Private Function HexStrToLong(ByVal sHex As String) As Long
+  Dim buf(0 To 3) As Byte
+  Dim i As Long
+  Dim padded As String
+  padded = Right$(String$(8, "0") & UCase$(Trim$(sHex)), 8)
+  For i = 0 To 3
+    buf(3 - i) = CByte("&H" & Mid$(padded, i * 2 + 1, 2))
+  Next i
+  HexStrToLong = ReadS32(buf, 0)
+End Function
+
+' Reverse of NameBool. "Yes(1)" preserves the 1-variant so the round
+' trip is byte-perfect when the source blob used 1 rather than -1.
+Private Function ParseBool(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "no", "false":  ParseBool = 0
+    Case "yes", "true":  ParseBool = -1
+    Case "yes(1)":       ParseBool = 1
+    Case Else:           ParseBool = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseItemLayout(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "downthenacross": ParseItemLayout = acPRVerticalColumnLayout
+    Case "acrossthendown": ParseItemLayout = acPRHorizontalColumnLayout
+    Case Else:             ParseItemLayout = ParseLongVal(s)
+  End Select
+End Function
+
+
