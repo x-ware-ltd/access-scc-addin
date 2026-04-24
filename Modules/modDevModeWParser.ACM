@@ -654,6 +654,78 @@ End Function
 
 
 '************************************************
+' PrtDevModeWToSummaryText
+'
+' Export-side reducer: parse a PrtDevModeW hex blob and emit the four
+' fields that survive in the source-controlled PrtDevMode_H block
+' (Orientation, PaperSize, Scale, Color). Not currently wired into the
+' replace-rule registry (PrtDevMode is the export source of truth);
+' provided for symmetry with PrtDevModeToSummaryText.
+'************************************************
+Public Function PrtDevModeWToSummaryText(ByVal sBlob As String) As String
+  Dim dm As tDevModeW
+  Const NL As String = vbCrLf
+  Dim s  As String
+  dm = ParseDevModeW(sBlob)
+  s = s & "Orientation =" & NameOrientation(dm.Orientation) & NL
+  s = s & "PaperSize =" & NamePaperSize(dm.PaperSize) & NL
+  s = s & "Scale =" & dm.[Scale] & NL
+  s = s & "Color =" & NameColor(dm.Color) & NL
+  PrtDevModeWToSummaryText = s
+End Function
+
+
+'************************************************
+' SummaryTextToPrtDevModeW
+'
+' Import-side expander: read a PrtDevMode_H block body (Orientation,
+' PaperSize, Scale, Color) and emit the DEVMODEW hex block Access
+' expects alongside PrtDevMode. Every other member is zero;
+' SpecVersion, Size and Fields are set to the minimum that lets
+' Access parse the struct.
+'************************************************
+Public Function SummaryTextToPrtDevModeW(ByVal sText As String) As String
+  Dim dm       As tDevModeW
+  Dim lines()  As String
+  Dim ln       As String
+  Dim eqPos    As Long
+  Dim fldName  As String
+  Dim fldValue As String
+  Dim i        As Long
+
+  sText = Replace$(sText, vbCrLf, vbLf)
+  sText = Replace$(sText, vbCr, vbLf)
+  lines = Split(sText, vbLf)
+  For i = LBound(lines) To UBound(lines)
+    ln = Trim$(CStr(lines(i)))
+    If LenB(ln) = 0 Then
+      ' skip
+    ElseIf Left$(ln, 1) = "'" Then
+      ' skip comment
+    Else
+      eqPos = InStr(1, ln, "=")
+      If eqPos > 0 Then
+        fldName = Trim$(Left$(ln, eqPos - 1))
+        fldValue = Trim$(Mid$(ln, eqPos + 1))
+        Select Case fldName
+          Case "Orientation": dm.Orientation = ParseOrientation(fldValue)
+          Case "PaperSize":   dm.PaperSize = ParsePaperSize(fldValue)
+          Case "Scale":       dm.[Scale] = ParseLongVal(fldValue)
+          Case "Color":       dm.Color = ParseColor(fldValue)
+        End Select
+      End If
+    End If
+  Next i
+
+  dm.SpecVersion = &H401
+  dm.Size = DEVMODE_FIXED_SIZE
+  dm.Fields = DM_ORIENTATION Or DM_PAPERSIZE Or DM_SCALE Or DM_COLOR
+
+  SummaryTextToPrtDevModeW = DevModeWToHexBlock(dm)
+End Function
+
+
+'************************************************
 ' ParseDevModeWText
 '
 ' Parse a multi-line "FieldName =Value" text representation into a

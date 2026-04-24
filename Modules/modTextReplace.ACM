@@ -205,7 +205,7 @@ End Function
 Private Sub EnsureRules()
   If (Not m_Rules) <> -1 Then Exit Sub  ' already built
 
-  ReDim m_Rules(11) As ReplaceRule
+  ReDim m_Rules(12) As ReplaceRule
 
   m_Rules(0).bytsStart = "GUID = Begin" & vbCrLf
   m_Rules(0).bytsEnd = "End" & vbCrLf
@@ -215,6 +215,7 @@ Private Sub EnsureRules()
   m_Rules(1).ReplaceWhen = IEX_ON_EXPORT
   m_Rules(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
   m_Rules(2).bytsEnd = "End" & vbCrLf
+  m_Rules(2).ReplaceWith = "PrtDevModeToSummaryText"
   m_Rules(2).ReplaceWhen = IEX_ON_EXPORT
   m_Rules(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
   m_Rules(3).bytsEnd = "End" & vbCrLf
@@ -245,6 +246,10 @@ Private Sub EnsureRules()
   m_Rules(11).bytsEnd = "End" & vbCrLf
   m_Rules(11).ReplaceWith = "TextToPrtMip"
   m_Rules(11).ReplaceWhen = IEX_ON_BOTH
+  m_Rules(12).bytsStart = "PrtDevMode_H = Begin" & vbCrLf
+  m_Rules(12).bytsEnd = "End" & vbCrLf
+  m_Rules(12).ReplaceWith = "SummaryTextToPrtDevModePair"
+  m_Rules(12).ReplaceWhen = IEX_ON_BOTH
 End Sub
 
 
@@ -305,6 +310,11 @@ Private Function MatchReplaceRule(bytsFile() As Byte, bytsLine() As Byte, lngSta
               bytsReplacement = WrapSectionBlock("PrtMip_H", PrtMipToText(sPayload))
             Case "TextToPrtMip"
               bytsReplacement = WrapSectionBlock("PrtMip", TextToPrtMip(sPayload))
+            Case "PrtDevModeToSummaryText"
+              bytsReplacement = WrapSectionBlock("PrtDevMode_H", PrtDevModeToSummaryText(sPayload))
+            Case "SummaryTextToPrtDevModePair"
+              bytsReplacement = WrapSectionBlock("PrtDevMode", SummaryTextToPrtDevMode(sPayload)) & _
+                                WrapSectionBlock("PrtDevModeW", SummaryTextToPrtDevModeW(sPayload))
           End Select
           On Error GoTo 0
           MatchReplaceRule = MATCH_REPLACE
