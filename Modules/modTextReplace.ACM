@@ -1,0 +1,353 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' Text Replace engine
+'
+' Applies a registry of Begin/End block rules to a UCS-2 text buffer.
+' Each rule either strips the matched block (legacy Ignore behaviour)
+' or feeds the block's payload through a named parser function and
+' splices an indented replacement block into the output.
+'
+' The replacement section name is derived from the rule's bytsStart by
+' toggling the "_H" suffix: a rule matching "PrtMip = Begin ... End"
+' produces a "PrtMip_H = Begin ... End" block, and the reverse rule
+' matching "PrtMip_H = Begin ... End" produces "PrtMip = Begin ... End".
+' This convention lets the same rule definition encode either direction
+' and is what the export/import pipeline uses to expose raw hex blobs
+' as source-control-friendly text.
+'
+' @author Barry Pitfield (barry.pitfield@talkjcs.com)
+' @version 1.0
+'************************************************
+
+Public Enum IEX_WHEN
+  IEX_ON_EXPORT = 1
+  IEX_ON_IMPORT = 2
+  IEX_ON_BOTH = 3
+End Enum
+
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As LongPtr)
+
+Private Const clngNOTFOUND = -2147483648#
+
+' Outcomes returned by MatchReplaceRule
+Private Const MATCH_NONE As Long = 0
+Private Const MATCH_STRIP As Long = 1
+Private Const MATCH_REPLACE As Long = 2
+Private Const MATCH_PARSE_ERROR As Long = 3
+
+Private Type ReplaceRule
+  bytsStart() As Byte           ' Begin marker to search for (e.g. "PrtMip = Begin" & vbCrLf)
+  bytsEnd() As Byte             ' End marker to search for (e.g. "End" & vbCrLf)
+  ReplaceWith As String         ' name of a public parser function applied to the block payload;
+                                ' empty = strip
+  ReplaceWhen As IEX_WHEN
+End Type
+
+' Module-level rule registry. Built lazily by EnsureRules and read
+' directly by MatchReplaceRule so the per-line parse loop does not
+' clone the array on every call.
+Private m_Rules() As ReplaceRule
+
+'************************************************
+' ApplyReplaceRulesToFile
+'
+' Applies the rule registry to a text file in place. Handles any of
+' UCS-2, UTF-8 or ANSI encoding - the output is written back in the
+' original encoding. Returns True on success, False on any read /
+' parse / write failure.
+'************************************************
+Public Function ApplyReplaceRulesToFile(strFilename As String, enmDirection as IEX_WHEN) As Boolean
+  Dim byts()       As Byte
+  Dim enmEncoding  As enmFileEncoding
+
+  ApplyReplaceRulesToFile = False
+
+  If Not ReadFromFile(strFilename, byts) Then Exit Function
+
+  enmEncoding = DetectEncoding(byts)
+
+  Select Case enmEncoding
+    Case enmFileEncoding_UCS2
+      ' already UCS-2
+    Case enmFileEncoding_UTF8
+      If Not UTF8_to_UCS2(byts) Then Exit Function
+    Case enmFileEncoding_ANSI
+      If Not ANSI_to_UCS2(byts) Then Exit Function
+    Case Else
+      Exit Function
+  End Select
+
+  If Not ApplyReplaceRules(byts, enmDirection) Then Exit Function
+
+  Select Case enmEncoding
+    Case enmFileEncoding_UCS2
+      ' stay in UCS-2
+    Case enmFileEncoding_UTF8
+      If Not UCS2_to_UTF8(byts) Then Exit Function
+    Case enmFileEncoding_ANSI
+      If Not UCS2_to_ANSI(byts) Then Exit Function
+  End Select
+
+  ApplyReplaceRulesToFile = WriteToFile(byts, strFilename)
+End Function
+
+
+'************************************************
+' ApplyReplaceRules
+'
+' Walks the UCS-2 buffer line by line applying the rule registry.
+' A matching rule either strips the block (ReplaceWith empty) or
+' replaces it with an indented block built from the parser output.
+' The caller's buffer is consumed and replaced with the result.
+'
+' Rule matching is disabled inside the CodeBehind section to avoid
+' spurious matches on arbitrary VBA source.
+'
+' Returns False on parse failure inside a substitution rule.
+'************************************************
+Public Function ApplyReplaceRules(ByRef byts() As Byte, enmDirection as IEX_WHEN) As Boolean
+  Dim bytsLine()     As Byte
+  Dim bytsResult()   As Byte
+  Dim bytsReplacement() As Byte
+  Dim bytsCrLf()     As Byte
+  Dim bytsCodeBehind() As Byte
+  Dim cap            As Long
+  Dim used           As Long
+  Dim lngStartPos    As Long
+  Dim lngNextStartPos As Long
+  Dim lngLineLen     As Long
+  Dim x              As Long
+  Dim blnEOF         As Boolean
+  Dim blnCodeBehind  As Boolean
+  Dim lngMatch       As Long
+
+  ApplyReplaceRules = False
+  If (Not byts) = -1 Then Exit Function
+
+  bytsCodeBehind = "CodeBehind"
+  blnCodeBehind = False
+  bytsCrLf() = vbCrLf
+
+  ' Start with a growing buffer sized to the input; AppendBytes doubles
+  ' capacity as needed for substitution rules that enlarge content.
+  cap = UBound(byts) - LBound(byts) + 1
+  If cap < 64 Then cap = 64
+  ReDim bytsResult(0 To cap - 1)
+  used = 0
+
+  lngStartPos = LBound(byts)
+  blnEOF = False
+
+  Do
+    x = InBytArr(lngStartPos, byts, bytsCrLf)
+    If x = clngNOTFOUND Then
+      lngNextStartPos = UBound(byts) + 1
+      blnEOF = True
+    Else
+      lngNextStartPos = x + 4 ' 2 bytes per UCS-2 char * 2 chars
+      If lngNextStartPos = UBound(byts) + 1 Then blnEOF = True
+    End If
+
+    lngLineLen = lngNextStartPos - lngStartPos
+    ReDim bytsLine(lngLineLen - 1)
+    CopyMemory VarPtr(bytsLine(0)), VarPtr(byts(lngStartPos)), lngLineLen
+
+    If Not blnCodeBehind Then
+      If InBytArr(0, bytsLine, bytsCodeBehind) = 0 Then blnCodeBehind = True
+    End If
+
+    If blnCodeBehind Then
+      AppendBytes bytsResult, cap, used, bytsLine
+    Else
+      lngMatch = MatchReplaceRule(byts, bytsLine, lngStartPos, lngNextStartPos, enmDirection, bytsReplacement)
+      Select Case lngMatch
+        Case MATCH_NONE
+          If UBound(bytsLine) > 3 Then AppendBytes bytsResult, cap, used, bytsLine
+        Case MATCH_STRIP
+          ' block discarded
+        Case MATCH_REPLACE
+          AppendBytes bytsResult, cap, used, bytsReplacement
+        Case MATCH_PARSE_ERROR
+          Exit Function
+      End Select
+    End If
+
+    lngStartPos = lngNextStartPos
+  Loop While Not blnEOF
+
+  If used > 0 Then
+    ReDim Preserve bytsResult(0 To used - 1)
+  Else
+    Erase bytsResult
+  End If
+
+  SwapByteArrays byts, bytsResult
+  ApplyReplaceRules = True
+End Function
+
+
+'************************************************
+' EnsureRules
+'
+' Populates the module-level m_Rules registry on first call. Subsequent
+' calls are a fast no-op. Callers read m_Rules directly so the per-line
+' parse loop never clones the array.
+'
+' Strip rules leave ReplaceWith empty; substitute rules name a public
+' parser function (XxxToText / TextToXxx) that converts the block
+' payload either way. A round-trip conversion is modelled as two
+' independent rules (raw->human and human->raw); the engine is single-
+' pass over the input so output from one rule is never re-matched by
+' another.
+'************************************************
+Private Sub EnsureRules()
+  If (Not m_Rules) <> -1 Then Exit Sub  ' already built
+
+  ReDim m_Rules(11) As ReplaceRule
+
+  m_Rules(0).bytsStart = "GUID = Begin" & vbCrLf
+  m_Rules(0).bytsEnd = "End" & vbCrLf
+  m_Rules(0).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(1).bytsStart = "Checksum ="
+  m_Rules(1).bytsEnd = vbCrLf
+  m_Rules(1).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
+  m_Rules(2).bytsEnd = "End" & vbCrLf
+  m_Rules(2).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
+  m_Rules(3).bytsEnd = "End" & vbCrLf
+  m_Rules(3).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
+  m_Rules(4).bytsEnd = "End" & vbCrLf
+  m_Rules(4).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
+  m_Rules(5).bytsEnd = "End" & vbCrLf
+  m_Rules(5).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(6).bytsStart = "PrtMip = Begin" & vbCrLf
+  m_Rules(6).bytsEnd = "End" & vbCrLf
+  m_Rules(6).ReplaceWith = "PrtMipToText"
+  m_Rules(6).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(7).bytsStart = "NameMap = Begin" & vbCrLf
+  m_Rules(7).bytsEnd = "End" & vbCrLf
+  m_Rules(7).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(8).bytsStart = "LayoutCached"
+  m_Rules(8).bytsEnd = vbCrLf
+  m_Rules(8).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(9).bytsStart = "NoSaveCTIWhenDisabled"
+  m_Rules(9).bytsEnd = vbCrLf
+  m_Rules(9).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(10).bytsStart = "dbLongBinary ""DOL"" = Begin" & vbCrLf
+  m_Rules(10).bytsEnd = "End" & vbCrLf
+  m_Rules(10).ReplaceWhen = IEX_ON_EXPORT
+  m_Rules(11).bytsStart = "PrtMip_H = Begin" & vbCrLf
+  m_Rules(11).bytsEnd = "End" & vbCrLf
+  m_Rules(11).ReplaceWith = "TextToPrtMip"
+  m_Rules(11).ReplaceWhen = IEX_ON_BOTH
+End Sub
+
+
+'************************************************
+' MatchReplaceRule
+'
+' Tests every rule against the current line. On match advances
+' lngNextStartPos past the block and returns one of:
+'   MATCH_NONE        - no rule matched
+'   MATCH_STRIP       - matched a strip rule (caller writes nothing)
+'   MATCH_REPLACE     - matched a substitution rule; bytsReplacement
+'                       holds the content to write
+'   MATCH_PARSE_ERROR - parser function raised
+'************************************************
+Private Function MatchReplaceRule(bytsFile() As Byte, bytsLine() As Byte, lngStartPos As Long, ByRef lngNextStartPos As Long, enmDirection As IEX_WHEN, ByRef bytsReplacement() As Byte) As Long
+  Dim lngStartRule   As Long
+  Dim lngEndRule     As Long
+  Dim lngStartLen    As Long
+  Dim lngEndLen      As Long
+  Dim lngPayloadOff  As Long
+  Dim lngPayloadLen  As Long
+  Dim bytsPayload()  As Byte
+  Dim sPayload       As String
+  Dim i              As Long
+
+  EnsureRules
+
+  For i = LBound(m_Rules) To UBound(m_Rules)
+    If (m_Rules(i).ReplaceWhen And enmDirection) = enmDirection Then
+      lngStartRule = InBytArr(0, bytsLine, m_Rules(i).bytsStart)
+      If lngStartRule <> clngNOTFOUND Then
+        lngEndRule = InBytArr(lngStartPos + lngStartRule, bytsFile, m_Rules(i).bytsEnd)
+        If lngEndRule <> clngNOTFOUND Then
+          lngStartLen = UBound(m_Rules(i).bytsStart) - LBound(m_Rules(i).bytsStart) + 1
+          lngEndLen = UBound(m_Rules(i).bytsEnd) - LBound(m_Rules(i).bytsEnd) + 1
+          lngNextStartPos = lngEndRule + lngEndLen
+
+          If LenB(m_Rules(i).ReplaceWith) = 0 Then
+            MatchReplaceRule = MATCH_STRIP
+            Exit Function
+          End If
+
+          ' Substitute rule: extract payload, run it through the named
+          ' parser, wrap the output as an indented block.
+          lngPayloadOff = lngStartPos + lngStartRule + lngStartLen
+          lngPayloadLen = lngEndRule - lngPayloadOff
+          If lngPayloadLen > 0 Then
+            ReDim bytsPayload(lngPayloadLen - 1)
+            CopyMemory VarPtr(bytsPayload(0)), VarPtr(bytsFile(lngPayloadOff)), lngPayloadLen
+            sPayload = bytsPayload
+          Else
+            sPayload = ""
+          End If
+
+          On Error GoTo ParseErr
+          Select Case m_Rules(i).ReplaceWith
+            Case "PrtMipToText"
+              bytsReplacement = WrapSectionBlock("PrtMip_H", PrtMipToText(sPayload))
+            Case "TextToPrtMip"
+              bytsReplacement = WrapSectionBlock("PrtMip", TextToPrtMip(sPayload))
+          End Select
+          On Error GoTo 0
+          MatchReplaceRule = MATCH_REPLACE
+          Exit Function
+        End If
+      End If
+    End If
+  Next i
+
+  MatchReplaceRule = MATCH_NONE
+  Exit Function
+
+ParseErr:
+  MatchReplaceRule = MATCH_PARSE_ERROR
+End Function
+
+
+'************************************************
+' WrapSectionBlock
+'
+' Wraps an arbitrary body in an indented <Name> = Begin ... End block.
+' Outer (section-level) indent is 4 spaces; each body line is
+' re-indented to 8 spaces. Any existing leading whitespace is stripped
+' before re-indenting, so both unindented text (XxxToText output) and
+' pre-indented hex (TextToXxx output) produce the same uniform layout.
+'************************************************
+Private Function WrapSectionBlock(ByVal sSectionName As String, ByVal sBody As String) As String
+  Const OUTER As String = "    "
+  Const INNER As String = "        "
+  Dim lines() As String
+  Dim i       As Long
+  Dim ln      As String
+  Dim sb      As String
+
+  sb = OUTER & sSectionName & " = Begin" & vbCrLf
+  sBody = Replace$(sBody, vbCrLf, vbLf)
+  sBody = Replace$(sBody, vbCr, vbLf)
+  lines = Split(sBody, vbLf)
+  For i = LBound(lines) To UBound(lines)
+    ln = LTrim$(CStr(lines(i)))
+    If LenB(ln) > 0 Then sb = sb & INNER & ln & vbCrLf
+  Next i
+  sb = sb & OUTER & "End" & vbCrLf
+
+  WrapSectionBlock = sb
+End Function
