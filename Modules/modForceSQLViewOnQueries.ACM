@@ -80,23 +80,37 @@ Public Function ForceQuerySQLView(sQueryName As String) As Boolean
   DoCmd.RunCommand acCmdSQLView
   DoEvents
   
-  hWndOKttbx = GetFocus
+  ' Locate the query's SQL edit control (class "OKttbx"). The original code used
+  ' GetFocus, but that only returns the control while Access is the foreground
+  ' application, so an unattended build failed with "Focus window is not a query
+  ' window" whenever the user clicked away from Access. Walk the window tree from
+  ' the Access MDI client instead (focus-independent), and only fall back to the
+  ' GetFocus lookup if that fails.
+  hWndOQry = FindWindowEx(GetAccessMDIClient(), 0&, "OQry", vbNullString)
+  If hWndOQry <> 0 Then
+    hWndOKttbx = FindWindowEx(hWndOQry, 0&, "OKttbx", vbNullString)
+  End If
+
+  If hWndOKttbx = 0 Then
+    ' Fall back to the focus-based lookup (works when Access is foreground)
+    hWndOKttbx = GetFocus
+    hWndOQry = GetParent(hWndOKttbx)
+  End If
+
   If fGetClassName(hWndOKttbx) <> "OKttbx" Then
     ForceQuerySQLView = False
-    sErrorText = "Focus window is not a query window"
+    sErrorText = "Could not locate the query SQL view edit window"
     GoTo Err_ForceQuerySQLView
   End If
-  
-  ' Get Parent
-  hWndOQry = GetParent(hWndOKttbx)
+
   ' If not "OQry" then we are not in Query Design window
   If hWndOQry = 0 Then
-    sErrorText = "Focus window Parent is wrong class, the Query design window is not open"
+    sErrorText = "The Query design window is not open"
     GoTo Err_ForceQuerySQLView
   End If
-  
+
   If fGetClassName(hWndOQry) <> "OQry" Then
-    sErrorText = "Window with focus is not a query window"
+    sErrorText = "Window is not a query window"
     ForceQuerySQLView = False
     GoTo Err_ForceQuerySQLView
   End If
@@ -156,6 +170,14 @@ Err_ForceQuerySQLView:
          "  Error Message: " & Err.Description, vbCritical, "Force SQL View on Query"
   Resume Exit_Err_ForceQuerySQLView
 
+End Function
+
+
+' Returns the handle of Access's MDIClient window, which hosts the document
+' (query/table/form) design windows. Found relative to the main Access window,
+' so it does not depend on Access having the foreground/keyboard focus.
+Private Function GetAccessMDIClient() As LongPtr
+  GetAccessMDIClient = FindWindowEx(Application.hWndAccessApp, 0&, "MDIClient", vbNullString)
 End Function
 
 
