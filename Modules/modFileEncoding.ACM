@@ -131,6 +131,13 @@ Function ConvFileANSI_to_UCS2(strFilename As String, Optional strNewFilename As 
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
 
   If ReadFromFile(strFilename, byts) Then
+    ' An empty source file yields an undimensioned buffer (see ReadFromFile) with
+    ' no bytes to convert. Skip UBound and still honour strNewFilename with an empty
+    ' output (copy the source, or no-op when converting in place).
+    If (Not byts) = -1 Then
+      ConvFileANSI_to_UCS2 = pvtPassThroughFile(strFilename, strNewFilename)
+      Exit Function
+    End If
     lngLen = UBound(byts) + 1
     lngOutLen = lngLen * 2 + 2 ' 2 bytes for every ANSI byte plus 2 Byte BOM
     ReDim bytsOut(lngOutLen - 1)
@@ -159,7 +166,10 @@ Function ConvFileUCS2_to_ANSI(strFilename As String, Optional strNewFilename As 
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
 
   If ReadFromFile(strFilename, byts) Then
-    If UCS2_to_ANSI(byts) Then
+    If (Not byts) = -1 Then
+      ' Empty file: no content to transcode; honour strNewFilename (copy) or no-op.
+      ConvFileUCS2_to_ANSI = pvtPassThroughFile(strFilename, strNewFilename)
+    ElseIf UCS2_to_ANSI(byts) Then
       ConvFileUCS2_to_ANSI = WriteToFile(byts, strNewFilename)
     End If
   End If
@@ -172,7 +182,10 @@ Function ConvFileUTF8_to_UCS2(strFilename As String, Optional strNewFilename As 
 
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
   If ReadFromFile(strFilename, byts) Then
-    If UTF8_to_UCS2(byts) Then
+    If (Not byts) = -1 Then
+      ' Empty file: no content to transcode; honour strNewFilename (copy) or no-op.
+      ConvFileUTF8_to_UCS2 = pvtPassThroughFile(strFilename, strNewFilename)
+    ElseIf UTF8_to_UCS2(byts) Then
       ConvFileUTF8_to_UCS2 = WriteToFile(byts, strNewFilename)
     End If
   End If
@@ -185,7 +198,10 @@ Function ConvFileUCS2_to_UTF8(strFilename As String, Optional strNewFilename As 
 
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
   If ReadFromFile(strFilename, byts) Then
-    If UCS2_to_UTF8(byts) Then
+    If (Not byts) = -1 Then
+      ' Empty file: no content to transcode; honour strNewFilename (copy) or no-op.
+      ConvFileUCS2_to_UTF8 = pvtPassThroughFile(strFilename, strNewFilename)
+    ElseIf UCS2_to_UTF8(byts) Then
       ConvFileUCS2_to_UTF8 = WriteToFile(byts, strNewFilename)
     End If
   End If
@@ -193,16 +209,27 @@ Function ConvFileUCS2_to_UTF8(strFilename As String, Optional strNewFilename As 
 End Function
 
 Function ReadFromFile(strFilename As String, byts() As Byte) As Boolean
-  ' Reads data from the supplied file into the supplied byte array
+  ' Reads data from the supplied file into the supplied byte array.
+  '
+  ' Returns True when the file exists and was read, otherwise False. NOTE: an
+  ' existing but empty (zero-length) file also returns True, but leaves byts
+  ' UNDIMENSIONED - there is no element to index. Callers must test for this
+  ' (e.g. If (Not byts) = -1 Then ...) before calling LBound/UBound on byts.
   
   Dim f As Long
   
   If FileExists(strFilename) Then
-    ' load the file into the bytsFile array
+    ' load the file into the byts array
     f = FreeFile()
     Open strFilename For Binary Access Read As #f
-    ReDim byts(LOF(f) - 1)
-    Get #f, , byts()
+    ' Guard the empty-file case: ReDim byts(-1) would raise a runtime error.
+    If LOF(f) > 0 Then
+      ReDim byts(LOF(f) - 1)
+      Get #f, , byts()
+    Else
+      ' Empty file - hand back an undimensioned array (see the header note above).
+      Erase byts
+    End If
     Close #f
     ReadFromFile = True
   End If
@@ -222,6 +249,19 @@ Function WriteToFile(byts() As Byte, strFilename As String) As Boolean
   
   WriteToFile = True
   
+End Function
+
+Private Function pvtPassThroughFile(strFilename As String, strNewFilename As String) As Boolean
+  ' Used when there is no content to transcode (e.g. an empty source file) so the
+  ' conversion is a pure pass-through: produces strNewFilename from strFilename so an
+  ' optional output filename is still honoured. Copies the source when the names differ,
+  ' otherwise it is a no-op. Mirrors the pass-through branch of ConvFile_to_UCS2.
+  ' Always returns True.
+  If strFilename <> strNewFilename Then
+    If FileExists(strNewFilename) Then Kill strNewFilename
+    FileCopy strFilename, strNewFilename
+  End If
+  pvtPassThroughFile = True
 End Function
 
 Function UCS2_to_UTF8(ByRef byts() As Byte) As Boolean
@@ -581,6 +621,8 @@ Function ConvFileUTF8_to_ANSI(strFilename As String, Optional strNewFilename As 
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
 
   If Not ReadFromFile(strFilename, byts) Then Exit Function
+  ' Empty file: no content to transcode; honour strNewFilename (copy) or no-op.
+  If (Not byts) = -1 Then ConvFileUTF8_to_ANSI = pvtPassThroughFile(strFilename, strNewFilename): Exit Function
   If Not UTF8_to_UCS2(byts) Then Exit Function
   If Not UCS2_to_ANSI(byts) Then Exit Function
   ConvFileUTF8_to_ANSI = WriteToFile(byts, strNewFilename)

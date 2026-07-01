@@ -74,6 +74,9 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
 
       ' Load the Access output once and perform every conversion and transformation in memory
       If Not ReadFromFile(strFilename & ".tmp", byts) Then blnFail = True: GoTo End_Processing
+      ' An empty export (undimensioned byts) is abnormal for a Form/Report and would crash the
+      ' in-memory pipeline below when it calls UBound - treat it as a processing failure.
+      If (Not byts) = -1 Then blnFail = True: GoTo End_Processing
       blnSourceIsUCS2 = (DetectEncoding(byts) = enmFileEncoding_UCS2) ' so we know what format to ultimately output
       If Not Conv_to_UCS2(byts) Then blnFail = True: GoTo End_Processing
 
@@ -81,6 +84,8 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
         ' Replacing code only so there is no requirement to Clean the Form/Report Layout section
         ' we need to use the existing file as well - promote it to UCS2 in memory
         If Not ReadFromFile(strFilename, bytsOrigUCS2) Then blnFail = True: GoTo End_Processing
+        ' No existing code section to merge into if the repository file is empty (undimensioned).
+        If (Not bytsOrigUCS2) = -1 Then blnFail = True: GoTo End_Processing
         If Not Conv_to_UCS2(bytsOrigUCS2) Then blnFail = True: GoTo End_Processing
 
         ' Both buffers are UCS2 so we can merge in the new code section
@@ -97,8 +102,12 @@ Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As
       If blnSaveAsUTF8 Then
         If Not UCS2_to_UTF8(byts) Then blnFail = True: GoTo End_Processing
       ElseIf Not blnSourceIsUCS2 Then
-        ' MS Access originally produced a non-UCS2 file so convert the output back to ANSI
-        If Not UCS2_to_ANSI(byts) Then blnFail = True: GoTo End_Processing
+        ' MS Access originally produced a non-UCS2 file so convert the output back to ANSI.
+        ' If the content cannot be represented in ANSI, keep the valid UCS-2 output rather
+        ' than dropping the object (UCS2_to_ANSI leaves byts untouched on failure).
+        If Not UCS2_to_ANSI(byts) Then
+          MsgBox "Unable to convert '" & objName & "' to ANSI encoding; kept as UCS-2. Beware when committing."
+        End If
       End If
 
       If Not WriteToFile(byts, strFilename) Then blnFail = True: GoTo End_Processing
@@ -676,6 +685,8 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
   Dim arrUniqueIdx() As Variant
   Dim cntUniqueIdx As Long
   Dim strLeadingIdx As String
+  Dim strIdxFields As String
+  Dim blnLeadingIdxIsPrimary As Boolean
   Dim i As Long
   
   sDelimiter = Chr(135)
@@ -750,15 +761,20 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
 
       'Now Data
       If enmMode = asFullWithData Then
-        ' Build a deterministic ORDER BY. Prefer Primary Index -> else alphabetically-first
-        ' Unique index (both are sufficient on their own); only when neither exists do we
-        ' fall back to sorting by every sortable field to force a total order.
-        ' dbMemo/dbLongBinary are excluded from the fallback: Jet cannot ORDER BY them,
-        ' so rows byte-identical except in those fields remain ambiguous.
+        ' Build a deterministic ORDER BY. Prefer the Primary Index (unique and
+        ' non-nullable, so its fields alone are a total order) -> else the
+        ' alphabetically-first Unique index. A non-Primary Unique index can
+        ' hold Null keys (Jet permits multiple Null rows in a unique index) and
+        ' those have no stable order, so we append every remaining sortable
+        ' field as a tie-breaker. With no usable index we sort by every sortable
+        ' field. dbMemo/dbLongBinary are always excluded (Jet cannot ORDER BY
+        ' them), so rows byte-identical except in those fields remain ambiguous.
         strSortString = ""
         strLeadingIdx = ""
+        blnLeadingIdxIsPrimary = False
         If strPrimaryIndex <> "" Then
           strLeadingIdx = strPrimaryIndex
+          blnLeadingIdxIsPrimary = True
         ElseIf tdf.Indexes.Count > 0 Then
           ReDim arrUniqueIdx(0 To tdf.Indexes.Count - 1)
           cntUniqueIdx = 0
@@ -773,20 +789,29 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
             strLeadingIdx = arrUniqueIdx(0)
           End If
         End If
+        ' Fields already contributed by the leading index, tracked as a
+        ' ";Name;" list so the tie-breaker loop below does not repeat them.
+        strIdxFields = ";"
         If strLeadingIdx <> "" Then
           For Each fld In tdf.Indexes(strLeadingIdx).Fields
             If strSortString <> "" Then strSortString = strSortString & ", "
             strSortString = strSortString & "[" & fld.Name & "]"
+            strIdxFields = strIdxFields & fld.Name & ";"
           Next
-        Else
+        End If
+        ' Append the full-field tie-breaker unless a Primary Index (already a
+        ' total order on its own) provided the ordering.
+        If Not blnLeadingIdxIsPrimary Then
           For i = 0 To tdf.Fields.Count - 1
             Set fld = tdf.Fields(i)
             Select Case fld.Type
               Case dbMemo, dbLongBinary
                 ' unsortable in Jet ORDER BY
               Case Else
-                If strSortString <> "" Then strSortString = strSortString & ", "
-                strSortString = strSortString & "[" & fld.Name & "]"
+                If InStr(1, strIdxFields, ";" & fld.Name & ";", vbTextCompare) = 0 Then
+                  If strSortString <> "" Then strSortString = strSortString & ", "
+                  strSortString = strSortString & "[" & fld.Name & "]"
+                End If
             End Select
           Next
         End If

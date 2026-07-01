@@ -262,7 +262,7 @@ End Function
 ' stops at the first non-hex, non-whitespace character (so the "B"
 ' and "E" in "Begin"/"End" are not consumed as hex digits).
 '************************************************
-Public Function HexBlobToBytes(ByVal sBlob As String) As Byte()
+Private Function HexBlobToBytes(ByVal sBlob As String) As Byte()
   Dim sUpper As String
   Dim sb     As String
   Dim i      As Long
@@ -355,7 +355,12 @@ Private Function ReadS32(ByRef b() As Byte, ByVal off As Long) As Long
   ReadS32 = r
 End Function
 
-' Read up to maxLen ANSI bytes, truncating at the first NUL.
+' Read up to maxLen bytes, truncating at the first NUL. Each byte maps to the
+' identical Unicode code point (Latin-1 / ISO-8859-1) via ChrW$, so the result
+' is independent of the machine's ANSI codepage and round-trips byte-for-byte
+' through WriteAnsiZ (AscW). Chr$ would route bytes >= 128 through the local
+' codepage, making the StrComp in FormatDevMode - and hence whether the RawHex
+' fallback is emitted - locale-dependent.
 Private Function ReadAnsiZ(ByRef b() As Byte, ByVal off As Long, ByVal maxLen As Long) As String
   Dim i As Long
   Dim s As String
@@ -365,7 +370,7 @@ Private Function ReadAnsiZ(ByRef b() As Byte, ByVal off As Long, ByVal maxLen As
       ReadAnsiZ = Left$(s, i)
       Exit Function
     End If
-    Mid$(s, i + 1, 1) = Chr$(b(off + i))
+    Mid$(s, i + 1, 1) = ChrW$(b(off + i))
   Next i
   ReadAnsiZ = s
 End Function
@@ -902,14 +907,16 @@ Private Sub WriteS32(ByRef b() As Byte, ByVal off As Long, ByVal v As Long)
   b(off + 3) = CByte("&H" & Mid$(h, 1, 2))
 End Sub
 
-' Write s as an ANSI string padded with NULs to exactly maxLen bytes.
+' Write s as a single-byte string padded with NULs to exactly maxLen bytes.
+' AscW (not Asc) keeps the byte value independent of the machine's ANSI
+' codepage - the exact inverse of ReadAnsiZ's ChrW$ over the 0..255 range.
 Private Sub WriteAnsiZ(ByRef b() As Byte, ByVal off As Long, ByVal maxLen As Long, ByVal s As String)
   Dim i As Long
   Dim n As Long
   n = Len(s)
   If n > maxLen Then n = maxLen
   For i = 0 To n - 1
-    b(off + i) = CByte(Asc(Mid$(s, i + 1, 1)) And &HFF&)
+    b(off + i) = CByte(AscW(Mid$(s, i + 1, 1)) And &HFF&)
   Next i
   For i = n To maxLen - 1
     b(off + i) = 0

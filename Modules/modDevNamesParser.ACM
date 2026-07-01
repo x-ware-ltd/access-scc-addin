@@ -328,7 +328,7 @@ End Function
 ' stops at the first non-hex, non-whitespace character (so the "B"
 ' and "E" in "Begin"/"End" are not consumed as hex digits).
 '************************************************
-Public Function HexBlobToBytes(ByVal sBlob As String) As Byte()
+Private Function HexBlobToBytes(ByVal sBlob As String) As Byte()
   Dim sUpper As String
   Dim sb     As String
   Dim i      As Long
@@ -414,9 +414,13 @@ Private Function ReadS32(ByRef b() As Byte, ByVal off As Long) As Long
   ReadS32 = r
 End Function
 
-' Read a null-terminated ANSI string starting at off. Stops at the
-' first NUL or at the end of the buffer. Returns "" if off is out
-' of range (defensive - malformed blobs shouldn't crash the parser).
+' Read a null-terminated string starting at off. Stops at the first NUL or at
+' the end of the buffer. Returns "" if off is out of range (defensive -
+' malformed blobs shouldn't crash the parser). Each byte maps to the identical
+' Unicode code point (Latin-1) via ChrW$, so the value is independent of the
+' machine's ANSI codepage and round-trips byte-for-byte through WriteAnsiZAt
+' (AscW). Because that is a single-byte-per-char mapping, Len(string) is also
+' the correct ANSI byte length used when sizing the canonical buffer.
 Private Function ReadAnsiZAt(ByRef b() As Byte, ByVal off As Long) As String
   Dim i    As Long
   Dim last As Long
@@ -432,7 +436,7 @@ Private Function ReadAnsiZAt(ByRef b() As Byte, ByVal off As Long) As String
       ReadAnsiZAt = Left$(s, i)
       Exit Function
     End If
-    Mid$(s, i + 1, 1) = Chr$(b(off + i))
+    Mid$(s, i + 1, 1) = ChrW$(b(off + i))
   Next i
   ReadAnsiZAt = s
 End Function
@@ -544,9 +548,11 @@ Private Sub WriteU16(ByRef b() As Byte, ByVal off As Long, ByVal v As Long)
   b(off + 1) = CByte((v \ &H100&) And &HFF&)
 End Sub
 
-' Write s as an ANSI string + trailing NUL at absolute offset off.
+' Write s as a single-byte string + trailing NUL at absolute offset off.
 ' Silently clips if the buffer is too small (shouldn't happen when
 ' TotalSize is respected, but keeps us crash-free on malformed input).
+' AscW (not Asc) keeps the byte value independent of the machine's ANSI
+' codepage - the exact inverse of ReadAnsiZAt's ChrW$ over the 0..255 range.
 Private Sub WriteAnsiZAt(ByRef b() As Byte, ByVal off As Long, ByVal s As String)
   Dim i    As Long
   Dim last As Long
@@ -554,7 +560,7 @@ Private Sub WriteAnsiZAt(ByRef b() As Byte, ByVal off As Long, ByVal s As String
   If off < 0 Or off > last Then Exit Sub
   For i = 1 To Len(s)
     If off + i - 1 > last Then Exit Sub
-    b(off + i - 1) = CByte(Asc(Mid$(s, i, 1)) And &HFF&)
+    b(off + i - 1) = CByte(AscW(Mid$(s, i, 1)) And &HFF&)
   Next i
   If off + Len(s) <= last Then b(off + Len(s)) = 0
 End Sub

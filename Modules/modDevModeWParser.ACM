@@ -265,7 +265,7 @@ End Function
 ' stops at the first non-hex, non-whitespace character (so the "B"
 ' and "E" in "Begin"/"End" are not consumed as hex digits).
 '************************************************
-Public Function HexBlobToBytes(ByVal sBlob As String) As Byte()
+Private Function HexBlobToBytes(ByVal sBlob As String) As Byte()
   Dim sUpper As String
   Dim sb     As String
   Dim i      As Long

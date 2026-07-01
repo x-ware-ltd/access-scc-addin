@@ -267,6 +267,6 @@ Begin TableDef
         75� .75�#06/15/2023 00:00:00#��Add support for 64-bit Office�
         76� .76�#03/27/2024 00:00:00#��Add support for importing multiple repositories�
         77� .77�#01/20/2024 00:00:00#��Fix form reference. Turn off Monaco when importing�
-        78� .78�#30/06/2026 00:00:00#��Enhanced removal of unneeded info�
+        78� .78�#06/30/2026 00:00:00#��Enhanced removal of unneeded info�
     End
 End

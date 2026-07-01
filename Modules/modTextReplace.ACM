@@ -66,6 +66,10 @@ Public Function ApplyReplaceRulesToFile(strFilename As String, enmDirection as I
 
   If Not ReadFromFile(strFilename, byts) Then Exit Function
 
+  ' An empty file (undimensioned byts) has nothing to replace - succeed without
+  ' rewriting it, before DetectEncoding/ApplyReplaceRules reach UBound.
+  If (Not byts) = -1 Then ApplyReplaceRulesToFile = True: Exit Function
+
   enmEncoding = DetectEncoding(byts)
 
   Select Case enmEncoding
@@ -180,6 +184,12 @@ Public Function ApplyReplaceRules(ByRef byts() As Byte, enmDirection as IEX_WHEN
   If used > 0 Then
     ReDim Preserve bytsResult(0 To used - 1)
   Else
+    ' Degenerate case: every line was stripped so there is no output.
+    ' Erase leaves bytsResult undimensioned, which makes the SwapByteArrays
+    ' call below raise Err 9. That error is intentional: a real Access object
+    ' always carries non-strippable header lines (Version, Begin, ...), so
+    ' this branch is unreachable. Failing loudly here is preferable to
+    ' silently emitting a stray null byte should that assumption ever break.
     Erase bytsResult
   End If
 
@@ -296,6 +306,13 @@ Private Function MatchReplaceRule(bytsFile() As Byte, bytsLine() As Byte, lngSta
           ' parser, wrap the output as an indented block.
           lngPayloadOff = lngStartPos + lngStartRule + lngStartLen
           lngPayloadLen = lngEndRule - lngPayloadOff
+          ' Payload is UCS-2 (2 bytes per WCHAR); an odd byte count means the
+          ' block has been corrupted (e.g. hand-edited) and reinterpreting it
+          ' as a String would silently drop the trailing byte. Fail cleanly.
+          If (lngPayloadLen And 1) = 1 Then
+            MatchReplaceRule = MATCH_PARSE_ERROR
+            Exit Function
+          End If
           If lngPayloadLen > 0 Then
             ReDim bytsPayload(lngPayloadLen - 1)
             CopyMemory VarPtr(bytsPayload(0)), VarPtr(bytsFile(lngPayloadOff)), lngPayloadLen
