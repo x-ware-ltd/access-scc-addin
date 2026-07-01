@@ -1,0 +1,16 @@
+build/
+
+# VS Code
+.vscode/*
+# Re-include settings.json, which may contain useful workspace settings
+!.vscode/settings.json
+
+# ignore any access databases in the root of the repo
+/*.mda
+/*.mdb
+/*.accda
+/*.accdb
+
+# ignore any access locking files anywhere in the repo
+*.ldb
+*.laccdb
