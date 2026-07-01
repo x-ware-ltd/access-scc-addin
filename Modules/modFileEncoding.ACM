@@ -244,9 +244,11 @@ Function WriteToFile(byts() As Byte, strFilename As String) As Boolean
   ' Open file ready for output
   f = FreeFile()
   Open strFilename For Binary Access Write As #f
-  Put #f, 1, byts
+  ' An undimensioned buffer (e.g. the empty result of converting a BOM-only
+  ' file) has nothing to write - leave a 0-byte file rather than raising.
+  If (Not byts) <> -1 Then Put #f, 1, byts
   Close #f
-  
+
   WriteToFile = True
   
 End Function
@@ -394,6 +396,14 @@ Function UCS2_to_ANSI(ByRef byts() As Byte) As Boolean
   If DetectEncoding(byts) <> enmFileEncoding_UCS2 Then Exit Function
 
   lngOutLen = (lenUCS2 - 2) / 2 ' drop the BOM, 1 ANSI byte per UCS2 code point
+  If lngOutLen = 0 Then
+    ' BOM only (empty content): the ANSI result is empty. Hand back an
+    ' undimensioned buffer rather than ReDim(-1)-ing (which raises) or
+    ' swapping an undimensioned array into byts.
+    Erase byts
+    UCS2_to_ANSI = True
+    Exit Function
+  End If
   ReDim bytsResult(lngOutLen - 1)
   j = 0
   For i = LBound(byts) + 2 To UBound(byts) Step 2

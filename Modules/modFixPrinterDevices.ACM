@@ -275,6 +275,9 @@ Function FileExists(strPath As String) As Boolean
   lSize = -1
   'Get the length of the file
   lSize = FileLen(strPath)
+  'Clear the suppressed "file not found" (Err 53) so a missing file does not
+  'leak an error onto Err for the caller to trip over.
+  On Error GoTo 0
   If lSize > -1 Then
     FileExists = True
   Else

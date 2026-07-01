@@ -1,0 +1,299 @@
+﻿Option Compare Database
+Option Explicit
+
+'************************************************
+' modTextReplace_test
+'
+' Edge-case tests for the Text Replace engine (modTextReplace):
+'   - ApplyReplaceRules        (in-memory strip / substitute engine)
+'   - ApplyReplaceRulesToFile  (file wrapper across UCS-2 / UTF-8 / ANSI)
+'
+' Covers the review changes:
+'   - modTextReplace line ~187: an all-stripped buffer is a degenerate case that,
+'     by design, raises Err 9 (fail-loud) - Test4 characterises that contract.
+'   - the odd-length UCS-2 payload guard (MATCH_PARSE_ERROR) - Test3.
+'   - ApplyReplaceRulesToFile on an empty file returns True without rewriting - Test6.
+'
+' Run: UnitTests.Test "modTextReplace_test"
+'
+' @author Claude (edge-case coverage for TL-7940 review)
+'************************************************
+
+' ---- helpers ---------------------------------------------------------------
+
+' UCS-2 LE bytes of a string (the buffer format the engine consumes).
+Private Function pvtU(ByVal s As String) As Byte()
+  Dim b() As Byte
+  b = s
+  pvtU = b
+End Function
+
+' Interpret an (even-length) byte buffer back as a UCS-2 string.
+Private Function pvtStr(ByRef byts() As Byte) As String
+  Dim s As String
+  If (Not byts) = -1 Then Exit Function
+  s = byts
+  pvtStr = s
+End Function
+
+Private Function pvtBytes(ParamArray vals() As Variant) As Byte()
+  Dim out() As Byte
+  Dim i As Long
+  If UBound(vals) < 0 Then Exit Function
+  ReDim out(0 To UBound(vals))
+  For i = 0 To UBound(vals)
+    out(i) = CByte(vals(i))
+  Next i
+  pvtBytes = out
+End Function
+
+Private Function pvtLen(ByRef b() As Byte) As Long
+  If (Not b) = -1 Then Exit Function
+  pvtLen = UBound(b) - LBound(b) + 1
+End Function
+
+' Concatenate two byte buffers (used to build a deliberately odd-length buffer).
+Private Function pvtConcat(ByRef a() As Byte, ByRef b() As Byte) As Byte()
+  Dim out() As Byte
+  Dim i As Long
+  Dim n As Long
+  Dim la As Long
+  Dim lb As Long
+  la = pvtLen(a)
+  lb = pvtLen(b)
+  If la + lb = 0 Then Exit Function
+  ReDim out(0 To la + lb - 1)
+  n = 0
+  For i = 0 To la - 1
+    out(n) = a(LBound(a) + i)
+    n = n + 1
+  Next i
+  For i = 0 To lb - 1
+    out(n) = b(LBound(b) + i)
+    n = n + 1
+  Next i
+  pvtConcat = out
+End Function
+
+' Call ApplyReplaceRules trapping any runtime error; returns Err.Number (0 = none).
+Private Function pvtErrApply(ByRef byts() As Byte, ByVal dir As IEX_WHEN) As Long
+  Dim blnOk As Boolean
+  On Error Resume Next
+  Err.Clear
+  blnOk = ApplyReplaceRules(byts, dir)
+  pvtErrApply = Err.Number
+  On Error GoTo 0
+End Function
+
+Private Function pvtTemp(ByVal nm As String) As String
+  pvtTemp = Environ$("TEMP") & "\uttest_tr_" & nm
+End Function
+
+Private Sub pvtKill(ByVal strPath As String)
+  On Error Resume Next
+  If Len(Dir$(strPath)) > 0 Then Kill strPath
+  On Error GoTo 0
+End Sub
+
+Private Sub pvtMakeEmpty(ByVal strPath As String)
+  Dim f As Integer
+  pvtKill strPath
+  f = FreeFile
+  Open strPath For Output As #f
+  Close #f
+End Sub
+
+Private Sub pvtWriteRaw(ByVal strPath As String, ByRef byts() As Byte)
+  Dim f As Integer
+  pvtKill strPath
+  f = FreeFile
+  Open strPath For Binary Access Write As #f
+  If (Not byts) <> -1 Then Put #f, 1, byts
+  Close #f
+End Sub
+
+Private Function pvtReadRaw(ByVal strPath As String) As Byte()
+  Dim f As Integer
+  Dim out() As Byte
+  f = FreeFile
+  Open strPath For Binary Access Read As #f
+  If LOF(f) > 0 Then
+    ReDim out(0 To LOF(f) - 1)
+    Get #f, , out
+  End If
+  Close #f
+  pvtReadRaw = out
+End Function
+
+' A valid 56-byte PrtMip block (real fixture from frmSplash), markers unindented
+' so they match the rule's Begin/End exactly.
+Private Function pvtPrtMipBlock() As String
+  pvtPrtMipBlock = _
+    "PrtMip = Begin" & vbCrLf & _
+    "        0xae050000a8050000a8050000a805000000000000201c0000e010000001000000 ," & vbCrLf & _
+    "        0x010000006801000000000000a10700000100000001000000" & vbCrLf & _
+    "End" & vbCrLf
+End Function
+
+
+' ---- ApplyReplaceRules: guards & strip -------------------------------------
+
+'@test
+Function Test1()
+  UnitTests.Describe "ApplyReplaceRules: undimensioned buffer and no-match pass-through"
+  Dim b() As Byte
+
+  ' undimensioned buffer -> False, no crash
+  UnitTests.AssertIsFalse ApplyReplaceRules(b, IEX_ON_EXPORT), "undimensioned buffer -> False"
+
+  ' a buffer with no matching rule is returned unchanged
+  b = pvtU("Left =12345678" & vbCrLf & "Top =87654321" & vbCrLf)
+  UnitTests.AssertIsTrue ApplyReplaceRules(b, IEX_ON_EXPORT), "no-match buffer -> True"
+  UnitTests.AssertEqual pvtStr(b), "Left =12345678" & vbCrLf & "Top =87654321" & vbCrLf, "no-match buffer is unchanged"
+End Function
+
+'@test
+Function Test2()
+  UnitTests.Describe "ApplyReplaceRules: a strip rule removes a GUID block but keeps surrounding lines"
+  Dim b() As Byte
+  Dim s As String
+
+  b = pvtU( _
+    "Version =1234567" & vbCrLf & _
+    "GUID = Begin" & vbCrLf & _
+    "    0x1234abcd" & vbCrLf & _
+    "End" & vbCrLf & _
+    "OtherProp =wxyz" & vbCrLf)
+
+  UnitTests.AssertIsTrue ApplyReplaceRules(b, IEX_ON_EXPORT), "strip returns True"
+  s = pvtStr(b)
+  UnitTests.AssertIsTrue (InStr(s, "GUID") = 0), "GUID block removed"
+  UnitTests.AssertIsTrue (InStr(s, "0x1234abcd") = 0), "GUID block body removed"
+  UnitTests.AssertIsTrue (InStr(s, "Version =1234567") > 0), "line before the block kept"
+  UnitTests.AssertIsTrue (InStr(s, "OtherProp =wxyz") > 0), "line after the block kept"
+End Function
+
+
+' ---- ApplyReplaceRules: substitution round-trip & odd-payload guard ---------
+
+'@test
+Function Test3()
+  UnitTests.Describe "ApplyReplaceRules: PrtMip export->import->export round-trip is stable; odd payload fails cleanly"
+  Dim b() As Byte
+  Dim s1 As String
+  Dim s2 As String
+
+  ' Round-trip: raw PrtMip --export--> PrtMip_H text --import--> raw PrtMip --export--> PrtMip_H text.
+  ' The block runs to the very end of the buffer, exercising the end-of-buffer path.
+  b = pvtU(pvtPrtMipBlock())
+  UnitTests.AssertIsTrue ApplyReplaceRules(b, IEX_ON_EXPORT), "export converts PrtMip -> PrtMip_H"
+  s1 = pvtStr(b)
+  UnitTests.AssertIsTrue (InStr(s1, "PrtMip_H = Begin") > 0), "export produced a PrtMip_H block"
+
+  UnitTests.AssertIsTrue ApplyReplaceRules(b, IEX_ON_IMPORT), "import converts PrtMip_H -> PrtMip"
+  UnitTests.AssertIsTrue (InStr(pvtStr(b), "PrtMip = Begin") > 0), "import produced a PrtMip block"
+
+  UnitTests.AssertIsTrue ApplyReplaceRules(b, IEX_ON_EXPORT), "second export converts back to PrtMip_H"
+  s2 = pvtStr(b)
+  UnitTests.AssertEqual s2, s1, "PrtMip round-trip through the engine is stable"
+
+  ' Odd-length payload: a stray byte between the markers makes the UCS-2 payload
+  ' odd, which the guard must reject with MATCH_PARSE_ERROR (-> False).
+  b = pvtConcat(pvtConcat(pvtU("PrtMip_H = Begin" & vbCrLf), pvtBytes(65)), pvtU("End" & vbCrLf))
+  UnitTests.AssertIsFalse ApplyReplaceRules(b, IEX_ON_IMPORT), "odd-length payload -> False (clean parse error)"
+End Function
+
+
+' ---- ApplyReplaceRules: the degenerate line ~187 case ----------------------
+
+'@test
+Function Test4()
+  UnitTests.Describe "ApplyReplaceRules: a buffer that strips to nothing raises Err 9 by design (fail-loud, line ~187)"
+  Dim b() As Byte
+
+  ' A single blank line produces no output (used = 0). The Erase / SwapByteArrays
+  ' path is deliberately left to raise Err 9 - a real Access object never strips
+  ' to nothing, so this documents the intentional fail-loud contract.
+  b = pvtU(vbCrLf)
+  UnitTests.AssertEqual pvtErrApply(b, IEX_ON_EXPORT), 9, "all-stripped buffer raises Err 9"
+End Function
+
+
+' ---- ApplyReplaceRulesToFile ----------------------------------------------
+
+'@test
+Function Test5()
+  UnitTests.Describe "ApplyReplaceRulesToFile: missing file returns False"
+  Dim p As String
+  p = pvtTemp("missing.txt")
+  pvtKill p
+  UnitTests.AssertIsFalse ApplyReplaceRulesToFile(p, IEX_ON_EXPORT), "missing file -> False"
+End Function
+
+'@test
+Function Test6()
+  UnitTests.Describe "ApplyReplaceRulesToFile: an empty file succeeds and is left untouched"
+  Dim p As String
+  p = pvtTemp("empty.txt")
+  pvtMakeEmpty p
+
+  UnitTests.AssertIsTrue ApplyReplaceRulesToFile(p, IEX_ON_EXPORT), "empty file -> True"
+  UnitTests.AssertIsTrue (Len(Dir$(p)) > 0), "empty file still exists"
+  UnitTests.AssertEqual FileLen(p), 0, "empty file is not rewritten"
+
+  pvtKill p
+End Function
+
+'@test
+Function Test7()
+  UnitTests.Describe "ApplyReplaceRulesToFile: strips a GUID block from a UCS-2 file, preserving the encoding"
+  Dim p As String
+  Dim back() As Byte
+  Dim s As String
+  p = pvtTemp("ucs2.txt")
+
+  ' UCS-2 file (BOM + content) with a GUID block to strip
+  pvtWriteRaw p, pvtU(ChrW$(&HFEFF) & _
+    "Version =1" & vbCrLf & _
+    "GUID = Begin" & vbCrLf & _
+    "    0xdeadbeef" & vbCrLf & _
+    "End" & vbCrLf & _
+    "Tail =9" & vbCrLf)
+
+  UnitTests.AssertIsTrue ApplyReplaceRulesToFile(p, IEX_ON_EXPORT), "UCS-2 clean returns True"
+  UnitTests.AssertEqual DetectFileEncoding(p), enmFileEncoding_UCS2, "output stays UCS-2 (BOM preserved)"
+  back = pvtReadRaw(p)
+  s = pvtStr(back)
+  UnitTests.AssertIsTrue (InStr(s, "GUID") = 0), "GUID block stripped from the file"
+  UnitTests.AssertIsTrue (InStr(s, "Version =1") > 0), "kept content before the block"
+  UnitTests.AssertIsTrue (InStr(s, "Tail =9") > 0), "kept content after the block"
+
+  pvtKill p
+End Function
+
+'@test
+Function Test8()
+  UnitTests.Describe "ApplyReplaceRulesToFile: strips a GUID block from an ANSI file, preserving the encoding"
+  Dim p As String
+  Dim src() As Byte
+  Dim expected() As Byte
+  Dim back() As Byte
+  p = pvtTemp("ansi.txt")
+
+  ' ANSI file (no BOM) - exercises ANSI_to_UCS2 -> strip -> UCS2_to_ANSI, with the
+  ' stripped block running to the end of the file (end-of-buffer path).
+  src = StrConv( _
+    "Keep =1" & vbCrLf & _
+    "GUID = Begin" & vbCrLf & _
+    "    0x0102" & vbCrLf & _
+    "End" & vbCrLf, vbFromUnicode)
+  pvtWriteRaw p, src
+
+  UnitTests.AssertIsTrue ApplyReplaceRulesToFile(p, IEX_ON_EXPORT), "ANSI clean returns True"
+  UnitTests.AssertEqual DetectFileEncoding(p), enmFileEncoding_ANSI, "output stays ANSI"
+  back = pvtReadRaw(p)
+  expected = StrConv("Keep =1" & vbCrLf, vbFromUnicode)
+  UnitTests.AssertEqual back, expected, "ANSI file: GUID stripped, header kept"
+
+  pvtKill p
+End Function

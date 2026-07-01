@@ -179,6 +179,10 @@ Public Function ApplyReplaceRules(ByRef byts() As Byte, enmDirection as IEX_WHEN
     End If
 
     lngStartPos = lngNextStartPos
+    ' A matching rule may have advanced lngNextStartPos to the end of the buffer
+    ' (a Begin/End block that runs to the final byte). Stop now rather than
+    ' re-entering the loop with an empty line, which would ReDim bytsLine(-1).
+    If lngStartPos > UBound(byts) Then blnEOF = True
   Loop While Not blnEOF
 
   If used > 0 Then

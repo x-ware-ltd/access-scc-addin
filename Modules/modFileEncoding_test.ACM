@@ -1,0 +1,584 @@
+﻿Option Compare Database
+Option Explicit
+
+'************************************************
+' modFileEncoding_test
+'
+' Edge-case tests for every conversion routine in modFileEncoding:
+'   - DetectEncoding / DetectFileEncoding   (BOM classification)
+'   - ReadFromFile / WriteToFile            (file <-> byte array)
+'   - ANSI_to_UCS2 / UCS2_to_ANSI           (in-memory transcode)
+'   - UTF8_to_UCS2 / UCS2_to_UTF8           (in-memory transcode)
+'   - Conv_to_UCS2                          (in-memory dispatch)
+'   - ANSICP_to_UnicodeCP / UnicodeCP_to_ANSICP / PopulateANSI_Unicode_BestFit
+'   - ConvFile* wrappers                    (file transcode, incl. empty-file pass-through)
+'
+' Run: UnitTests.Test "modFileEncoding_test"
+'
+' @author Claude (edge-case coverage for TL-7940 review)
+'************************************************
+
+' ---- helpers ---------------------------------------------------------------
+
+' Build a Byte() from an explicit list of byte values. No args -> undimensioned.
+Private Function pvtBytes(ParamArray vals() As Variant) As Byte()
+  Dim out() As Byte
+  Dim i As Long
+  If UBound(vals) < 0 Then Exit Function       ' no args -> leave undimensioned
+  ReDim out(0 To UBound(vals))
+  For i = 0 To UBound(vals)
+    out(i) = CByte(vals(i))
+  Next i
+  pvtBytes = out
+End Function
+
+Private Function pvtIsUndimensioned(ByRef byts() As Byte) As Boolean
+  pvtIsUndimensioned = ((Not byts) = -1)
+End Function
+
+Private Function pvtTemp(ByVal nm As String) As String
+  pvtTemp = Environ$("TEMP") & "\uttest_fe_" & nm
+End Function
+
+Private Sub pvtKill(ByVal strPath As String)
+  On Error Resume Next
+  If Len(Dir$(strPath)) > 0 Then Kill strPath
+  On Error GoTo 0
+End Sub
+
+' Create a zero-byte file.
+Private Sub pvtMakeEmpty(ByVal strPath As String)
+  Dim f As Integer
+  pvtKill strPath
+  f = FreeFile
+  Open strPath For Output As #f
+  Close #f
+End Sub
+
+' Write raw bytes to a file (independent of WriteToFile). Undimensioned -> empty file.
+Private Sub pvtWriteRaw(ByVal strPath As String, ByRef byts() As Byte)
+  Dim f As Integer
+  pvtKill strPath
+  f = FreeFile
+  Open strPath For Binary Access Write As #f
+  If Not pvtIsUndimensioned(byts) Then Put #f, 1, byts
+  Close #f
+End Sub
+
+' Read raw bytes from a file (independent of ReadFromFile). Empty -> undimensioned.
+Private Function pvtReadRaw(ByVal strPath As String) As Byte()
+  Dim f As Integer
+  Dim out() As Byte
+  f = FreeFile
+  Open strPath For Binary Access Read As #f
+  If LOF(f) > 0 Then
+    ReDim out(0 To LOF(f) - 1)
+    Get #f, , out
+  End If
+  Close #f
+  pvtReadRaw = out
+End Function
+
+' Call UCS2_to_ANSI trapping any runtime error; returns the Err.Number (0 = no error).
+Private Function pvtErrUCS2toANSI(ByRef byts() As Byte) As Long
+  Dim blnOk As Boolean
+  On Error Resume Next
+  Err.Clear
+  blnOk = UCS2_to_ANSI(byts)
+  pvtErrUCS2toANSI = Err.Number
+  On Error GoTo 0
+End Function
+
+
+' ---- DetectEncoding (in-memory) --------------------------------------------
+
+'@test
+Function Test1()
+  UnitTests.Describe "DetectEncoding: classify a byte buffer by BOM, incl. empty/short edges"
+  Dim b() As Byte
+
+  ' undimensioned -> ANSI (defensive default)
+  UnitTests.AssertEqual DetectEncoding(b), enmFileEncoding_ANSI, "undimensioned buffer -> ANSI"
+
+  ' a single byte is too short to hold any BOM -> ANSI
+  UnitTests.AssertEqual DetectEncoding(pvtBytes(65)), enmFileEncoding_ANSI, "1 byte -> ANSI"
+
+  ' exactly the UCS-2 BOM (FF FE)
+  UnitTests.AssertEqual DetectEncoding(pvtBytes(255, 254)), enmFileEncoding_UCS2, "FF FE -> UCS2"
+
+  ' two non-BOM bytes -> ANSI
+  UnitTests.AssertEqual DetectEncoding(pvtBytes(65, 0)), enmFileEncoding_ANSI, "41 00 -> ANSI"
+
+  ' UTF-8 BOM (EF BB BF)
+  UnitTests.AssertEqual DetectEncoding(pvtBytes(239, 187, 191)), enmFileEncoding_UTF8, "EF BB BF -> UTF8"
+
+  ' partial UTF-8 BOM (only 2 of 3 bytes match) -> ANSI
+  UnitTests.AssertEqual DetectEncoding(pvtBytes(239, 187, 0)), enmFileEncoding_ANSI, "EF BB 00 -> ANSI"
+
+  ' BOM followed by content is still recognised
+  UnitTests.AssertEqual DetectEncoding(pvtBytes(255, 254, 65, 0)), enmFileEncoding_UCS2, "FF FE + content -> UCS2"
+  UnitTests.AssertEqual DetectEncoding(pvtBytes(239, 187, 191, 65)), enmFileEncoding_UTF8, "EF BB BF + content -> UTF8"
+
+  ' plain ASCII text -> ANSI
+  UnitTests.AssertEqual DetectEncoding(pvtBytes(72, 105, 33)), enmFileEncoding_ANSI, "ASCII -> ANSI"
+End Function
+
+
+' ---- DetectFileEncoding (file) ---------------------------------------------
+
+'@test
+Function Test2()
+  UnitTests.Describe "DetectFileEncoding: classify a file, incl. missing and zero-byte edges"
+  Dim p As String
+  p = pvtTemp("detect.bin")
+
+  ' missing file
+  pvtKill p
+  UnitTests.AssertEqual DetectFileEncoding(p), enmFileEncoding_Missing, "missing file -> Missing"
+
+  ' zero-byte file -> ANSI (empty buffer classifies as ANSI)
+  pvtMakeEmpty p
+  UnitTests.AssertEqual DetectFileEncoding(p), enmFileEncoding_ANSI, "zero-byte file -> ANSI"
+
+  ' one-byte file -> ANSI
+  pvtWriteRaw p, pvtBytes(65)
+  UnitTests.AssertEqual DetectFileEncoding(p), enmFileEncoding_ANSI, "1-byte file -> ANSI"
+
+  ' UCS-2 file
+  pvtWriteRaw p, pvtBytes(255, 254, 65, 0)
+  UnitTests.AssertEqual DetectFileEncoding(p), enmFileEncoding_UCS2, "FF FE file -> UCS2"
+
+  ' UTF-8 file
+  pvtWriteRaw p, pvtBytes(239, 187, 191, 65)
+  UnitTests.AssertEqual DetectFileEncoding(p), enmFileEncoding_UTF8, "EF BB BF file -> UTF8"
+
+  ' ANSI file
+  pvtWriteRaw p, pvtBytes(72, 105, 33)
+  UnitTests.AssertEqual DetectFileEncoding(p), enmFileEncoding_ANSI, "ASCII file -> ANSI"
+
+  pvtKill p
+End Function
+
+
+' ---- ReadFromFile (focus of the review change) -----------------------------
+
+'@test
+Function Test3()
+  UnitTests.Describe "ReadFromFile: missing, zero-byte, one-byte and multi-byte files"
+  Dim p As String
+  Dim byts() As Byte
+  Dim exp() As Byte
+  p = pvtTemp("read.bin")
+
+  ' missing file -> False, buffer left undimensioned
+  pvtKill p
+  UnitTests.AssertIsFalse ReadFromFile(p, byts), "missing file returns False"
+  UnitTests.AssertIsTrue pvtIsUndimensioned(byts), "missing file leaves buffer undimensioned"
+
+  ' zero-byte file -> True, buffer undimensioned (the guarded edge case)
+  pvtMakeEmpty p
+  Erase byts
+  UnitTests.AssertIsTrue ReadFromFile(p, byts), "zero-byte file returns True"
+  UnitTests.AssertIsTrue pvtIsUndimensioned(byts), "zero-byte file yields an undimensioned buffer (no ReDim(-1) crash)"
+
+  ' one-byte file -> exact byte
+  pvtWriteRaw p, pvtBytes(200)
+  Erase byts
+  UnitTests.AssertIsTrue ReadFromFile(p, byts), "1-byte file returns True"
+  UnitTests.AssertEqual byts, pvtBytes(200), "1-byte file read back exactly"
+
+  ' multi-byte file, including NUL and 0xFF, read back byte-for-byte
+  exp = pvtBytes(0, 65, 255, 10, 13, 128)
+  pvtWriteRaw p, exp
+  Erase byts
+  UnitTests.AssertIsTrue ReadFromFile(p, byts), "multi-byte file returns True"
+  UnitTests.AssertEqual byts, exp, "multi-byte file read back byte-for-byte"
+
+  pvtKill p
+End Function
+
+
+' ---- WriteToFile + round-trip ----------------------------------------------
+
+'@test
+Function Test4()
+  UnitTests.Describe "WriteToFile: round-trips with ReadFromFile and overwrites cleanly"
+  Dim p As String
+  Dim src() As Byte
+  Dim back() As Byte
+  p = pvtTemp("write.bin")
+
+  ' write then read back
+  src = pvtBytes(0, 65, 255, 10, 13)
+  pvtKill p
+  UnitTests.AssertIsTrue WriteToFile(src, p), "WriteToFile returns True"
+  UnitTests.AssertIsTrue ReadFromFile(p, back), "ReadFromFile after WriteToFile returns True"
+  UnitTests.AssertEqual back, src, "written bytes read back byte-for-byte"
+
+  ' overwrite a longer file with a shorter one -> file is exactly the shorter content
+  src = pvtBytes(1, 2, 3, 4, 5, 6, 7, 8)
+  WriteToFile src, p
+  src = pvtBytes(9, 9)
+  UnitTests.AssertIsTrue WriteToFile(src, p), "overwrite returns True"
+  Erase back
+  ReadFromFile p, back
+  UnitTests.AssertEqual back, pvtBytes(9, 9), "overwrite truncates to the new content"
+
+  pvtKill p
+End Function
+
+
+' ---- ANSI_to_UCS2 ----------------------------------------------------------
+
+'@test
+Function Test5()
+  UnitTests.Describe "ANSI_to_UCS2: undimensioned, exact expansion, unmappable byte, high bytes"
+  Dim b() As Byte
+
+  ' undimensioned -> False
+  UnitTests.AssertIsFalse ANSI_to_UCS2(b), "undimensioned -> False"
+
+  ' exact output: "AB" -> FF FE 41 00 42 00
+  b = pvtBytes(65, 66)
+  UnitTests.AssertIsTrue ANSI_to_UCS2(b), "ASCII converts"
+  UnitTests.AssertEqual b, pvtBytes(255, 254, 65, 0, 66, 0), "ANSI 'AB' -> BOM + UCS-2"
+
+  ' unmappable ANSI byte (129 is undefined in CP1252) -> False
+  b = pvtBytes(65, 129)
+  UnitTests.AssertIsFalse ANSI_to_UCS2(b), "unmappable byte 129 -> False"
+
+  ' high bytes >= 160 map straight through (MSB 0)
+  b = pvtBytes(160, 200, 255)
+  UnitTests.AssertIsTrue ANSI_to_UCS2(b), "bytes >= 160 convert"
+  UnitTests.AssertEqual b, pvtBytes(255, 254, 160, 0, 200, 0, 255, 0), "high bytes expand with MSB 0"
+End Function
+
+
+' ---- UCS2_to_ANSI ----------------------------------------------------------
+
+'@test
+Function Test6()
+  UnitTests.Describe "UCS2_to_ANSI: length/BOM guards, unmappable codepoint, valid conversion"
+  Dim b() As Byte
+
+  ' too short (< 2 bytes) -> False
+  b = pvtBytes(255)
+  UnitTests.AssertIsFalse UCS2_to_ANSI(b), "1 byte -> False"
+
+  ' odd length -> False
+  b = pvtBytes(255, 254, 65)
+  UnitTests.AssertIsFalse UCS2_to_ANSI(b), "odd length -> False"
+
+  ' no BOM -> False
+  b = pvtBytes(65, 0, 66, 0)
+  UnitTests.AssertIsFalse UCS2_to_ANSI(b), "missing BOM -> False"
+
+  ' unmappable codepoint U+0100 (Latin A with macron) -> False
+  b = pvtBytes(255, 254, 0, 1)
+  UnitTests.AssertIsFalse UCS2_to_ANSI(b), "codepoint U+0100 -> False"
+
+  ' valid: BOM + "AB" -> "AB" (BOM dropped)
+  b = pvtBytes(255, 254, 65, 0, 66, 0)
+  UnitTests.AssertIsTrue UCS2_to_ANSI(b), "valid UCS-2 converts"
+  UnitTests.AssertEqual b, pvtBytes(65, 66), "BOM dropped, 1 byte per codepoint"
+End Function
+
+'@test
+Function Test7()
+  UnitTests.Describe "UCS2_to_ANSI: an empty (BOM-only) UCS-2 buffer converts to empty ANSI without crashing"
+  Dim b() As Byte
+  Dim p As String
+
+  ' In memory: a UCS-2 buffer that is just the 2-byte BOM is empty content.
+  ' This must not raise (ReDim(-1)); the result is an empty ANSI buffer.
+  b = pvtBytes(255, 254)
+  UnitTests.AssertEqual pvtErrUCS2toANSI(b), 0, "BOM-only UCS-2 -> no runtime error"
+  UnitTests.AssertIsTrue pvtIsUndimensioned(b), "BOM-only UCS-2 -> empty ANSI buffer"
+
+  ' End to end: a BOM-only UCS-2 file converts to a 0-byte ANSI file.
+  p = pvtTemp("bomonly.txt")
+  pvtWriteRaw p, pvtBytes(255, 254)
+  UnitTests.AssertIsTrue ConvFileUCS2_to_ANSI(p), "BOM-only UCS-2 file converts in place"
+  UnitTests.AssertEqual FileLen(p), 0, "BOM-only UCS-2 file -> 0-byte ANSI file"
+  pvtKill p
+End Function
+
+
+' ---- UTF8_to_UCS2 ----------------------------------------------------------
+
+'@test
+Function Test8()
+  UnitTests.Describe "UTF8_to_UCS2: length/BOM guards, valid conversion, malformed sequence, BOM-only"
+  Dim b() As Byte
+
+  ' too short (< 3 bytes) -> False
+  b = pvtBytes(239, 187)
+  UnitTests.AssertIsFalse UTF8_to_UCS2(b), "2 bytes -> False"
+
+  ' no BOM -> False
+  b = pvtBytes(1, 2, 3)
+  UnitTests.AssertIsFalse UTF8_to_UCS2(b), "missing BOM -> False"
+
+  ' valid: EF BB BF 'A' -> FF FE 41 00
+  b = pvtBytes(239, 187, 191, 65)
+  UnitTests.AssertIsTrue UTF8_to_UCS2(b), "valid UTF-8 converts"
+  UnitTests.AssertEqual b, pvtBytes(255, 254, 65, 0), "BOM transcoded + 'A'"
+
+  ' malformed: a 2-byte lead (0xC0) with no continuation byte -> False
+  b = pvtBytes(239, 187, 191, 192)
+  UnitTests.AssertIsFalse UTF8_to_UCS2(b), "truncated multi-byte sequence -> False"
+
+  ' BOM-only UTF-8 -> UCS-2 BOM only (empty content)
+  b = pvtBytes(239, 187, 191)
+  UnitTests.AssertIsTrue UTF8_to_UCS2(b), "BOM-only UTF-8 converts"
+  UnitTests.AssertEqual b, pvtBytes(255, 254), "BOM-only UTF-8 -> BOM-only UCS-2"
+End Function
+
+
+' ---- UCS2_to_UTF8 ----------------------------------------------------------
+
+'@test
+Function Test9()
+  UnitTests.Describe "UCS2_to_UTF8: length/BOM guards, valid conversion, BOM-only"
+  Dim b() As Byte
+
+  ' too short -> False
+  b = pvtBytes(255)
+  UnitTests.AssertIsFalse UCS2_to_UTF8(b), "1 byte -> False"
+
+  ' odd length -> False
+  b = pvtBytes(255, 254, 65)
+  UnitTests.AssertIsFalse UCS2_to_UTF8(b), "odd length -> False"
+
+  ' no BOM -> False
+  b = pvtBytes(65, 0, 66, 0)
+  UnitTests.AssertIsFalse UCS2_to_UTF8(b), "missing BOM -> False"
+
+  ' valid: FF FE 41 00 -> EF BB BF 41
+  b = pvtBytes(255, 254, 65, 0)
+  UnitTests.AssertIsTrue UCS2_to_UTF8(b), "valid UCS-2 converts"
+  UnitTests.AssertEqual b, pvtBytes(239, 187, 191, 65), "BOM transcoded + 'A'"
+
+  ' BOM-only UCS-2 -> UTF-8 BOM only
+  b = pvtBytes(255, 254)
+  UnitTests.AssertIsTrue UCS2_to_UTF8(b), "BOM-only UCS-2 converts"
+  UnitTests.AssertEqual b, pvtBytes(239, 187, 191), "BOM-only UCS-2 -> BOM-only UTF-8"
+End Function
+
+
+' ---- Full round-trips ------------------------------------------------------
+
+'@test
+Function Test10()
+  UnitTests.Describe "Byte-perfect round-trips: ANSI<->UCS2 and UCS2<->UTF8 over the full byte range"
+  Dim ansi() As Byte
+  Dim work() As Byte
+  Dim ucs2() As Byte
+  Dim i As Long
+  Dim n As Long
+
+  ' Build an ANSI buffer of every mappable byte (0..255 except the 5 CP1252 holes).
+  ReDim ansi(0 To 250)
+  n = 0
+  For i = 0 To 255
+    Select Case i
+      Case 129, 141, 143, 144, 157   ' undefined in CP1252
+        ' skip
+      Case Else
+        ansi(n) = CByte(i)
+        n = n + 1
+    End Select
+  Next i
+  ReDim Preserve ansi(0 To n - 1)
+
+  ' ANSI -> UCS2 -> ANSI reproduces the original
+  work = ansi
+  UnitTests.AssertIsTrue ANSI_to_UCS2(work), "ANSI -> UCS2"
+  UnitTests.AssertIsTrue UCS2_to_ANSI(work), "UCS2 -> ANSI"
+  UnitTests.AssertEqual work, ansi, "ANSI round-trip is byte-perfect"
+
+  ' UCS2 -> UTF8 -> UCS2 reproduces the original
+  ucs2 = ChrW$(&HFEFF) & "Hello, world! 123 <>&"
+  work = ucs2
+  UnitTests.AssertIsTrue UCS2_to_UTF8(work), "UCS2 -> UTF8"
+  UnitTests.AssertEqual DetectEncoding(work), enmFileEncoding_UTF8, "intermediate is UTF-8"
+  UnitTests.AssertIsTrue UTF8_to_UCS2(work), "UTF8 -> UCS2"
+  UnitTests.AssertEqual work, ucs2, "UCS2 round-trip is byte-perfect"
+End Function
+
+
+' ---- Conv_to_UCS2 (in-memory dispatch) -------------------------------------
+
+'@test
+Function Test11()
+  UnitTests.Describe "Conv_to_UCS2: undimensioned, already-UCS2 no-op, ANSI/UTF8 promotion, unmappable"
+  Dim b() As Byte
+
+  ' undimensioned -> False
+  UnitTests.AssertIsFalse Conv_to_UCS2(b), "undimensioned -> False"
+
+  ' already UCS-2 -> True, unchanged
+  b = ChrW$(&HFEFF) & "Hi"
+  UnitTests.AssertIsTrue Conv_to_UCS2(b), "already UCS-2 -> True"
+  UnitTests.AssertEqual b, CByteArr(ChrW$(&HFEFF) & "Hi"), "already-UCS-2 buffer is unchanged"
+
+  ' ANSI -> promoted to UCS-2 (BOM present afterwards)
+  b = pvtBytes(72, 105)
+  UnitTests.AssertIsTrue Conv_to_UCS2(b), "ANSI promotes"
+  UnitTests.AssertEqual DetectEncoding(b), enmFileEncoding_UCS2, "promoted buffer is UCS-2"
+  UnitTests.AssertEqual b, pvtBytes(255, 254, 72, 0, 105, 0), "ANSI 'Hi' -> UCS-2"
+
+  ' UTF-8 -> promoted to UCS-2
+  b = pvtBytes(239, 187, 191, 65)
+  UnitTests.AssertIsTrue Conv_to_UCS2(b), "UTF-8 promotes"
+  UnitTests.AssertEqual b, pvtBytes(255, 254, 65, 0), "UTF-8 'A' -> UCS-2"
+
+  ' ANSI with an unmappable byte -> False
+  b = pvtBytes(65, 129)
+  UnitTests.AssertIsFalse Conv_to_UCS2(b), "unmappable ANSI -> False"
+End Function
+
+' Helper: coerce a String into a Byte() (its UCS-2 LE storage).
+Private Function CByteArr(ByVal s As String) As Byte()
+  Dim b() As Byte
+  b = s
+  CByteArr = b
+End Function
+
+
+' ---- Codepoint converters --------------------------------------------------
+
+'@test
+Function Test12()
+  UnitTests.Describe "ANSICP_to_UnicodeCP / UnicodeCP_to_ANSICP: all ranges incl. best-fit and holes"
+  Dim msb As Byte
+  Dim lsb As Byte
+  Dim ansi As Byte
+
+  ' plain ASCII: single byte, MSB 0
+  UnitTests.AssertIsTrue ANSICP_to_UnicodeCP(65, msb, lsb), "'A' maps"
+  UnitTests.AssertEqual msb, 0, "'A' MSB 0"
+  UnitTests.AssertEqual lsb, 65, "'A' LSB 65"
+  UnitTests.AssertIsTrue UnicodeCP_to_ANSICP(0, 65, ansi), "'A' maps back"
+  UnitTests.AssertEqual ansi, 65, "'A' round-trips"
+
+  ' best-fit range: 128 -> Euro U+20AC
+  UnitTests.AssertIsTrue ANSICP_to_UnicodeCP(128, msb, lsb), "byte 128 maps"
+  UnitTests.AssertEqual msb, &H20, "128 -> MSB 0x20"
+  UnitTests.AssertEqual lsb, &HAC, "128 -> LSB 0xAC"
+  UnitTests.AssertIsTrue UnicodeCP_to_ANSICP(&H20, &HAC, ansi), "Euro maps back"
+  UnitTests.AssertEqual ansi, 128, "Euro round-trips to 128"
+
+  ' CP1252 holes are unmappable
+  UnitTests.AssertIsFalse ANSICP_to_UnicodeCP(129, msb, lsb), "byte 129 unmappable"
+  UnitTests.AssertIsFalse ANSICP_to_UnicodeCP(157, msb, lsb), "byte 157 unmappable"
+
+  ' >= 160: single byte, MSB 0
+  UnitTests.AssertIsTrue ANSICP_to_UnicodeCP(200, msb, lsb), "byte 200 maps"
+  UnitTests.AssertEqual msb, 0, "200 MSB 0"
+  UnitTests.AssertEqual lsb, 200, "200 LSB 200"
+
+  ' reverse: a Unicode value in 0x80..0x9F with MSB 0 cannot exist as ANSI -> False
+  UnitTests.AssertIsFalse UnicodeCP_to_ANSICP(0, 130, ansi), "U+0082 -> no ANSI"
+
+  ' reverse: an arbitrary unmapped 2-byte Unicode -> False
+  UnitTests.AssertIsFalse UnicodeCP_to_ANSICP(&H12, &H34, ansi), "U+1234 -> no ANSI"
+End Function
+
+'@test
+Function Test13()
+  UnitTests.Describe "PopulateANSI_Unicode_BestFit: fills the 128..159 best-fit map (bounds and key values)"
+  Dim m() As Long
+
+  ' First call populates an undimensioned map.
+  PopulateANSI_Unicode_BestFit m
+  UnitTests.AssertEqual LBound(m), 128, "map lower bound is 128"
+  UnitTests.AssertEqual UBound(m), 159, "map upper bound is 159"
+  UnitTests.AssertEqual m(128), &H20AC, "128 -> Euro"
+  UnitTests.AssertEqual m(129), -1, "129 -> unmapped sentinel"
+  UnitTests.AssertEqual m(142), &H17D, "142 -> Z caron"
+  UnitTests.AssertEqual m(159), &H178, "159 -> Y diaeresis"
+
+  ' A second call on an already-dimensioned map still leaves it correctly populated.
+  PopulateANSI_Unicode_BestFit m
+  UnitTests.AssertEqual m(128), &H20AC, "128 still Euro after a second call"
+  UnitTests.AssertEqual m(159), &H178, "159 still Y diaeresis after a second call"
+End Function
+
+
+' ---- ConvFile* wrappers: empty-file pass-through ---------------------------
+
+'@test
+Function Test14()
+  UnitTests.Describe "ConvFile* wrappers pass an empty source through without crashing"
+  Dim src As String
+  Dim dst As String
+  src = pvtTemp("empty_src.txt")
+  dst = pvtTemp("empty_dst.txt")
+
+  ' ANSI -> UCS2
+  pvtMakeEmpty src : pvtKill dst
+  UnitTests.AssertIsTrue ConvFileANSI_to_UCS2(src, dst), "empty ANSI->UCS2 returns True"
+  UnitTests.AssertIsTrue (Len(Dir$(dst)) > 0), "empty ANSI->UCS2 still produces the output file"
+  UnitTests.AssertEqual FileLen(dst), 0, "empty ANSI->UCS2 output is empty"
+
+  ' UCS2 -> ANSI
+  pvtKill dst
+  UnitTests.AssertIsTrue ConvFileUCS2_to_ANSI(src, dst), "empty UCS2->ANSI returns True"
+  UnitTests.AssertEqual FileLen(dst), 0, "empty UCS2->ANSI output is empty"
+
+  ' UTF8 -> UCS2
+  pvtKill dst
+  UnitTests.AssertIsTrue ConvFileUTF8_to_UCS2(src, dst), "empty UTF8->UCS2 returns True"
+  UnitTests.AssertEqual FileLen(dst), 0, "empty UTF8->UCS2 output is empty"
+
+  ' UCS2 -> UTF8
+  pvtKill dst
+  UnitTests.AssertIsTrue ConvFileUCS2_to_UTF8(src, dst), "empty UCS2->UTF8 returns True"
+  UnitTests.AssertEqual FileLen(dst), 0, "empty UCS2->UTF8 output is empty"
+
+  ' UTF8 -> ANSI
+  pvtKill dst
+  UnitTests.AssertIsTrue ConvFileUTF8_to_ANSI(src, dst), "empty UTF8->ANSI returns True"
+  UnitTests.AssertEqual FileLen(dst), 0, "empty UTF8->ANSI output is empty"
+
+  ' dispatch wrappers on an empty file
+  pvtKill dst
+  UnitTests.AssertIsTrue ConvFile_to_UCS2(src, dst), "empty ConvFile_to_UCS2 returns True"
+  pvtKill dst
+  UnitTests.AssertIsTrue ConvFile_to_UTF8(src, dst), "empty ConvFile_to_UTF8 returns True"
+
+  pvtKill src : pvtKill dst
+End Function
+
+'@test
+Function Test15()
+  UnitTests.Describe "ConvFile* wrappers: normal file transcodes and pass-through no-ops"
+  Dim src As String
+  Dim dst As String
+  Dim back() As Byte
+  src = pvtTemp("conv_src.txt")
+  dst = pvtTemp("conv_dst.txt")
+
+  ' ANSI source -> UCS2 output (new filename)
+  pvtWriteRaw src, pvtBytes(72, 105)            ' "Hi"
+  pvtKill dst
+  UnitTests.AssertIsTrue ConvFileANSI_to_UCS2(src, dst), "ANSI->UCS2 file returns True"
+  back = pvtReadRaw(dst)
+  UnitTests.AssertEqual back, pvtBytes(255, 254, 72, 0, 105, 0), "ANSI file -> UCS-2 file bytes"
+
+  ' round-trip that same UCS2 file back to ANSI
+  pvtKill src
+  UnitTests.AssertIsTrue ConvFileUCS2_to_ANSI(dst, src), "UCS2->ANSI file returns True"
+  back = pvtReadRaw(src)
+  UnitTests.AssertEqual back, pvtBytes(72, 105), "UCS-2 file -> ANSI file bytes"
+
+  ' ConvFile_to_UTF8 on an already-UTF8 file is a pass-through copy
+  pvtWriteRaw src, pvtBytes(239, 187, 191, 65)  ' UTF-8 "A"
+  pvtKill dst
+  UnitTests.AssertIsTrue ConvFile_to_UTF8(src, dst), "already-UTF8 copy returns True"
+  back = pvtReadRaw(dst)
+  UnitTests.AssertEqual back, pvtBytes(239, 187, 191, 65), "already-UTF8 pass-through preserves bytes"
+
+  pvtKill src : pvtKill dst
+End Function
