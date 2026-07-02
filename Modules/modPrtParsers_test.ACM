@@ -1,0 +1,370 @@
+﻿Option Compare Database
+Option Explicit
+
+'************************************************
+' modPrtParsers_test
+'
+' Round-trip and edge-case tests for the printer-blob conversion routines:
+'   - PrtMipToText / TextToPrtMip                    (modPrtMipParser)
+'   - DevModeToText / TextToDevMode                  (modDevModeParser)
+'   - DevModeWToText / TextToDevModeW                (modDevModeWParser)
+'   - DevNamesToText / TextToDevNames                (modDevNamesParser)
+'   - DevNamesWToText / TextToDevNamesW              (modDevNamesWParser)
+'   - PrtDevModeToSummaryText / SummaryTextToPrtDevMode (lossy reducer used by the engine)
+'
+' The full To/From pairs above are designed to be byte-perfect (the RawHex /
+' DriverExtra / RawPayload fallbacks preserve any bytes the field decode would
+' otherwise lose), so each test converts a real blob raw -> text -> raw and
+' asserts the reconstructed bytes match the original exactly. Fixtures are the
+' real blobs exported into Forms\frmSplash.ACF.
+'
+' Test6 targets the review's Finding 6: an ANSI name byte >= 128 must decode
+' via Latin-1 (ChrW$), independent of the machine's ANSI codepage.
+'
+' Run: UnitTests.Test "modPrtParsers_test"
+'
+' @author Claude (edge-case coverage for TL-7940 review)
+'************************************************
+
+' ---- helpers ---------------------------------------------------------------
+
+' Extract the bytes from a "0x...." hex block exactly as the parsers' own
+' HexBlobToBytes does: resync at each 0x marker, take hex-digit pairs, stop at
+' the first non-hex character (so Begin/End keywords are never consumed).
+Private Function pvtHexBytes(ByVal sBlob As String) As Byte()
+  Dim u As String
+  Dim hexs As String
+  Dim i As Long
+  Dim c As String
+  Dim out() As Byte
+  Dim n As Long
+
+  u = UCase$(sBlob)
+  i = 1
+  Do While i <= Len(u) - 1
+    If Mid$(u, i, 2) = "0X" Then
+      i = i + 2
+      Do While i <= Len(u)
+        c = Mid$(u, i, 1)
+        If (c >= "0" And c <= "9") Or (c >= "A" And c <= "F") Then
+          hexs = hexs & c
+          i = i + 1
+        Else
+          Exit Do
+        End If
+      Loop
+    Else
+      i = i + 1
+    End If
+  Loop
+
+  n = Len(hexs) \ 2
+  If n = 0 Then Exit Function
+  ReDim out(0 To n - 1)
+  For i = 0 To n - 1
+    out(i) = CByte("&H" & Mid$(hexs, i * 2 + 1, 2))
+  Next i
+  pvtHexBytes = out
+End Function
+
+' Build a Byte() from explicit values.
+Private Function pvtBytes(ParamArray vals() As Variant) As Byte()
+  Dim out() As Byte
+  Dim i As Long
+  If UBound(vals) < 0 Then Exit Function
+  ReDim out(0 To UBound(vals))
+  For i = 0 To UBound(vals)
+    out(i) = CByte(vals(i))
+  Next i
+  pvtBytes = out
+End Function
+
+' Render a Byte() as a single "0x...." hex string (parser input format).
+Private Function pvtBytesToHex(ByRef b() As Byte) As String
+  Dim i As Long
+  Dim s As String
+  Dim t As String
+  s = "0x"
+  For i = LBound(b) To UBound(b)
+    t = Hex$(b(i))
+    If Len(t) = 1 Then t = "0" & t
+    s = s & t
+  Next i
+  pvtBytesToHex = s
+End Function
+
+' Call a named parser that raises on bad input, trapping the error; returns Err.Number.
+Private Function pvtErrCall(ByVal which As String, ByVal arg As String) As Long
+  Dim s As String
+  On Error Resume Next
+  Err.Clear
+  Select Case which
+    Case "PrtMip":   s = PrtMipToText(arg)
+    Case "DevNames": s = DevNamesToText(arg)
+  End Select
+  pvtErrCall = Err.Number
+  On Error GoTo 0
+End Function
+
+
+' ---- PrtMip ----------------------------------------------------------------
+
+'@test
+Function Test1()
+  UnitTests.Describe "PrtMipToText / TextToPrtMip: byte-perfect round-trip, decode sanity, too-short blob"
+  Dim raw As String
+  Dim back As String
+
+  raw = fxPrtMip()
+  back = TextToPrtMip(PrtMipToText(raw))
+  UnitTests.AssertEqual pvtHexBytes(back), pvtHexBytes(raw), "PrtMip raw -> text -> raw is byte-perfect"
+
+  ' decode sanity: the text carries the documented field names
+  UnitTests.AssertIsTrue (InStr(PrtMipToText(raw), "LeftMargin =") > 0), "text has LeftMargin"
+  UnitTests.AssertIsTrue (InStr(PrtMipToText(raw), "Columns =") > 0), "text has Columns"
+
+  ' too-short blob raises
+  UnitTests.AssertNotEqual pvtErrCall("PrtMip", "0x0000"), 0, "a blob shorter than 56 bytes raises"
+End Function
+
+
+' ---- DevMode (ANSI) - exercises Finding 6 (DeviceName/FormName decode) ------
+
+'@test
+Function Test2()
+  UnitTests.Describe "DevModeToText / TextToDevMode: byte-perfect round-trip of a real DEVMODEA blob"
+  Dim raw As String
+  Dim back As String
+
+  raw = fxDevMode()
+  back = TextToDevMode(DevModeToText(raw))
+  UnitTests.AssertEqual pvtHexBytes(back), pvtHexBytes(raw), "DEVMODEA raw -> text -> raw is byte-perfect"
+
+  ' decode sanity: the driver/device name survives into the text
+  UnitTests.AssertIsTrue (InStr(DevModeToText(raw), "DeviceName =") > 0), "text has DeviceName"
+End Function
+
+
+' ---- DevModeW (Unicode) ----------------------------------------------------
+
+'@test
+Function Test3()
+  UnitTests.Describe "DevModeWToText / TextToDevModeW: byte-perfect round-trip of a real DEVMODEW blob"
+  Dim raw As String
+  Dim back As String
+
+  raw = fxDevModeW()
+  back = TextToDevModeW(DevModeWToText(raw))
+  UnitTests.AssertEqual pvtHexBytes(back), pvtHexBytes(raw), "DEVMODEW raw -> text -> raw is byte-perfect"
+End Function
+
+
+' ---- DevNames (ANSI) -------------------------------------------------------
+
+'@test
+Function Test4()
+  UnitTests.Describe "DevNamesToText / TextToDevNames: byte-perfect round-trip, too-short blob"
+  Dim raw As String
+  Dim back As String
+
+  raw = fxDevNames()
+  back = TextToDevNames(DevNamesToText(raw))
+  UnitTests.AssertEqual pvtHexBytes(back), pvtHexBytes(raw), "DEVNAMES raw -> text -> raw is byte-perfect"
+
+  ' too-short blob (< 8-byte header) raises
+  UnitTests.AssertNotEqual pvtErrCall("DevNames", "0x0000"), 0, "a blob shorter than the 8-byte header raises"
+End Function
+
+
+' ---- DevNamesW (Unicode) ---------------------------------------------------
+
+'@test
+Function Test5()
+  UnitTests.Describe "DevNamesWToText / TextToDevNamesW: byte-perfect round-trip of a real DEVNAMESW blob"
+  Dim raw As String
+  Dim back As String
+
+  raw = fxDevNamesW()
+  back = TextToDevNamesW(DevNamesWToText(raw))
+  UnitTests.AssertEqual pvtHexBytes(back), pvtHexBytes(raw), "DEVNAMESW raw -> text -> raw is byte-perfect"
+End Function
+
+
+' ---- Finding 6: codepage-independent (Latin-1) ANSI name decode ------------
+
+'@test
+Function Test6()
+  UnitTests.Describe "Finding 6: an ANSI name byte >= 128 decodes via Latin-1 (ChrW$), not the ANSI codepage"
+  Dim raw() As Byte
+  Dim rawHex As String
+  Dim t As String
+  Dim back() As Byte
+
+  ' A minimal DEVNAMES blob whose Driver name contains bytes 0x80, 0x8D, 0x90, 0xFF:
+  '   header: DriverOffset=8, DeviceOffset=14, OutputOffset=16, Default=0
+  '   Driver @8 : 41 80 8D 90 FF 00   Device @14 : 44 00   Output @16 : 4F 00
+  raw = pvtBytes(8, 0, 14, 0, 16, 0, 0, 0, _
+                 65, 128, 141, 144, 255, 0, _
+                 68, 0, _
+                 79, 0)
+  rawHex = pvtBytesToHex(raw)
+
+  ' byte 0x80 must decode to U+0080 (Latin-1). The old Chr$ path would have
+  ' produced the CP1252 Euro sign (U+20AC) on a Western machine.
+  t = DevNamesToText(rawHex)
+  UnitTests.AssertIsTrue (InStr(t, ChrW$(&H80)) > 0), "byte 0x80 -> U+0080 (Latin-1), codepage-independent"
+
+  ' and the whole blob still round-trips byte-for-byte
+  back = pvtHexBytes(TextToDevNames(t))
+  UnitTests.AssertEqual back, raw, "high-byte DEVNAMES round-trips byte-for-byte"
+End Function
+
+
+' ---- PrtDevMode summary reducer (lossy but stable) -------------------------
+
+'@test
+Function Test7()
+  UnitTests.Describe "PrtDevModeToSummaryText / SummaryTextToPrtDevMode: lossy reducer preserves its 4 fields and is stable"
+  Dim s1 As String
+  Dim blob As String
+  Dim s2 As String
+
+  s1 = PrtDevModeToSummaryText(fxDevMode())
+  UnitTests.AssertIsTrue (InStr(s1, "Orientation =") > 0), "summary keeps Orientation"
+  UnitTests.AssertIsTrue (InStr(s1, "PaperSize =") > 0), "summary keeps PaperSize"
+  UnitTests.AssertIsTrue (InStr(s1, "Scale =") > 0), "summary keeps Scale"
+  UnitTests.AssertIsTrue (InStr(s1, "Color =") > 0), "summary keeps Color"
+
+  ' The reducer drops everything else, so it is not byte-perfect - but the four
+  ' surviving fields must round-trip stably through the DEVMODEA reconstruction.
+  blob = SummaryTextToPrtDevMode(s1)
+  s2 = PrtDevModeToSummaryText(blob)
+  UnitTests.AssertEqual s2, s1, "the reducer's preserved fields are stable across a round-trip"
+End Function
+
+'@test
+Function Test8()
+  UnitTests.Describe "SummaryTextToPrtDevMode / ...W: the reconstructed DEVMODE blobs re-parse cleanly"
+  ' The engine regenerates both DEVMODEA and DEVMODEW from one summary. Confirm
+  ' each reconstruction is itself a valid blob its own parser can read back.
+  Dim s1 As String
+  s1 = PrtDevModeToSummaryText(fxDevMode())
+  UnitTests.AssertIsTrue (InStr(DevModeToText(SummaryTextToPrtDevMode(s1)), "PaperSize =") > 0), "DEVMODEA reconstruction re-parses"
+  UnitTests.AssertIsTrue (InStr(DevModeWToText(SummaryTextToPrtDevModeW(s1)), "PaperSize =") > 0), "DEVMODEW reconstruction re-parses"
+End Function
+
+
+' ---- fixtures (real blobs from Forms\frmSplash.ACF) ------------------------
+
+
+Private Function fxPrtMip() As String
+  Dim s As String
+  s = s & "0xae050000a8050000a8050000a805000000000000201c0000e010000001000000 ," & vbCrLf
+  s = s & "0x010000006801000000000000a10700000100000001000000" & vbCrLf
+  fxPrtMip = s
+End Function
+
+Private Function fxDevMode() As String
+  Dim s As String
+  s = s & "0x4c414e494552204d502043323530302f4c44343235632052504353008860ca0e ," & vbCrLf
+  s = s & "0x010400049c00f80303ff80010100090000000000640001000700580202000100 ," & vbCrLf
+  s = s & "0x5802030001004134008cca0e24aa3d6c00008001000000008860ca0e4c5f4f01 ," & vbCrLf
+  s = s & "0xcba93d6c88600000000000000000000000000000000000000000000001000000 ," & vbCrLf
+  s = s & "0x020000002c010000010000000000000000000000000000000000000052504353 ," & vbCrLf
+  s = s & "0x0000000052433938453137302e696e690000000030312e303000000000000000 ," & vbCrLf
+  s = s & "0x0000000030312e3030000000000000000000000052434f4d4d4f4e0005000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000705 ," & vbCrLf
+  s = s & "0x0300000003000002013fff0d0000010000000000000000000000000000707269 ," & vbCrLf
+  s = s & "0x76f8030000420100000000d404641900b3010000580258020000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000040000000000000000000000000000 ," & vbCrLf
+  s = s & "0x000000000000000000000000000000002c010000400000000200640064000100 ," & vbCrLf
+  s = s & "0x0100010301000000000000000000080204060005000000000000000000000000 ," & vbCrLf
+  s = s & "0x00000000000000000000000000000000000000000000417269616c0000000000 ," & vbCrLf
+  s = s & "0x000000000000000000000000000000000000000000000a000100000001033200 ," & vbCrLf
+  s = s & "0x0100010001000100000001000000000001808000000000020000000000000f03 ," & vbCrLf
+  s = s & "0x0020010100000100000000112002000100000001000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x000000000000000000000000000000000000000000000000000000000000ff03 ," & vbCrLf
+  s = s & "0x1000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x00000000000000011000010100000000910000000a800800b000f00dc0260000 ," & vbCrLf
+  s = s & "0xcc36000004000100c0260000cc36000004000100000100000000000000000000 ," & vbCrLf
+  s = s & "0x0005050505010100010001000100010001000100010000000000000006020300 ," & vbCrLf
+  s = s & "0x0000000000000000010003000100000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x000000000000000000000000000000417269616c000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000046001e00460000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000341700006810000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000001000100000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000304 ," & vbCrLf
+  s = s & "0x0100020002000000000000000000000001000200000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000300000002000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000002010000000101000000000000000100" & vbCrLf
+  fxDevMode = s
+End Function
+
+Private Function fxDevModeW() As String
+  Dim s As String
+  s = s & "0x4c0041004e0049004500520020004d0050002000430032003500300030002f00 ," & vbCrLf
+  s = s & "0x4c00440034003200350063002000520050004300530000003c6ea7002c1a1500 ," & vbCrLf
+  s = s & "0x01040004dc00f80303ff80010100090000000000640001000700580202000100 ," & vbCrLf
+  s = s & "0x5802030001004100340000000c5892006cd5910003e94f00b2d991000000ae0d ," & vbCrLf
+  s = s & "0x20c8500120c850017f000000c000ae0d8ed20000c0a8cf004674930000000000 ," & vbCrLf
+  s = s & "0x0000000061150000000000000000000000000000000000000000000001000000 ," & vbCrLf
+  s = s & "0x020000002c010000010000000000000000000000000000000000000052504353 ," & vbCrLf
+  s = s & "0x0000000052433938453137302e696e690000000030312e303000000000000000 ," & vbCrLf
+  s = s & "0x0000000030312e3030000000000000000000000052434f4d4d4f4e0005000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000705 ," & vbCrLf
+  s = s & "0x0300000003000002013fff0d0000010000000000000000000000000000707269 ," & vbCrLf
+  s = s & "0x76f8030000420100000000d404641900b3010000580258020000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000040000000000000000000000000000 ," & vbCrLf
+  s = s & "0x000000000000000000000000000000002c010000400000000200640064000100 ," & vbCrLf
+  s = s & "0x0100010301000000000000000000080204060005000000000000000000000000 ," & vbCrLf
+  s = s & "0x00000000000000000000000000000000000000000000417269616c0000000000 ," & vbCrLf
+  s = s & "0x000000000000000000000000000000000000000000000a000100000001033200 ," & vbCrLf
+  s = s & "0x0100010001000100000001000000000001808000000000020000000000000f03 ," & vbCrLf
+  s = s & "0x0020010100000100000000112002000100000001000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x000000000000000000000000000000000000000000000000000000000000ff03 ," & vbCrLf
+  s = s & "0x1000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x00000000000000011000010100000000910000000a800800b000f00dc0260000 ," & vbCrLf
+  s = s & "0xcc36000004000100c0260000cc36000004000100000100000000000000000000 ," & vbCrLf
+  s = s & "0x0005050505010100010001000100010001000100010000000000000006020300 ," & vbCrLf
+  s = s & "0x0000000000000000010003000100000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x000000000000000000000000000000417269616c000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000046001e00460000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000341700006810000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000001000100000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000304 ," & vbCrLf
+  s = s & "0x0100020002000000000000000000000001000200000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000300000002000000000000000000 ," & vbCrLf
+  s = s & "0x0000000000000000000000000000000000000000000000000000000000000000 ," & vbCrLf
+  s = s & "0x0000000002010000000101000000000000000100" & vbCrLf
+  fxDevModeW = s
+End Function
+
+Private Function fxDevNames() As String
+  Dim s As String
+  s = s & "0x08002400400001004c414e494552204d502043323530302f4c44343235632052 ," & vbCrLf
+  s = s & "0x504353004c414e494552204d502043323530302f4c4434323563205250435300 ," & vbCrLf
+  s = s & "0x49505f3139322e3136382e312e343900000000000000000000000000" & vbCrLf
+  fxDevNames = s
+End Function
+
+Private Function fxDevNamesW() As String
+  Dim s As String
+  s = s & "0x040020003c0001004c0041004e0049004500520020004d005000200043003200 ," & vbCrLf
+  s = s & "0x3500300030002f004c0044003400320035006300200052005000430053000000 ," & vbCrLf
+  s = s & "0x4c0041004e0049004500520020004d0050002000430032003500300030002f00 ," & vbCrLf
+  s = s & "0x4c0044003400320035006300200052005000430053000000490050005f003100 ," & vbCrLf
+  s = s & "0x390032002e003100360038002e0031002e003400390000000000000000000000 ," & vbCrLf
+  s = s & "0x00000000000000000000000000000000" & vbCrLf
+  fxDevNamesW = s
+End Function

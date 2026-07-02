@@ -1,0 +1,669 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' DEVNAMES Parser
+'
+' Parses a Windows DEVNAMES structure stored as the hex blob found
+' inside an Access form's .ACF source file (the
+' PrtDevNames = Begin ... End block) and produces a human-readable
+' representation suitable for storing in source control.
+'
+' Typical use from the Immediate window:
+'
+'   Dim s As String
+'   s = "0x0800220039000100000000000000000000000000000000000000000000000000 , " _
+'     & "0x0000000000000000000000000000000000000000000000000054533030310000 , " _
+'     & "0x0000000000000000000000"
+'   Debug.Print DevNamesToText(s)
+'
+' The input is tolerant: it accepts either the raw block copied from
+' an .ACF (0x..... , 0x..... , lines), or a bare hex string.
+'
+' Structure (Win32 DEVNAMES):
+'   WORD wDriverOffset   ' offset of driver name string
+'   WORD wDeviceOffset   ' offset of device name string
+'   WORD wOutputOffset   ' offset of output/port string
+'   WORD wDefault        ' flag bits (DN_DEFAULTPRN = 0x0001)
+'   ... three null-terminated ANSI strings at the specified offsets ...
+'
+' The strings are typically packed tightly after the header but may
+' sit in larger fixed-size slots (e.g. Access keeps a 26-byte driver
+' slot when the printer name has been cleared), so the three offsets
+' and the total blob size are preserved verbatim rather than derived.
+'
+' @Version      1.00
+'************************************************
+
+' ---- wDefault bit flags (commdlg.h) ---------------------------------------
+Private Const DN_DEFAULTPRN      As Long = &H1
+
+Private Const DEVNAMES_HEADER_SIZE As Long = 8
+
+
+'************************************************
+' tDevNames
+'
+' Decoded view of a DEVNAMES blob. RawPayloadHex is empty when the
+' canonical reconstruction (header + strings at offsets + NUL fill)
+' matches the source bytes exactly; when non-empty it carries the
+' literal bytes from offset 8 onwards so round-trips are byte-perfect
+' even if the blob contains non-NUL garbage in the string gaps or
+' trailing padding.
+'************************************************
+Public Type tDevNames
+  DriverOffset  As Long     ' WORD
+  DeviceOffset  As Long     ' WORD
+  OutputOffset  As Long     ' WORD
+  Default       As Long     ' WORD (flag bitmask)
+  Driver        As String   ' ANSI, null-terminated at DriverOffset
+  Device        As String   ' ANSI, null-terminated at DeviceOffset
+  Output        As String   ' ANSI, null-terminated at OutputOffset
+  TotalSize     As Long     ' total blob length in bytes (>= header + last-string + NUL)
+  RawPayloadHex As String   ' bytes 8.. as lowercase hex; empty = reconstruct canonically from strings + TotalSize
+End Type
+
+
+'************************************************
+' DevNamesToText
+'
+' Convenience: parse the hex blob and format it.
+'************************************************
+Public Function DevNamesToText(ByVal sBlob As String) As String
+  Dim dn As tDevNames
+  dn = ParseDevNames(sBlob)
+  DevNamesToText = FormatDevNames(dn)
+End Function
+
+
+'************************************************
+' ParseDevNames
+'
+' Parse a DEVNAMES hex blob into a populated tDevNames.
+'************************************************
+Public Function ParseDevNames(ByVal sBlob As String) As tDevNames
+  Dim b()        As Byte
+  Dim dn         As tDevNames
+  Dim payload    As String
+  Dim canonical  As String
+
+  b = HexBlobToBytes(sBlob)
+  dn.TotalSize = UBound(b) - LBound(b) + 1
+
+  If dn.TotalSize < DEVNAMES_HEADER_SIZE Then
+    Err.Raise vbObjectError + 1002, "ParseDevNames", _
+              "DEVNAMES blob is too short: got " & dn.TotalSize _
+              & " bytes, need at least " & DEVNAMES_HEADER_SIZE & "."
+  End If
+
+  dn.DriverOffset = ReadU16(b, 0)
+  dn.DeviceOffset = ReadU16(b, 2)
+  dn.OutputOffset = ReadU16(b, 4)
+  dn.Default = ReadU16(b, 6)
+
+  dn.Driver = ReadAnsiZAt(b, dn.DriverOffset)
+  dn.Device = ReadAnsiZAt(b, dn.DeviceOffset)
+  dn.Output = ReadAnsiZAt(b, dn.OutputOffset)
+
+  ' Preserve non-canonical bytes (garbage in gaps / trailing padding)
+  ' so that round-trips are byte-perfect.
+  payload = BytesToHex(b, DEVNAMES_HEADER_SIZE, dn.TotalSize - DEVNAMES_HEADER_SIZE)
+  canonical = CanonicalPayloadHex(dn)
+  If StrComp(payload, canonical, vbTextCompare) <> 0 Then
+    dn.RawPayloadHex = payload
+  End If
+
+  ParseDevNames = dn
+End Function
+
+
+'************************************************
+' FormatDevNames
+'
+' Render a tDevNames as a multi-line, ACF-style text representation
+' (Name =Value) with a trailing hex dump only when the canonical
+' reconstruction wouldn't match the source.
+'************************************************
+Public Function FormatDevNames(ByRef dn As tDevNames) As String
+  Dim s As String
+  Const NL As String = vbCrLf
+
+  s = s & "DriverOffset =" & dn.DriverOffset & NL
+  s = s & "DeviceOffset =" & dn.DeviceOffset & NL
+  s = s & "OutputOffset =" & dn.OutputOffset & NL
+  s = s & "Default =" & DescribeDefault(dn.Default) & NL
+  s = s & "Driver =" & QuoteStr(dn.Driver) & NL
+  s = s & "Device =" & QuoteStr(dn.Device) & NL
+  s = s & "Output =" & QuoteStr(dn.Output) & NL
+  s = s & "TotalSize =" & dn.TotalSize & NL
+  If LenB(dn.RawPayloadHex) > 0 Then
+    s = s & "RawPayload = Begin" & NL
+    s = s & WrapHex(dn.RawPayloadHex, 64, "    ")
+    s = s & "End" & NL
+  End If
+
+  FormatDevNames = s
+End Function
+
+
+'************************************************
+' TextToDevNames
+'
+' Reverse of DevNamesToText. Takes the human-readable
+'   FieldName =Value
+' representation and returns the hex lines exactly as they appear
+' inside a PrtDevNames = Begin ... End block in an .ACF file
+' (8-space indent, 32 bytes per line, trailing " ," on every line
+' except the last, lowercase hex).
+'************************************************
+Public Function TextToDevNames(ByVal sText As String) As String
+  Dim dn As tDevNames
+  dn = ParseDevNamesText(sText)
+  TextToDevNames = DevNamesToHexBlock(dn)
+End Function
+
+
+'************************************************
+' ParseDevNamesText
+'
+' Parse a multi-line "FieldName =Value" text representation into a
+' tDevNames. Blank lines, VB-style ' comments, and unrecognised field
+' names are ignored. RawPayload is read from the nested
+' "Begin ... End" block using HexBlobToBytes.
+'************************************************
+Public Function ParseDevNamesText(ByVal sText As String) As tDevNames
+  Dim dn       As tDevNames
+  Dim lines()  As String
+  Dim ln       As String
+  Dim i        As Long
+  Dim eqPos    As Long
+  Dim fldName  As String
+  Dim fldValue As String
+  Dim inRaw    As Boolean
+  Dim rawBuf   As String
+  Dim rawBytes() As Byte
+  Dim nRaw     As Long
+
+  sText = Replace$(sText, vbCrLf, vbLf)
+  sText = Replace$(sText, vbCr, vbLf)
+  lines = Split(sText, vbLf)
+
+  For i = LBound(lines) To UBound(lines)
+    ln = Trim$(CStr(lines(i)))
+    If LenB(ln) = 0 Then
+      ' skip
+    ElseIf Left$(ln, 1) = "'" Then
+      ' VB-style line comment, skip
+    ElseIf inRaw Then
+      If StrComp(ln, "End", vbTextCompare) = 0 Then
+        inRaw = False
+      Else
+        rawBuf = rawBuf & ln & vbLf
+      End If
+    Else
+      eqPos = InStr(1, ln, "=")
+      If eqPos > 0 Then
+        fldName = Trim$(Left$(ln, eqPos - 1))
+        fldValue = Trim$(Mid$(ln, eqPos + 1))
+        If StrComp(fldName, "RawPayload", vbTextCompare) = 0 Then
+          ' Expected value is "Begin"; switch to hex-collection mode.
+          inRaw = True
+          rawBuf = ""
+        Else
+          AssignDevNamesField dn, fldName, fldValue
+        End If
+      End If
+    End If
+  Next i
+
+  If LenB(rawBuf) > 0 Then
+    rawBytes = HexBlobToBytes(rawBuf)
+    nRaw = UBound(rawBytes) - LBound(rawBytes) + 1
+    If nRaw > 0 Then
+      dn.RawPayloadHex = BytesToHex(rawBytes, 0, nRaw)
+    End If
+  End If
+
+  ParseDevNamesText = dn
+End Function
+
+
+'************************************************
+' DevNamesToHexBlock
+'
+' Serialise a tDevNames as the hex lines exactly as they appear in
+' an .ACF file (8-space indent, 32 bytes per line, trailing " ,"
+' on every line except the last).
+'************************************************
+Public Function DevNamesToHexBlock(ByRef dn As tDevNames) As String
+  Dim b() As Byte
+  b = DevNamesToBytes(dn)
+  DevNamesToHexBlock = BytesToHexBlock(b)
+End Function
+
+
+'------------------------------------------------------------------
+' Serialise a tDevNames to raw little-endian bytes. The 8-byte
+' header always comes from the four WORD fields. The rest of the
+' blob is either RawPayloadHex verbatim (when preserving non-canonical
+' bytes) or a canonical reconstruction: zero-fill, then the three
+' strings (with NUL terminators) placed at their offsets.
+'------------------------------------------------------------------
+Private Function DevNamesToBytes(ByRef dn As tDevNames) As Byte()
+  Dim b()     As Byte
+  Dim total   As Long
+  Dim payLen  As Long
+
+  If LenB(dn.RawPayloadHex) > 0 Then
+    payLen = Len(dn.RawPayloadHex) \ 2
+    total = DEVNAMES_HEADER_SIZE + payLen
+  Else
+    total = dn.TotalSize
+    If total < CanonicalMinSize(dn) Then total = CanonicalMinSize(dn)
+    If total < DEVNAMES_HEADER_SIZE Then total = DEVNAMES_HEADER_SIZE
+  End If
+
+  ReDim b(0 To total - 1)
+
+  WriteU16 b, 0, dn.DriverOffset
+  WriteU16 b, 2, dn.DeviceOffset
+  WriteU16 b, 4, dn.OutputOffset
+  WriteU16 b, 6, dn.Default
+
+  If LenB(dn.RawPayloadHex) > 0 Then
+    WriteHexString b, DEVNAMES_HEADER_SIZE, dn.RawPayloadHex
+  Else
+    WriteAnsiZAt b, dn.DriverOffset, dn.Driver
+    WriteAnsiZAt b, dn.DeviceOffset, dn.Device
+    WriteAnsiZAt b, dn.OutputOffset, dn.Output
+  End If
+
+  DevNamesToBytes = b
+End Function
+
+
+'------------------------------------------------------------------
+' Build the lowercase hex of the canonical bytes 8.. that would be
+' produced by placing the three NUL-terminated strings at their
+' offsets within a TotalSize-byte blob zero-filled elsewhere. Used
+' during parsing to decide whether the source had non-NUL garbage
+' that needs preserving via RawPayloadHex.
+'------------------------------------------------------------------
+Private Function CanonicalPayloadHex(ByRef dn As tDevNames) As String
+  Dim b()    As Byte
+  Dim total  As Long
+  total = dn.TotalSize
+  If total < DEVNAMES_HEADER_SIZE Then total = DEVNAMES_HEADER_SIZE
+  ReDim b(0 To total - 1)
+  WriteAnsiZAt b, dn.DriverOffset, dn.Driver
+  WriteAnsiZAt b, dn.DeviceOffset, dn.Device
+  WriteAnsiZAt b, dn.OutputOffset, dn.Output
+  CanonicalPayloadHex = BytesToHex(b, DEVNAMES_HEADER_SIZE, total - DEVNAMES_HEADER_SIZE)
+End Function
+
+
+'------------------------------------------------------------------
+' Smallest TotalSize that still fits the three strings (each needs
+' its offset + Len(string) + 1 NUL byte).
+'------------------------------------------------------------------
+Private Function CanonicalMinSize(ByRef dn As tDevNames) As Long
+  Dim m As Long
+  m = DEVNAMES_HEADER_SIZE
+  If dn.DriverOffset + Len(dn.Driver) + 1 > m Then m = dn.DriverOffset + Len(dn.Driver) + 1
+  If dn.DeviceOffset + Len(dn.Device) + 1 > m Then m = dn.DeviceOffset + Len(dn.Device) + 1
+  If dn.OutputOffset + Len(dn.Output) + 1 > m Then m = dn.OutputOffset + Len(dn.Output) + 1
+  CanonicalMinSize = m
+End Function
+
+
+'************************************************
+' HexBlobToBytes
+'
+' Turn a hex string into a byte array. Accepts:
+'   - The block of 0x.... , 0x.... , lines as found in .ACF files
+'     (the "Begin"/"End" keywords and commas are ignored safely).
+'   - A bare hex string with arbitrary whitespace.
+'
+' When 0x markers are present the scan restarts at each marker and
+' stops at the first non-hex, non-whitespace character (so the "B"
+' and "E" in "Begin"/"End" are not consumed as hex digits).
+'************************************************
+Private Function HexBlobToBytes(ByVal sBlob As String) As Byte()
+  Dim sUpper As String
+  Dim sb     As String
+  Dim i      As Long
+  Dim n      As Long
+  Dim ca     As Long
+  Dim out()  As Byte
+
+  sUpper = UCase$(sBlob)
+  sb = String$(Len(sUpper), " ")
+  n = 0
+
+  If InStr(1, sUpper, "0X") > 0 Then
+    i = 1
+    Do While i <= Len(sUpper) - 1
+      If Mid$(sUpper, i, 2) = "0X" Then
+        i = i + 2
+        Do While i <= Len(sUpper)
+          ca = Asc(Mid$(sUpper, i, 1))
+          Select Case ca
+            Case 48 To 57, 65 To 70        ' 0-9, A-F
+              n = n + 1
+              Mid$(sb, n, 1) = Chr$(ca)
+              i = i + 1
+            Case Else
+              Exit Do                        ' any other char ends the run
+          End Select                         ' - CRITICAL: newline must end
+        Loop                                 '   the run, otherwise we would
+      Else                                   '   swallow the '0' from the
+        i = i + 1                            '   next line's "0x" prefix
+      End If                                 '   and treat its 'x' as a
+    Loop                                     '   terminator, losing data.
+  Else
+    For i = 1 To Len(sUpper)
+      ca = Asc(Mid$(sUpper, i, 1))
+      If (ca >= 48 And ca <= 57) Or (ca >= 65 And ca <= 70) Then
+        n = n + 1
+        Mid$(sb, n, 1) = Chr$(ca)
+      End If
+    Next i
+  End If
+
+  If n = 0 Then
+    HexBlobToBytes = out
+    Exit Function
+  End If
+
+  If n Mod 2 <> 0 Then
+    Err.Raise vbObjectError + 1001, "HexBlobToBytes", _
+              "Hex blob has an odd number of nibbles: " & n
+  End If
+
+  sb = Left$(sb, n)
+  ReDim out(0 To n \ 2 - 1)
+  For i = 0 To UBound(out)
+    out(i) = CByte("&H" & Mid$(sb, i * 2 + 1, 2))
+  Next i
+  HexBlobToBytes = out
+End Function
+
+
+' ---- Byte-array read primitives -------------------------------------------
+
+' Unsigned 16-bit little-endian into a Long (0..65535).
+Private Function ReadU16(ByRef b() As Byte, ByVal off As Long) As Long
+  ReadU16 = CLng(b(off)) Or (CLng(b(off + 1)) * &H100&)
+End Function
+
+' 32-bit little-endian, bit-preserving into a signed Long.
+' Kept for parity with the sibling parsers; unused in DEVNAMES
+' itself but HexStrToLong relies on the same LE layout.
+Private Function ReadS32(ByRef b() As Byte, ByVal off As Long) As Long
+  Dim r  As Long
+  Dim hi As Byte
+  r = CLng(b(off)) _
+    Or (CLng(b(off + 1)) * &H100&) _
+    Or (CLng(b(off + 2)) * &H10000)
+  hi = b(off + 3)
+  If hi < &H80 Then
+    r = r Or (CLng(hi) * &H1000000)
+  Else
+    r = r Or (CLng(hi And &H7F) * &H1000000) Or &H80000000
+  End If
+  ReadS32 = r
+End Function
+
+' Read a null-terminated string starting at off. Stops at the first NUL or at
+' the end of the buffer. Returns "" if off is out of range (defensive -
+' malformed blobs shouldn't crash the parser). Each byte maps to the identical
+' Unicode code point (Latin-1) via ChrW$, so the value is independent of the
+' machine's ANSI codepage and round-trips byte-for-byte through WriteAnsiZAt
+' (AscW). Because that is a single-byte-per-char mapping, Len(string) is also
+' the correct ANSI byte length used when sizing the canonical buffer.
+Private Function ReadAnsiZAt(ByRef b() As Byte, ByVal off As Long) As String
+  Dim i    As Long
+  Dim last As Long
+  Dim s    As String
+  last = UBound(b)
+  If off < 0 Or off > last Then
+    ReadAnsiZAt = ""
+    Exit Function
+  End If
+  s = String$(last - off + 1, " ")
+  For i = 0 To last - off
+    If b(off + i) = 0 Then
+      ReadAnsiZAt = Left$(s, i)
+      Exit Function
+    End If
+    Mid$(s, i + 1, 1) = ChrW$(b(off + i))
+  Next i
+  ReadAnsiZAt = s
+End Function
+
+' Lowercase, contiguous hex of a byte range (e.g. "004d171f80...").
+Private Function BytesToHex(ByRef b() As Byte, ByVal off As Long, ByVal nBytes As Long) As String
+  Dim i As Long
+  Dim s As String
+  Dim t As String
+  If nBytes <= 0 Then Exit Function
+  s = String$(nBytes * 2, "0")
+  For i = 0 To nBytes - 1
+    t = Hex$(b(off + i))
+    If Len(t) = 1 Then
+      Mid$(s, i * 2 + 2, 1) = t
+    Else
+      Mid$(s, i * 2 + 1, 2) = t
+    End If
+  Next i
+  BytesToHex = LCase$(s)
+End Function
+
+
+' ---- Formatting helpers ----------------------------------------------------
+
+' "0x0000AF03" for FormatHex(&HAF03, 8). Hex$() preserves bits for
+' negatives (Hex$(-1) = "FFFFFFFF"), so this is safe for full DWORDs.
+Private Function FormatHex(ByVal v As Long, ByVal Width As Long) As String
+  Dim h As String
+  h = Hex$(v)
+  If Len(h) < Width Then h = Right$(String$(Width, "0") & h, Width)
+  FormatHex = "0x" & h
+End Function
+
+Private Function QuoteStr(ByVal s As String) As String
+  QuoteStr = """" & Replace$(s, """", """""") & """"
+End Function
+
+' Wrap a long hex string into fixed-width lines prefixed with "0x".
+Private Function WrapHex(ByVal sHex As String, ByVal Width As Long, ByVal INDENT As String) As String
+  Dim i As Long
+  Dim s As String
+  For i = 1 To Len(sHex) Step Width
+    s = s & INDENT & "0x" & Mid$(sHex, i, Width) & vbCrLf
+  Next i
+  WrapHex = s
+End Function
+
+
+' ---- Friendly names for DEVNAMES flag values ------------------------------
+
+' Describe wDefault as a pipe-separated list of known flags, with any
+' leftover bits appended as hex so unknown bits round-trip cleanly.
+Private Function DescribeDefault(ByVal v As Long) As String
+  Dim s    As String
+  Dim rest As Long
+  rest = v
+  If (rest And DN_DEFAULTPRN) Then
+    s = Join2(s, "DefaultPrinter")
+    rest = rest And Not DN_DEFAULTPRN
+  End If
+  If rest <> 0 Then s = Join2(s, FormatHex(rest, 4))
+  If LenB(s) = 0 Then s = "(none)"
+  DescribeDefault = s
+End Function
+
+Private Function Join2(ByVal a As String, ByVal b As String) As String
+  If LenB(a) = 0 Then
+    Join2 = b
+  Else
+    Join2 = a & " | " & b
+  End If
+End Function
+
+
+'************************************************
+' BytesToHexBlock
+'
+' Format a byte array as the 8-space-indented, 32-bytes-per-line,
+' trailing-" ," ACF hex block. Last line has no trailing comma.
+'************************************************
+Private Function BytesToHexBlock(ByRef b() As Byte) As String
+  Const BYTES_PER_LINE As Long = 32
+  Const INDENT         As String = "        "
+  Dim total  As Long
+  Dim off    As Long
+  Dim chunk  As Long
+  Dim sb     As String
+
+  total = UBound(b) - LBound(b) + 1
+  off = 0
+  Do While off < total
+    chunk = total - off
+    If chunk > BYTES_PER_LINE Then chunk = BYTES_PER_LINE
+    sb = sb & INDENT & "0x" & BytesToHex(b, off, chunk)
+    If off + chunk < total Then sb = sb & " ,"
+    sb = sb & vbCrLf
+    off = off + chunk
+  Loop
+
+  BytesToHexBlock = sb
+End Function
+
+
+' ---- Byte-array write primitives ------------------------------------------
+
+Private Sub WriteU16(ByRef b() As Byte, ByVal off As Long, ByVal v As Long)
+  b(off) = CByte(v And &HFF&)
+  b(off + 1) = CByte((v \ &H100&) And &HFF&)
+End Sub
+
+' Write s as a single-byte string + trailing NUL at absolute offset off.
+' Silently clips if the buffer is too small (shouldn't happen when
+' TotalSize is respected, but keeps us crash-free on malformed input).
+' AscW (not Asc) keeps the byte value independent of the machine's ANSI
+' codepage - the exact inverse of ReadAnsiZAt's ChrW$ over the 0..255 range.
+Private Sub WriteAnsiZAt(ByRef b() As Byte, ByVal off As Long, ByVal s As String)
+  Dim i    As Long
+  Dim last As Long
+  last = UBound(b)
+  If off < 0 Or off > last Then Exit Sub
+  For i = 1 To Len(s)
+    If off + i - 1 > last Then Exit Sub
+    b(off + i - 1) = CByte(AscW(Mid$(s, i, 1)) And &HFF&)
+  Next i
+  If off + Len(s) <= last Then b(off + Len(s)) = 0
+End Sub
+
+' Write a lowercase/uppercase hex string as a byte run starting at off.
+Private Sub WriteHexString(ByRef b() As Byte, ByVal off As Long, ByVal sHex As String)
+  Dim i As Long
+  Dim n As Long
+  n = Len(sHex) \ 2
+  For i = 0 To n - 1
+    b(off + i) = CByte("&H" & Mid$(sHex, i * 2 + 1, 2))
+  Next i
+End Sub
+
+
+' ---- Scalar / enum parsers (reverses of the format helpers) ----------------
+
+Private Sub AssignDevNamesField(ByRef dn As tDevNames, ByVal fldName As String, ByVal fldValue As String)
+  Select Case fldName
+    Case "DriverOffset": dn.DriverOffset = ParseLongVal(fldValue)
+    Case "DeviceOffset": dn.DeviceOffset = ParseLongVal(fldValue)
+    Case "OutputOffset": dn.OutputOffset = ParseLongVal(fldValue)
+    Case "Default":      dn.Default = ParseDefaultFlags(fldValue)
+    Case "Driver":       dn.Driver = Unquote(fldValue)
+    Case "Device":       dn.Device = Unquote(fldValue)
+    Case "Output":       dn.Output = Unquote(fldValue)
+    Case "TotalSize":    dn.TotalSize = ParseLongVal(fldValue)
+  End Select
+End Sub
+
+' Parse a decimal or 0x-prefixed hex integer into a Long (bit-preserving).
+Private Function ParseLongVal(ByVal s As String) As Long
+  s = Trim$(s)
+  If Len(s) >= 2 And StrComp(Left$(s, 2), "0x", vbTextCompare) = 0 Then
+    ParseLongVal = HexStrToLong(Mid$(s, 3))
+  Else
+    ParseLongVal = CLng(s)
+  End If
+End Function
+
+' Parse up to 8 hex digits into a Long, preserving the bit pattern
+' (so "FFFFFFFF" yields -1 rather than overflowing).
+Private Function HexStrToLong(ByVal sHex As String) As Long
+  Dim buf(0 To 3) As Byte
+  Dim i      As Long
+  Dim padded As String
+  padded = Right$(String$(8, "0") & UCase$(Trim$(sHex)), 8)
+  For i = 0 To 3
+    buf(3 - i) = CByte("&H" & Mid$(padded, i * 2 + 1, 2))
+  Next i
+  HexStrToLong = ReadS32(buf, 0)
+End Function
+
+' Strip VBA-style surrounding quotes and un-double any escaped quotes.
+Private Function Unquote(ByVal s As String) As String
+  s = Trim$(s)
+  If Len(s) >= 2 And Left$(s, 1) = """" And Right$(s, 1) = """" Then
+    s = Mid$(s, 2, Len(s) - 2)
+    s = Replace$(s, """""", """")
+  End If
+  Unquote = s
+End Function
+
+' Reverse of DescribeDefault: "(none)" or "DefaultPrinter"
+' or "DefaultPrinter | 0x0042" or a bare number.
+Private Function ParseDefaultFlags(ByVal s As String) As Long
+  Dim parts() As String
+  Dim i       As Long
+  Dim v       As Long
+  Dim p       As String
+
+  s = Trim$(s)
+  If LenB(s) = 0 Or StrComp(s, "(none)", vbTextCompare) = 0 Then
+    ParseDefaultFlags = 0
+    Exit Function
+  End If
+
+  ' Bare number?
+  If IsNumeric(s) Then
+    ParseDefaultFlags = CLng(s)
+    Exit Function
+  End If
+  If StrComp(Left$(s, 2), "0x", vbTextCompare) = 0 Then
+    ParseDefaultFlags = ParseLongVal(s)
+    Exit Function
+  End If
+
+  parts = Split(s, "|")
+  For i = LBound(parts) To UBound(parts)
+    p = LCase$(Trim$(parts(i)))
+    Select Case p
+      Case "defaultprinter": v = v Or DN_DEFAULTPRN
+      Case Else
+        ' Unknown token - if it looks like a number, OR it in so
+        ' residual bits from DescribeDefault round-trip cleanly.
+        If Len(p) >= 2 And Left$(p, 2) = "0x" Then
+          v = v Or ParseLongVal(p)
+        ElseIf IsNumeric(p) Then
+          v = v Or CLng(p)
+        End If
+    End Select
+  Next i
+  ParseDefaultFlags = v
+End Function
+
+

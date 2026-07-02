@@ -1,0 +1,1242 @@
+Option Compare Database
+Option Explicit
+
+'************************************************
+' DEVMODEW Parser
+'
+' Parses a Windows DEVMODEW (Unicode) structure stored as the hex blob
+' found inside an Access form's .ACF source file (the
+' PrtDevModeW = Begin ... End block) and produces a human-readable
+' representation suitable for storing in source control.
+'
+' Typical use from the Immediate window:
+'
+'   Dim s As String
+'   s = "0x0000840d48000000ff02e12f263d4600f017840d0000840d0a00000001000000 , " _
+'     & "0x580100012d000000f015840d646566672d000000f015840df815840d74757677 , " _
+'     & ...
+'   Debug.Print DevModeWToText(s)
+'
+' The input is tolerant: it accepts either the raw block copied from
+' an .ACF (0x..... , 0x..... , lines), or a bare hex string. It is
+' not suitable for DEVMODEA (ANSI) blobs - see PrtDevMode and
+' modDevModeParser.
+'
+' @Version      1.00
+'************************************************
+
+' ---- dmFields bit flags (wingdi.h) ----------------------------------------
+Private Const DM_ORIENTATION        As Long = &H1
+Private Const DM_PAPERSIZE          As Long = &H2
+Private Const DM_PAPERLENGTH        As Long = &H4
+Private Const DM_PAPERWIDTH         As Long = &H8
+Private Const DM_SCALE              As Long = &H10
+Private Const DM_POSITION           As Long = &H20
+Private Const DM_NUP                As Long = &H40
+Private Const DM_DISPLAYORIENTATION As Long = &H80
+Private Const DM_COPIES             As Long = &H100
+Private Const DM_DEFAULTSOURCE      As Long = &H200
+Private Const DM_PRINTQUALITY       As Long = &H400
+Private Const DM_COLOR              As Long = &H800
+Private Const DM_DUPLEX             As Long = &H1000
+Private Const DM_YRESOLUTION        As Long = &H2000
+Private Const DM_TTOPTION           As Long = &H4000
+Private Const DM_COLLATE            As Long = &H8000&  ' Long suffix matters: &H8000 alone is the Integer -32768, which sign-extends to &HFFFF8000 and corrupts every OR into a Long field.
+Private Const DM_FORMNAME           As Long = &H10000
+Private Const DM_LOGPIXELS          As Long = &H20000
+Private Const DM_BITSPERPEL         As Long = &H40000
+Private Const DM_PELSWIDTH          As Long = &H80000
+Private Const DM_PELSHEIGHT         As Long = &H100000
+Private Const DM_DISPLAYFLAGS       As Long = &H200000
+Private Const DM_DISPLAYFREQUENCY   As Long = &H400000
+Private Const DM_ICMMETHOD          As Long = &H800000
+Private Const DM_ICMINTENT          As Long = &H1000000
+Private Const DM_MEDIATYPE          As Long = &H2000000
+Private Const DM_DITHERTYPE         As Long = &H4000000
+Private Const DM_PANNINGWIDTH       As Long = &H8000000
+Private Const DM_PANNINGHEIGHT      As Long = &H10000000
+
+' Windows DEVMODEW layout constants. WCHAR[32] doubles the string
+' footprint compared with DEVMODEA, so every field after dmDeviceName
+' is shifted by +64 and the fixed size grows from 156 to 220.
+Private Const CCHDEVICENAME      As Long = 32
+Private Const CCHFORMNAME        As Long = 32
+Private Const DEVMODE_FIXED_SIZE As Long = 220
+
+
+'************************************************
+' tDevModeW
+'
+' Decoded view of the fixed part of DEVMODEW plus any trailing
+' private driver data.
+'************************************************
+Public Type tDevModeW
+  DeviceName        As String   ' Unicode, up to 32 WCHARs (null-terminated)
+  DeviceNameRawHex  As String   ' Full 64 bytes as lowercase hex; preserved verbatim when non-NUL garbage follows the terminator. Empty = use DeviceName + NUL padding.
+  SpecVersion       As Long     ' WORD
+  DriverVersion     As Long     ' WORD
+  Size              As Long     ' WORD
+  DriverExtra       As Long     ' WORD
+  Fields            As Long     ' DWORD (bitmask)
+  Orientation       As Long     ' short
+  PaperSize         As Long     ' short
+  PaperLength       As Long     ' short
+  PaperWidth        As Long     ' short
+  Scale             As Long     ' short
+  Copies            As Long     ' short
+  DefaultSource     As Long     ' short
+  PrintQuality      As Long     ' short
+  Color             As Long     ' short
+  Duplex            As Long     ' short
+  YResolution       As Long     ' short
+  TTOption          As Long     ' short
+  Collate           As Long     ' short
+  FormName          As String   ' Unicode, up to 32 WCHARs (null-terminated)
+  FormNameRawHex    As String   ' Full 64 bytes as lowercase hex; preserved verbatim when non-NUL garbage follows the terminator. Empty = use FormName + NUL padding.
+  LogPixels         As Long     ' WORD
+  BitsPerPel        As Long     ' DWORD
+  PelsWidth         As Long     ' DWORD
+  PelsHeight        As Long     ' DWORD
+  DisplayFlagsOrNup As Long     ' DWORD (union of dmDisplayFlags / dmNup)
+  DisplayFrequency  As Long     ' DWORD
+  ICMMethod         As Long     ' DWORD
+  ICMIntent         As Long     ' DWORD
+  MediaType         As Long     ' DWORD
+  DitherType        As Long     ' DWORD
+  Reserved1         As Long     ' DWORD
+  Reserved2         As Long     ' DWORD
+  PanningWidth      As Long     ' DWORD
+  PanningHeight     As Long     ' DWORD
+  DriverExtraHex    As String   ' private driver data after fixed part, lowercase hex
+End Type
+
+
+'************************************************
+' DevModeWToText
+'
+' Convenience: parse the hex blob and format it.
+'************************************************
+Public Function DevModeWToText(ByVal sBlob As String) As String
+  Dim dm As tDevModeW
+  dm = ParseDevModeW(sBlob)
+  DevModeWToText = FormatDevModeW(dm)
+End Function
+
+
+'************************************************
+' ParseDevModeW
+'
+' Parse a DEVMODEW hex blob into a populated tDevModeW.
+'************************************************
+Public Function ParseDevModeW(ByVal sBlob As String) As tDevModeW
+  Dim b()   As Byte
+  Dim dm    As tDevModeW
+  Dim total As Long
+  Dim extra As Long
+
+  b = HexBlobToBytes(sBlob)
+  total = UBound(b) - LBound(b) + 1
+
+  If total < DEVMODE_FIXED_SIZE Then
+    Err.Raise vbObjectError + 1002, "ParseDevModeW", _
+              "DEVMODEW blob is too short: got " & total _
+              & " bytes, need at least " & DEVMODE_FIXED_SIZE & "."
+  End If
+
+  dm.DeviceName = ReadWideZ(b, 0, CCHDEVICENAME)
+  dm.DeviceNameRawHex = BytesToHex(b, 0, CCHDEVICENAME * 2)
+  dm.SpecVersion = ReadU16(b, 64)
+  dm.DriverVersion = ReadU16(b, 66)
+  dm.Size = ReadU16(b, 68)
+  dm.DriverExtra = ReadU16(b, 70)
+  dm.Fields = ReadS32(b, 72)
+  dm.Orientation = ReadS16(b, 76)
+  dm.PaperSize = ReadS16(b, 78)
+  dm.PaperLength = ReadS16(b, 80)
+  dm.PaperWidth = ReadS16(b, 82)
+  dm.[Scale] = ReadS16(b, 84)
+  dm.Copies = ReadS16(b, 86)
+  dm.DefaultSource = ReadS16(b, 88)
+  dm.PrintQuality = ReadS16(b, 90)
+  dm.Color = ReadS16(b, 92)
+  dm.Duplex = ReadS16(b, 94)
+  dm.YResolution = ReadS16(b, 96)
+  dm.TTOption = ReadS16(b, 98)
+  dm.Collate = ReadS16(b, 100)
+  dm.FormName = ReadWideZ(b, 102, CCHFORMNAME)
+  dm.FormNameRawHex = BytesToHex(b, 102, CCHFORMNAME * 2)
+  dm.LogPixels = ReadU16(b, 166)
+  dm.BitsPerPel = ReadS32(b, 168)
+  dm.PelsWidth = ReadS32(b, 172)
+  dm.PelsHeight = ReadS32(b, 176)
+  dm.DisplayFlagsOrNup = ReadS32(b, 180)
+  dm.DisplayFrequency = ReadS32(b, 184)
+  dm.ICMMethod = ReadS32(b, 188)
+  dm.ICMIntent = ReadS32(b, 192)
+  dm.MediaType = ReadS32(b, 196)
+  dm.DitherType = ReadS32(b, 200)
+  dm.Reserved1 = ReadS32(b, 204)
+  dm.Reserved2 = ReadS32(b, 208)
+  dm.PanningWidth = ReadS32(b, 212)
+  dm.PanningHeight = ReadS32(b, 216)
+
+  extra = total - DEVMODE_FIXED_SIZE
+  If extra > 0 Then
+    dm.DriverExtraHex = BytesToHex(b, DEVMODE_FIXED_SIZE, extra)
+  End If
+
+  ParseDevModeW = dm
+End Function
+
+
+'************************************************
+' FormatDevModeW
+'
+' Render a tDevModeW as a multi-line, ACF-style text representation
+' (Name =Value) with a trailing hex dump for any private driver data.
+'************************************************
+Public Function FormatDevModeW(ByRef dm As tDevModeW) As String
+  Dim s As String
+  Const NL As String = vbCrLf
+
+  s = s & "DeviceName =" & QuoteStr(dm.DeviceName) & NL
+  If LenB(dm.DeviceNameRawHex) > 0 Then
+    If StrComp(dm.DeviceNameRawHex, CleanWideEncoding(dm.DeviceName, CCHDEVICENAME), vbTextCompare) <> 0 Then
+      s = s & "DeviceNameRawHex =" & dm.DeviceNameRawHex & NL
+    End If
+  End If
+  s = s & "SpecVersion =" & dm.SpecVersion & NL
+  s = s & "DriverVersion =" & dm.DriverVersion & NL
+  s = s & "Size =" & dm.Size & NL
+  s = s & "DriverExtra =" & dm.DriverExtra & NL
+  s = s & "Fields =" & DescribeFields(dm.Fields) & NL
+  s = s & "Orientation =" & NameOrientation(dm.Orientation) & NL
+  s = s & "PaperSize =" & NamePaperSize(dm.PaperSize) & NL
+  s = s & "PaperLength =" & dm.PaperLength & NL
+  s = s & "PaperWidth =" & dm.PaperWidth & NL
+  s = s & "Scale =" & dm.[Scale] & NL
+  s = s & "Copies =" & dm.Copies & NL
+  s = s & "DefaultSource =" & NameDefaultSource(dm.DefaultSource) & NL
+  s = s & "PrintQuality =" & NamePrintQuality(dm.PrintQuality) & NL
+  s = s & "Color =" & NameColor(dm.Color) & NL
+  s = s & "Duplex =" & NameDuplex(dm.Duplex) & NL
+  s = s & "YResolution =" & dm.YResolution & NL
+  s = s & "TTOption =" & NameTTOption(dm.TTOption) & NL
+  s = s & "Collate =" & NameCollate(dm.Collate) & NL
+  s = s & "FormName =" & QuoteStr(dm.FormName) & NL
+  If LenB(dm.FormNameRawHex) > 0 Then
+    If StrComp(dm.FormNameRawHex, CleanWideEncoding(dm.FormName, CCHFORMNAME), vbTextCompare) <> 0 Then
+      s = s & "FormNameRawHex =" & dm.FormNameRawHex & NL
+    End If
+  End If
+  s = s & "LogPixels =" & dm.LogPixels & NL
+  s = s & "BitsPerPel =" & dm.BitsPerPel & NL
+  s = s & "PelsWidth =" & dm.PelsWidth & NL
+  s = s & "PelsHeight =" & dm.PelsHeight & NL
+  s = s & "DisplayFlagsOrNup =" & FormatHex(dm.DisplayFlagsOrNup, 8) & NL
+  s = s & "DisplayFrequency =" & dm.DisplayFrequency & NL
+  s = s & "ICMMethod =" & NameICMMethod(dm.ICMMethod) & NL
+  s = s & "ICMIntent =" & NameICMIntent(dm.ICMIntent) & NL
+  s = s & "MediaType =" & NameMediaType(dm.MediaType) & NL
+  s = s & "DitherType =" & NameDitherType(dm.DitherType) & NL
+  s = s & "Reserved1 =" & FormatHex(dm.Reserved1, 8) & NL
+  s = s & "Reserved2 =" & FormatHex(dm.Reserved2, 8) & NL
+  s = s & "PanningWidth =" & dm.PanningWidth & NL
+  s = s & "PanningHeight =" & dm.PanningHeight & NL
+  If LenB(dm.DriverExtraHex) > 0 Then
+    s = s & "DriverExtraData = Begin" & NL
+    s = s & WrapHex(dm.DriverExtraHex, 64, "    ")
+    s = s & "End" & NL
+  End If
+
+  FormatDevModeW = s
+End Function
+
+
+'************************************************
+' HexBlobToBytes
+'
+' Turn a hex string into a byte array. Accepts:
+'   - The block of 0x.... , 0x.... , lines as found in .ACF files
+'     (the "Begin"/"End" keywords and commas are ignored safely).
+'   - A bare hex string with arbitrary whitespace.
+'
+' When 0x markers are present the scan restarts at each marker and
+' stops at the first non-hex, non-whitespace character (so the "B"
+' and "E" in "Begin"/"End" are not consumed as hex digits).
+'************************************************
+Private Function HexBlobToBytes(ByVal sBlob As String) As Byte()
+  Dim sUpper As String
+  Dim sb     As String
+  Dim i      As Long
+  Dim n      As Long
+  Dim ca     As Long
+  Dim out()  As Byte
+
+  sUpper = UCase$(sBlob)
+  sb = String$(Len(sUpper), " ")
+  n = 0
+
+  If InStr(1, sUpper, "0X") > 0 Then
+    i = 1
+    Do While i <= Len(sUpper) - 1
+      If Mid$(sUpper, i, 2) = "0X" Then
+        i = i + 2
+        Do While i <= Len(sUpper)
+          ca = Asc(Mid$(sUpper, i, 1))
+          Select Case ca
+            Case 48 To 57, 65 To 70        ' 0-9, A-F
+              n = n + 1
+              Mid$(sb, n, 1) = Chr$(ca)
+              i = i + 1
+            Case Else
+              Exit Do                        ' any other char ends the run
+          End Select                         ' - CRITICAL: newline must end
+        Loop                                 '   the run, otherwise we would
+      Else                                   '   swallow the '0' from the
+        i = i + 1                            '   next line's "0x" prefix
+      End If                                 '   and treat its 'x' as a
+    Loop                                     '   terminator, losing data.
+  Else
+    For i = 1 To Len(sUpper)
+      ca = Asc(Mid$(sUpper, i, 1))
+      If (ca >= 48 And ca <= 57) Or (ca >= 65 And ca <= 70) Then
+        n = n + 1
+        Mid$(sb, n, 1) = Chr$(ca)
+      End If
+    Next i
+  End If
+
+  If n = 0 Then
+    HexBlobToBytes = out
+    Exit Function
+  End If
+
+  If n Mod 2 <> 0 Then
+    Err.Raise vbObjectError + 1001, "HexBlobToBytes", _
+              "Hex blob has an odd number of nibbles: " & n
+  End If
+
+  sb = Left$(sb, n)
+  ReDim out(0 To n \ 2 - 1)
+  For i = 0 To UBound(out)
+    out(i) = CByte("&H" & Mid$(sb, i * 2 + 1, 2))
+  Next i
+  HexBlobToBytes = out
+End Function
+
+
+' ---- Byte-array read primitives -------------------------------------------
+
+' Unsigned 16-bit little-endian into a Long (0..65535).
+Private Function ReadU16(ByRef b() As Byte, ByVal off As Long) As Long
+  ReadU16 = CLng(b(off)) Or (CLng(b(off + 1)) * &H100&)
+End Function
+
+' Signed 16-bit little-endian into a Long (-32768..32767).
+Private Function ReadS16(ByRef b() As Byte, ByVal off As Long) As Long
+  Dim v As Long
+  v = ReadU16(b, off)
+  If v >= &H8000& Then v = v - &H10000
+  ReadS16 = v
+End Function
+
+' 32-bit little-endian, bit-preserving into a signed Long.
+' 0xFFFFFFFF round-trips as -1; Hex$(result) reproduces the bit pattern.
+Private Function ReadS32(ByRef b() As Byte, ByVal off As Long) As Long
+  Dim r  As Long
+  Dim hi As Byte
+  r = CLng(b(off)) _
+    Or (CLng(b(off + 1)) * &H100&) _
+    Or (CLng(b(off + 2)) * &H10000)
+  hi = b(off + 3)
+  If hi < &H80 Then
+    r = r Or (CLng(hi) * &H1000000)
+  Else
+    r = r Or (CLng(hi And &H7F) * &H1000000) Or &H80000000
+  End If
+  ReadS32 = r
+End Function
+
+' Read up to maxChars UTF-16LE code units, truncating at the first NUL unit.
+Private Function ReadWideZ(ByRef b() As Byte, ByVal off As Long, ByVal maxChars As Long) As String
+  Dim i  As Long
+  Dim cu As Long
+  Dim s  As String
+  For i = 0 To maxChars - 1
+    cu = CLng(b(off + i * 2)) Or (CLng(b(off + i * 2 + 1)) * &H100&)
+    If cu = 0 Then
+      ReadWideZ = s
+      Exit Function
+    End If
+    s = s & ChrW$(UnsignedToSignedW(cu))
+  Next i
+  ReadWideZ = s
+End Function
+
+' Map an unsigned 16-bit code unit (0..65535) to the signed Integer that
+' ChrW$() expects. Values >= 32768 would otherwise overflow.
+Private Function UnsignedToSignedW(ByVal u As Long) As Long
+  If u >= &H8000& Then
+    UnsignedToSignedW = u - &H10000
+  Else
+    UnsignedToSignedW = u
+  End If
+End Function
+
+' Lowercase hex of what WriteWideZ would produce for s padded to maxChars
+' WCHARs. Used to decide whether a preserved DeviceNameRawHex/FormNameRawHex
+' carries information beyond the decoded string (if it matches this, we don't
+' bother emitting it; if it differs, the blob contains uninitialised memory
+' past the terminator and we need the raw bytes for a byte-perfect round-trip).
+Private Function CleanWideEncoding(ByVal s As String, ByVal maxChars As Long) As String
+  Dim b() As Byte
+  ReDim b(0 To maxChars * 2 - 1)
+  WriteWideZ b, 0, maxChars, s
+  CleanWideEncoding = BytesToHex(b, 0, maxChars * 2)
+End Function
+
+' Lowercase, contiguous hex of a byte range (e.g. "004d171f80...").
+Private Function BytesToHex(ByRef b() As Byte, ByVal off As Long, ByVal nBytes As Long) As String
+  Dim i As Long
+  Dim s As String
+  Dim t As String
+  s = String$(nBytes * 2, "0")
+  For i = 0 To nBytes - 1
+    t = Hex$(b(off + i))
+    If Len(t) = 1 Then
+      Mid$(s, i * 2 + 2, 1) = t
+    Else
+      Mid$(s, i * 2 + 1, 2) = t
+    End If
+  Next i
+  BytesToHex = LCase$(s)
+End Function
+
+
+' ---- Formatting helpers ----------------------------------------------------
+
+' "0x0000AF03" for FormatHex(&HAF03, 8). Hex$() preserves bits for
+' negatives (Hex$(-1) = "FFFFFFFF"), so this is safe for full DWORDs.
+Private Function FormatHex(ByVal v As Long, ByVal Width As Long) As String
+  Dim h As String
+  h = Hex$(v)
+  If Len(h) < Width Then h = Right$(String$(Width, "0") & h, Width)
+  FormatHex = "0x" & h
+End Function
+
+Private Function QuoteStr(ByVal s As String) As String
+  QuoteStr = """" & Replace$(s, """", """""") & """"
+End Function
+
+' Wrap a long hex string into fixed-width lines prefixed with "0x".
+Private Function WrapHex(ByVal sHex As String, ByVal Width As Long, ByVal INDENT As String) As String
+  Dim i As Long
+  Dim s As String
+  For i = 1 To Len(sHex) Step Width
+    s = s & INDENT & "0x" & Mid$(sHex, i, Width) & vbCrLf
+  Next i
+  WrapHex = s
+End Function
+
+
+' ---- Friendly names for enumerated DEVMODE values -------------------------
+
+Private Function NameOrientation(ByVal v As Long) As String
+  Select Case v
+    Case 1: NameOrientation = "Portrait"
+    Case 2: NameOrientation = "Landscape"
+    Case Else: NameOrientation = CStr(v)
+  End Select
+End Function
+
+Private Function NameColor(ByVal v As Long) As String
+  Select Case v
+    Case 1: NameColor = "Monochrome"
+    Case 2: NameColor = "Color"
+    Case Else: NameColor = CStr(v)
+  End Select
+End Function
+
+Private Function NameDuplex(ByVal v As Long) As String
+  Select Case v
+    Case 1: NameDuplex = "Simplex"
+    Case 2: NameDuplex = "Vertical"
+    Case 3: NameDuplex = "Horizontal"
+    Case Else: NameDuplex = CStr(v)
+  End Select
+End Function
+
+Private Function NameTTOption(ByVal v As Long) As String
+  Select Case v
+    Case 1: NameTTOption = "Bitmap"
+    Case 2: NameTTOption = "Download"
+    Case 3: NameTTOption = "DownloadOutline"
+    Case 4: NameTTOption = "SubDev"
+    Case Else: NameTTOption = CStr(v)
+  End Select
+End Function
+
+Private Function NameCollate(ByVal v As Long) As String
+  Select Case v
+    Case 0: NameCollate = "No"
+    Case 1: NameCollate = "Yes"
+    Case Else: NameCollate = CStr(v)
+  End Select
+End Function
+
+Private Function NameDefaultSource(ByVal v As Long) As String
+  Select Case v
+    Case 1:  NameDefaultSource = "OnlyOne"
+    Case 2:  NameDefaultSource = "Lower"
+    Case 3:  NameDefaultSource = "Middle"
+    Case 4:  NameDefaultSource = "Manual"
+    Case 5:  NameDefaultSource = "Envelope"
+    Case 6:  NameDefaultSource = "EnvManual"
+    Case 7:  NameDefaultSource = "Auto"
+    Case 8:  NameDefaultSource = "Tractor"
+    Case 9:  NameDefaultSource = "SmallFmt"
+    Case 10: NameDefaultSource = "LargeFmt"
+    Case 11: NameDefaultSource = "LargeCapacity"
+    Case 14: NameDefaultSource = "Cassette"
+    Case 15: NameDefaultSource = "FormSource"
+    Case Else: NameDefaultSource = CStr(v)
+  End Select
+End Function
+
+Private Function NamePrintQuality(ByVal v As Long) As String
+  Select Case v
+    Case -1: NamePrintQuality = "Draft"
+    Case -2: NamePrintQuality = "Low"
+    Case -3: NamePrintQuality = "Medium"
+    Case -4: NamePrintQuality = "High"
+    Case Else: NamePrintQuality = CStr(v)
+  End Select
+End Function
+
+Private Function NamePaperSize(ByVal v As Long) As String
+  Select Case v
+    Case 1:   NamePaperSize = "Letter"
+    Case 2:   NamePaperSize = "LetterSmall"
+    Case 3:   NamePaperSize = "Tabloid"
+    Case 4:   NamePaperSize = "Ledger"
+    Case 5:   NamePaperSize = "Legal"
+    Case 6:   NamePaperSize = "Statement"
+    Case 7:   NamePaperSize = "Executive"
+    Case 8:   NamePaperSize = "A3"
+    Case 9:   NamePaperSize = "A4"
+    Case 10:  NamePaperSize = "A4Small"
+    Case 11:  NamePaperSize = "A5"
+    Case 12:  NamePaperSize = "B4"
+    Case 13:  NamePaperSize = "B5"
+    Case 14:  NamePaperSize = "Folio"
+    Case 15:  NamePaperSize = "Quarto"
+    Case 16:  NamePaperSize = "10x14"
+    Case 17:  NamePaperSize = "11x17"
+    Case 18:  NamePaperSize = "Note"
+    Case 19:  NamePaperSize = "Env9"
+    Case 20:  NamePaperSize = "Env10"
+    Case 21:  NamePaperSize = "Env11"
+    Case 22:  NamePaperSize = "Env12"
+    Case 23:  NamePaperSize = "Env14"
+    Case 24:  NamePaperSize = "CSheet"
+    Case 25:  NamePaperSize = "DSheet"
+    Case 26:  NamePaperSize = "ESheet"
+    Case 256: NamePaperSize = "User"
+    Case Else: NamePaperSize = CStr(v)
+  End Select
+End Function
+
+Private Function NameICMMethod(ByVal v As Long) As String
+  Select Case v
+    Case 1: NameICMMethod = "None"
+    Case 2: NameICMMethod = "System"
+    Case 3: NameICMMethod = "Driver"
+    Case 4: NameICMMethod = "Device"
+    Case Else: NameICMMethod = CStr(v)
+  End Select
+End Function
+
+Private Function NameICMIntent(ByVal v As Long) As String
+  Select Case v
+    Case 1: NameICMIntent = "Saturate"
+    Case 2: NameICMIntent = "Contrast"
+    Case 3: NameICMIntent = "ColorimetricMatch"
+    Case 4: NameICMIntent = "AbsColorimetric"
+    Case Else: NameICMIntent = CStr(v)
+  End Select
+End Function
+
+Private Function NameMediaType(ByVal v As Long) As String
+  Select Case v
+    Case 1: NameMediaType = "Standard"
+    Case 2: NameMediaType = "Transparency"
+    Case 3: NameMediaType = "Glossy"
+    Case Else: NameMediaType = CStr(v)
+  End Select
+End Function
+
+Private Function NameDitherType(ByVal v As Long) As String
+  Select Case v
+    Case 1: NameDitherType = "None"
+    Case 2: NameDitherType = "Coarse"
+    Case 3: NameDitherType = "Fine"
+    Case 4: NameDitherType = "LineArt"
+    Case 5: NameDitherType = "ErrorDiffusion"
+    Case 6: NameDitherType = "Reserved6"
+    Case 7: NameDitherType = "Reserved7"
+    Case 8: NameDitherType = "Reserved8"
+    Case 9: NameDitherType = "Reserved9"
+    Case 10: NameDitherType = "GrayScale"
+    Case Else: NameDitherType = CStr(v)
+  End Select
+End Function
+
+Private Function DescribeFields(ByVal v As Long) As String
+  Dim s As String
+  If (v And DM_ORIENTATION) Then s = Join2(s, "Orientation")
+  If (v And DM_PAPERSIZE) Then s = Join2(s, "PaperSize")
+  If (v And DM_PAPERLENGTH) Then s = Join2(s, "PaperLength")
+  If (v And DM_PAPERWIDTH) Then s = Join2(s, "PaperWidth")
+  If (v And DM_SCALE) Then s = Join2(s, "Scale")
+  If (v And DM_POSITION) Then s = Join2(s, "Position")
+  If (v And DM_NUP) Then s = Join2(s, "Nup")
+  If (v And DM_DISPLAYORIENTATION) Then s = Join2(s, "DisplayOrientation")
+  If (v And DM_COPIES) Then s = Join2(s, "Copies")
+  If (v And DM_DEFAULTSOURCE) Then s = Join2(s, "DefaultSource")
+  If (v And DM_PRINTQUALITY) Then s = Join2(s, "PrintQuality")
+  If (v And DM_COLOR) Then s = Join2(s, "Color")
+  If (v And DM_DUPLEX) Then s = Join2(s, "Duplex")
+  If (v And DM_YRESOLUTION) Then s = Join2(s, "YResolution")
+  If (v And DM_TTOPTION) Then s = Join2(s, "TTOption")
+  If (v And DM_COLLATE) Then s = Join2(s, "Collate")
+  If (v And DM_FORMNAME) Then s = Join2(s, "FormName")
+  If (v And DM_LOGPIXELS) Then s = Join2(s, "LogPixels")
+  If (v And DM_BITSPERPEL) Then s = Join2(s, "BitsPerPel")
+  If (v And DM_PELSWIDTH) Then s = Join2(s, "PelsWidth")
+  If (v And DM_PELSHEIGHT) Then s = Join2(s, "PelsHeight")
+  If (v And DM_DISPLAYFLAGS) Then s = Join2(s, "DisplayFlags")
+  If (v And DM_DISPLAYFREQUENCY) Then s = Join2(s, "DisplayFrequency")
+  If (v And DM_ICMMETHOD) Then s = Join2(s, "ICMMethod")
+  If (v And DM_ICMINTENT) Then s = Join2(s, "ICMIntent")
+  If (v And DM_MEDIATYPE) Then s = Join2(s, "MediaType")
+  If (v And DM_DITHERTYPE) Then s = Join2(s, "DitherType")
+  If (v And DM_PANNINGWIDTH) Then s = Join2(s, "PanningWidth")
+  If (v And DM_PANNINGHEIGHT) Then s = Join2(s, "PanningHeight")
+  If LenB(s) = 0 Then s = "(none)"
+  DescribeFields = s
+End Function
+
+Private Function Join2(ByVal a As String, ByVal b As String) As String
+  If LenB(a) = 0 Then
+    Join2 = b
+  Else
+    Join2 = a & " | " & b
+  End If
+End Function
+
+
+'************************************************
+' TextToDevModeW
+'
+' Reverse of DevModeWToText. Takes the human-readable
+'   FieldName =Value
+' representation and returns the hex lines exactly as they appear
+' inside a PrtDevModeW = Begin ... End block in an .ACF file
+' (8-space indent, 32 bytes per line, trailing " ," on every line
+' except the last, lowercase hex).
+'************************************************
+Public Function TextToDevModeW(ByVal sText As String) As String
+  Dim dm As tDevModeW
+  dm = ParseDevModeWText(sText)
+  TextToDevModeW = DevModeWToHexBlock(dm)
+End Function
+
+
+'************************************************
+' PrtDevModeWToSummaryText
+'
+' Export-side reducer: parse a PrtDevModeW hex blob and emit the four
+' fields that survive in the source-controlled PrtDevMode_H block
+' (Orientation, PaperSize, Scale, Color). Not currently wired into the
+' replace-rule registry (PrtDevMode is the export source of truth);
+' provided for symmetry with PrtDevModeToSummaryText.
+'************************************************
+Public Function PrtDevModeWToSummaryText(ByVal sBlob As String) As String
+  Dim dm As tDevModeW
+  Const NL As String = vbCrLf
+  Dim s  As String
+  dm = ParseDevModeW(sBlob)
+  s = s & "Orientation =" & NameOrientation(dm.Orientation) & NL
+  s = s & "PaperSize =" & NamePaperSize(dm.PaperSize) & NL
+  s = s & "Scale =" & dm.[Scale] & NL
+  s = s & "Color =" & NameColor(dm.Color) & NL
+  PrtDevModeWToSummaryText = s
+End Function
+
+
+'************************************************
+' SummaryTextToPrtDevModeW
+'
+' Import-side expander: read a PrtDevMode_H block body (Orientation,
+' PaperSize, Scale, Color) and emit the DEVMODEW hex block Access
+' expects alongside PrtDevMode. Every other member is zero;
+' SpecVersion, Size and Fields are set to the minimum that lets
+' Access parse the struct.
+'************************************************
+Public Function SummaryTextToPrtDevModeW(ByVal sText As String) As String
+  Dim dm       As tDevModeW
+  Dim lines()  As String
+  Dim ln       As String
+  Dim eqPos    As Long
+  Dim fldName  As String
+  Dim fldValue As String
+  Dim i        As Long
+
+  sText = Replace$(sText, vbCrLf, vbLf)
+  sText = Replace$(sText, vbCr, vbLf)
+  lines = Split(sText, vbLf)
+  For i = LBound(lines) To UBound(lines)
+    ln = Trim$(CStr(lines(i)))
+    If LenB(ln) = 0 Then
+      ' skip
+    ElseIf Left$(ln, 1) = "'" Then
+      ' skip comment
+    Else
+      eqPos = InStr(1, ln, "=")
+      If eqPos > 0 Then
+        fldName = Trim$(Left$(ln, eqPos - 1))
+        fldValue = Trim$(Mid$(ln, eqPos + 1))
+        Select Case fldName
+          Case "Orientation": dm.Orientation = ParseOrientation(fldValue)
+          Case "PaperSize":   dm.PaperSize = ParsePaperSize(fldValue)
+          Case "Scale":       dm.[Scale] = ParseLongVal(fldValue)
+          Case "Color":       dm.Color = ParseColor(fldValue)
+        End Select
+      End If
+    End If
+  Next i
+
+  dm.SpecVersion = &H401
+  dm.Size = DEVMODE_FIXED_SIZE
+  dm.Fields = DM_ORIENTATION Or DM_PAPERSIZE Or DM_SCALE Or DM_COLOR
+
+  SummaryTextToPrtDevModeW = DevModeWToHexBlock(dm)
+End Function
+
+
+'************************************************
+' ParseDevModeWText
+'
+' Parse a multi-line "FieldName =Value" text representation into a
+' tDevModeW. Blank lines, VB-style ' comments, and unrecognised field
+' names are ignored. DriverExtraData is read from the nested
+' "Begin ... End" block using HexBlobToBytes.
+'************************************************
+Public Function ParseDevModeWText(ByVal sText As String) As tDevModeW
+  Dim dm       As tDevModeW
+  Dim lines()  As String
+  Dim ln       As String
+  Dim i        As Long
+  Dim eqPos    As Long
+  Dim fldName  As String
+  Dim fldValue As String
+  Dim inExtra  As Boolean
+  Dim extraBuf As String
+  Dim extraBytes() As Byte
+  Dim nExtra   As Long
+
+  sText = Replace$(sText, vbCrLf, vbLf)
+  sText = Replace$(sText, vbCr, vbLf)
+  lines = Split(sText, vbLf)
+
+  For i = LBound(lines) To UBound(lines)
+    ln = Trim$(CStr(lines(i)))
+    If LenB(ln) = 0 Then
+      ' skip
+    ElseIf Left$(ln, 1) = "'" Then
+      ' VB-style line comment, skip
+    ElseIf inExtra Then
+      If StrComp(ln, "End", vbTextCompare) = 0 Then
+        inExtra = False
+      Else
+        extraBuf = extraBuf & ln & vbLf
+      End If
+    Else
+      eqPos = InStr(1, ln, "=")
+      If eqPos > 0 Then
+        fldName = Trim$(Left$(ln, eqPos - 1))
+        fldValue = Trim$(Mid$(ln, eqPos + 1))
+        If StrComp(fldName, "DriverExtraData", vbTextCompare) = 0 Then
+          ' Expected value is "Begin"; switch to hex-collection mode.
+          inExtra = True
+          extraBuf = ""
+        Else
+          AssignDevModeWField dm, fldName, fldValue
+        End If
+      End If
+    End If
+  Next i
+
+  If LenB(extraBuf) > 0 Then
+    extraBytes = HexBlobToBytes(extraBuf)
+    nExtra = UBound(extraBytes) - LBound(extraBytes) + 1
+    If nExtra > 0 Then
+      dm.DriverExtraHex = BytesToHex(extraBytes, 0, nExtra)
+    End If
+  End If
+
+  ParseDevModeWText = dm
+End Function
+
+
+'************************************************
+' DevModeWToHexBlock
+'
+' Serialise a tDevModeW as the hex lines exactly as they appear in
+' an .ACF file (8-space indent, 32 bytes per line, trailing " ,"
+' on every line except the last).
+'************************************************
+Public Function DevModeWToHexBlock(ByRef dm As tDevModeW) As String
+  Dim b()      As Byte
+  b = DevModeWToBytes(dm)
+  DevModeWToHexBlock = BytesToHexBlock(b)
+End Function
+
+
+'------------------------------------------------------------------
+' Serialise a tDevModeW to raw little-endian bytes (fixed 220-byte
+' structure + any private driver-data bytes from DriverExtraHex).
+'------------------------------------------------------------------
+Private Function DevModeWToBytes(ByRef dm As tDevModeW) As Byte()
+  Dim b()       As Byte
+  Dim extraLen  As Long
+  Dim total     As Long
+
+  extraLen = Len(dm.DriverExtraHex) \ 2
+  total = DEVMODE_FIXED_SIZE + extraLen
+  ReDim b(0 To total - 1)
+
+  If Len(dm.DeviceNameRawHex) = CCHDEVICENAME * 4 Then
+    WriteHexString b, 0, dm.DeviceNameRawHex
+  Else
+    WriteWideZ b, 0, CCHDEVICENAME, dm.DeviceName
+  End If
+  WriteU16 b, 64, dm.SpecVersion
+  WriteU16 b, 66, dm.DriverVersion
+  WriteU16 b, 68, dm.Size
+  WriteU16 b, 70, dm.DriverExtra
+  WriteS32 b, 72, dm.Fields
+  WriteS16 b, 76, dm.Orientation
+  WriteS16 b, 78, dm.PaperSize
+  WriteS16 b, 80, dm.PaperLength
+  WriteS16 b, 82, dm.PaperWidth
+  WriteS16 b, 84, dm.[Scale]
+  WriteS16 b, 86, dm.Copies
+  WriteS16 b, 88, dm.DefaultSource
+  WriteS16 b, 90, dm.PrintQuality
+  WriteS16 b, 92, dm.Color
+  WriteS16 b, 94, dm.Duplex
+  WriteS16 b, 96, dm.YResolution
+  WriteS16 b, 98, dm.TTOption
+  WriteS16 b, 100, dm.Collate
+  If Len(dm.FormNameRawHex) = CCHFORMNAME * 4 Then
+    WriteHexString b, 102, dm.FormNameRawHex
+  Else
+    WriteWideZ b, 102, CCHFORMNAME, dm.FormName
+  End If
+  WriteU16 b, 166, dm.LogPixels
+  WriteS32 b, 168, dm.BitsPerPel
+  WriteS32 b, 172, dm.PelsWidth
+  WriteS32 b, 176, dm.PelsHeight
+  WriteS32 b, 180, dm.DisplayFlagsOrNup
+  WriteS32 b, 184, dm.DisplayFrequency
+  WriteS32 b, 188, dm.ICMMethod
+  WriteS32 b, 192, dm.ICMIntent
+  WriteS32 b, 196, dm.MediaType
+  WriteS32 b, 200, dm.DitherType
+  WriteS32 b, 204, dm.Reserved1
+  WriteS32 b, 208, dm.Reserved2
+  WriteS32 b, 212, dm.PanningWidth
+  WriteS32 b, 216, dm.PanningHeight
+
+  If extraLen > 0 Then
+    WriteHexString b, DEVMODE_FIXED_SIZE, dm.DriverExtraHex
+  End If
+
+  DevModeWToBytes = b
+End Function
+
+
+'------------------------------------------------------------------
+' Format a byte array as the 8-space-indented, 32-bytes-per-line,
+' trailing-" ," ACF hex block. Last line has no trailing comma.
+'------------------------------------------------------------------
+Private Function BytesToHexBlock(ByRef b() As Byte) As String
+  Const BYTES_PER_LINE As Long = 32
+  Const INDENT         As String = "        "
+  Dim total  As Long
+  Dim off    As Long
+  Dim chunk  As Long
+  Dim sb     As String
+
+  total = UBound(b) - LBound(b) + 1
+  off = 0
+  Do While off < total
+    chunk = total - off
+    If chunk > BYTES_PER_LINE Then chunk = BYTES_PER_LINE
+    sb = sb & INDENT & "0x" & BytesToHex(b, off, chunk)
+    If off + chunk < total Then sb = sb & " ,"
+    sb = sb & vbCrLf
+    off = off + chunk
+  Loop
+
+  BytesToHexBlock = sb
+End Function
+
+
+' ---- Byte-array write primitives -----------------------------------
+
+Private Sub WriteU16(ByRef b() As Byte, ByVal off As Long, ByVal v As Long)
+  b(off) = CByte(v And &HFF&)
+  b(off + 1) = CByte((v \ &H100&) And &HFF&)
+End Sub
+
+Private Sub WriteS16(ByRef b() As Byte, ByVal off As Long, ByVal v As Long)
+  Dim u As Long
+  If v < 0 Then u = v + &H10000 Else u = v
+  WriteU16 b, off, u
+End Sub
+
+' Bit-preserving write of a Long as 4 LE bytes (handles negatives).
+Private Sub WriteS32(ByRef b() As Byte, ByVal off As Long, ByVal v As Long)
+  Dim h As String
+  h = Right$("00000000" & Hex$(v), 8)
+  b(off + 0) = CByte("&H" & Mid$(h, 7, 2))
+  b(off + 1) = CByte("&H" & Mid$(h, 5, 2))
+  b(off + 2) = CByte("&H" & Mid$(h, 3, 2))
+  b(off + 3) = CByte("&H" & Mid$(h, 1, 2))
+End Sub
+
+' Write s as a UTF-16LE string padded with NUL code units to exactly
+' maxChars WCHARs (i.e. maxChars * 2 bytes). AscW returns a signed
+' Integer so code points >= 0x8000 come back negative and must be
+' normalised before splitting into bytes.
+Private Sub WriteWideZ(ByRef b() As Byte, ByVal off As Long, ByVal maxChars As Long, ByVal s As String)
+  Dim i  As Long
+  Dim n  As Long
+  Dim cu As Long
+  n = Len(s)
+  If n > maxChars Then n = maxChars
+  For i = 0 To n - 1
+    cu = AscW(Mid$(s, i + 1, 1))
+    If cu < 0 Then cu = cu + &H10000
+    b(off + i * 2) = CByte(cu And &HFF&)
+    b(off + i * 2 + 1) = CByte((cu \ &H100&) And &HFF&)
+  Next i
+  For i = n To maxChars - 1
+    b(off + i * 2) = 0
+    b(off + i * 2 + 1) = 0
+  Next i
+End Sub
+
+' Write a lowercase/uppercase hex string as a byte run starting at off.
+Private Sub WriteHexString(ByRef b() As Byte, ByVal off As Long, ByVal sHex As String)
+  Dim i As Long
+  Dim n As Long
+  n = Len(sHex) \ 2
+  For i = 0 To n - 1
+    b(off + i) = CByte("&H" & Mid$(sHex, i * 2 + 1, 2))
+  Next i
+End Sub
+
+
+' ---- Scalar / enum parsers (reverses of the Name* / Describe* helpers) -----
+
+Private Sub AssignDevModeWField(ByRef dm As tDevModeW, ByVal fldName As String, ByVal fldValue As String)
+  Select Case fldName
+    Case "DeviceName":        dm.DeviceName = Unquote(fldValue)
+    Case "DeviceNameRawHex":  dm.DeviceNameRawHex = LCase$(Trim$(fldValue))
+    Case "SpecVersion":       dm.SpecVersion = ParseLongVal(fldValue)
+    Case "DriverVersion":     dm.DriverVersion = ParseLongVal(fldValue)
+    Case "Size":              dm.Size = ParseLongVal(fldValue)
+    Case "DriverExtra":       dm.DriverExtra = ParseLongVal(fldValue)
+    Case "Fields":            dm.Fields = ParseFieldsFlags(fldValue)
+    Case "Orientation":       dm.Orientation = ParseOrientation(fldValue)
+    Case "PaperSize":         dm.PaperSize = ParsePaperSize(fldValue)
+    Case "PaperLength":       dm.PaperLength = ParseLongVal(fldValue)
+    Case "PaperWidth":        dm.PaperWidth = ParseLongVal(fldValue)
+    Case "Scale":             dm.[Scale] = ParseLongVal(fldValue)
+    Case "Copies":            dm.Copies = ParseLongVal(fldValue)
+    Case "DefaultSource":     dm.DefaultSource = ParseDefaultSource(fldValue)
+    Case "PrintQuality":      dm.PrintQuality = ParsePrintQuality(fldValue)
+    Case "Color":             dm.Color = ParseColor(fldValue)
+    Case "Duplex":            dm.Duplex = ParseDuplex(fldValue)
+    Case "YResolution":       dm.YResolution = ParseLongVal(fldValue)
+    Case "TTOption":          dm.TTOption = ParseTTOption(fldValue)
+    Case "Collate":           dm.Collate = ParseCollate(fldValue)
+    Case "FormName":          dm.FormName = Unquote(fldValue)
+    Case "FormNameRawHex":    dm.FormNameRawHex = LCase$(Trim$(fldValue))
+    Case "LogPixels":         dm.LogPixels = ParseLongVal(fldValue)
+    Case "BitsPerPel":        dm.BitsPerPel = ParseLongVal(fldValue)
+    Case "PelsWidth":         dm.PelsWidth = ParseLongVal(fldValue)
+    Case "PelsHeight":        dm.PelsHeight = ParseLongVal(fldValue)
+    Case "DisplayFlagsOrNup": dm.DisplayFlagsOrNup = ParseLongVal(fldValue)
+    Case "DisplayFrequency":  dm.DisplayFrequency = ParseLongVal(fldValue)
+    Case "ICMMethod":         dm.ICMMethod = ParseICMMethod(fldValue)
+    Case "ICMIntent":         dm.ICMIntent = ParseICMIntent(fldValue)
+    Case "MediaType":         dm.MediaType = ParseMediaType(fldValue)
+    Case "DitherType":        dm.DitherType = ParseDitherType(fldValue)
+    Case "Reserved1":         dm.Reserved1 = ParseLongVal(fldValue)
+    Case "Reserved2":         dm.Reserved2 = ParseLongVal(fldValue)
+    Case "PanningWidth":      dm.PanningWidth = ParseLongVal(fldValue)
+    Case "PanningHeight":     dm.PanningHeight = ParseLongVal(fldValue)
+  End Select
+End Sub
+
+' Parse a decimal or 0x-prefixed hex integer into a Long (bit-preserving).
+Private Function ParseLongVal(ByVal s As String) As Long
+  s = Trim$(s)
+  If Len(s) >= 2 And StrComp(Left$(s, 2), "0x", vbTextCompare) = 0 Then
+    ParseLongVal = HexStrToLong(Mid$(s, 3))
+  Else
+    ParseLongVal = CLng(s)
+  End If
+End Function
+
+' Parse up to 8 hex digits into a Long, preserving the bit pattern
+' (so "FFFFFFFF" yields -1 rather than overflowing).
+Private Function HexStrToLong(ByVal sHex As String) As Long
+  Dim buf(0 To 3) As Byte
+  Dim i As Long
+  Dim padded As String
+  padded = Right$(String$(8, "0") & UCase$(Trim$(sHex)), 8)
+  For i = 0 To 3
+    buf(3 - i) = CByte("&H" & Mid$(padded, i * 2 + 1, 2))
+  Next i
+  HexStrToLong = ReadS32(buf, 0)
+End Function
+
+' Strip VBA-style surrounding quotes and un-double any escaped quotes.
+Private Function Unquote(ByVal s As String) As String
+  s = Trim$(s)
+  If Len(s) >= 2 And Left$(s, 1) = """" And Right$(s, 1) = """" Then
+    s = Mid$(s, 2, Len(s) - 2)
+    s = Replace$(s, """""", """")
+  End If
+  Unquote = s
+End Function
+
+Private Function ParseOrientation(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "portrait":  ParseOrientation = 1
+    Case "landscape": ParseOrientation = 2
+    Case Else:        ParseOrientation = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseColor(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "monochrome": ParseColor = 1
+    Case "color":      ParseColor = 2
+    Case Else:         ParseColor = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseDuplex(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "simplex":    ParseDuplex = 1
+    Case "vertical":   ParseDuplex = 2
+    Case "horizontal": ParseDuplex = 3
+    Case Else:         ParseDuplex = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseTTOption(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "bitmap":          ParseTTOption = 1
+    Case "download":        ParseTTOption = 2
+    Case "downloadoutline": ParseTTOption = 3
+    Case "subdev":          ParseTTOption = 4
+    Case Else:              ParseTTOption = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseCollate(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "no":  ParseCollate = 0
+    Case "yes": ParseCollate = 1
+    Case Else:  ParseCollate = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseDefaultSource(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "onlyone":       ParseDefaultSource = 1
+    Case "lower":         ParseDefaultSource = 2
+    Case "middle":        ParseDefaultSource = 3
+    Case "manual":        ParseDefaultSource = 4
+    Case "envelope":      ParseDefaultSource = 5
+    Case "envmanual":     ParseDefaultSource = 6
+    Case "auto":          ParseDefaultSource = 7
+    Case "tractor":       ParseDefaultSource = 8
+    Case "smallfmt":      ParseDefaultSource = 9
+    Case "largefmt":      ParseDefaultSource = 10
+    Case "largecapacity": ParseDefaultSource = 11
+    Case "cassette":      ParseDefaultSource = 14
+    Case "formsource":    ParseDefaultSource = 15
+    Case Else:            ParseDefaultSource = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParsePrintQuality(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "draft":  ParsePrintQuality = -1
+    Case "low":    ParsePrintQuality = -2
+    Case "medium": ParsePrintQuality = -3
+    Case "high":   ParsePrintQuality = -4
+    Case Else:     ParsePrintQuality = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParsePaperSize(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "letter":      ParsePaperSize = 1
+    Case "lettersmall": ParsePaperSize = 2
+    Case "tabloid":     ParsePaperSize = 3
+    Case "ledger":      ParsePaperSize = 4
+    Case "legal":       ParsePaperSize = 5
+    Case "statement":   ParsePaperSize = 6
+    Case "executive":   ParsePaperSize = 7
+    Case "a3":          ParsePaperSize = 8
+    Case "a4":          ParsePaperSize = 9
+    Case "a4small":     ParsePaperSize = 10
+    Case "a5":          ParsePaperSize = 11
+    Case "b4":          ParsePaperSize = 12
+    Case "b5":          ParsePaperSize = 13
+    Case "folio":       ParsePaperSize = 14
+    Case "quarto":      ParsePaperSize = 15
+    Case "10x14":       ParsePaperSize = 16
+    Case "11x17":       ParsePaperSize = 17
+    Case "note":        ParsePaperSize = 18
+    Case "env9":        ParsePaperSize = 19
+    Case "env10":       ParsePaperSize = 20
+    Case "env11":       ParsePaperSize = 21
+    Case "env12":       ParsePaperSize = 22
+    Case "env14":       ParsePaperSize = 23
+    Case "csheet":      ParsePaperSize = 24
+    Case "dsheet":      ParsePaperSize = 25
+    Case "esheet":      ParsePaperSize = 26
+    Case "user":        ParsePaperSize = 256
+    Case Else:          ParsePaperSize = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseICMMethod(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "none":   ParseICMMethod = 1
+    Case "system": ParseICMMethod = 2
+    Case "driver": ParseICMMethod = 3
+    Case "device": ParseICMMethod = 4
+    Case Else:     ParseICMMethod = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseICMIntent(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "saturate":          ParseICMIntent = 1
+    Case "contrast":          ParseICMIntent = 2
+    Case "colorimetricmatch": ParseICMIntent = 3
+    Case "abscolorimetric":   ParseICMIntent = 4
+    Case Else:                ParseICMIntent = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseMediaType(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "standard":     ParseMediaType = 1
+    Case "transparency": ParseMediaType = 2
+    Case "glossy":       ParseMediaType = 3
+    Case Else:           ParseMediaType = ParseLongVal(s)
+  End Select
+End Function
+
+Private Function ParseDitherType(ByVal s As String) As Long
+  Select Case LCase$(Trim$(s))
+    Case "none":           ParseDitherType = 1
+    Case "coarse":         ParseDitherType = 2
+    Case "fine":           ParseDitherType = 3
+    Case "lineart":        ParseDitherType = 4
+    Case "errordiffusion": ParseDitherType = 5
+    Case "reserved6":      ParseDitherType = 6
+    Case "reserved7":      ParseDitherType = 7
+    Case "reserved8":      ParseDitherType = 8
+    Case "reserved9":      ParseDitherType = 9
+    Case "grayscale":      ParseDitherType = 10
+    Case Else:             ParseDitherType = ParseLongVal(s)
+  End Select
+End Function
+
+' Reverse of DescribeFields: "(none)" or "Orientation | PaperSize | ..."
+' or a plain decimal / 0x-prefixed hex number.
+Private Function ParseFieldsFlags(ByVal s As String) As Long
+  Dim parts() As String
+  Dim i       As Long
+  Dim v       As Long
+  Dim p       As String
+
+  s = Trim$(s)
+  If LenB(s) = 0 Or StrComp(s, "(none)", vbTextCompare) = 0 Then
+    ParseFieldsFlags = 0
+    Exit Function
+  End If
+
+  ' Bare number?
+  If IsNumeric(s) Then
+    ParseFieldsFlags = CLng(s)
+    Exit Function
+  End If
+  If StrComp(Left$(s, 2), "0x", vbTextCompare) = 0 Then
+    ParseFieldsFlags = ParseLongVal(s)
+    Exit Function
+  End If
+
+  parts = Split(s, "|")
+  For i = LBound(parts) To UBound(parts)
+    p = LCase$(Trim$(parts(i)))
+    Select Case p
+      Case "orientation":        v = v Or DM_ORIENTATION
+      Case "papersize":          v = v Or DM_PAPERSIZE
+      Case "paperlength":        v = v Or DM_PAPERLENGTH
+      Case "paperwidth":         v = v Or DM_PAPERWIDTH
+      Case "scale":              v = v Or DM_SCALE
+      Case "position":           v = v Or DM_POSITION
+      Case "nup":                v = v Or DM_NUP
+      Case "displayorientation": v = v Or DM_DISPLAYORIENTATION
+      Case "copies":             v = v Or DM_COPIES
+      Case "defaultsource":      v = v Or DM_DEFAULTSOURCE
+      Case "printquality":       v = v Or DM_PRINTQUALITY
+      Case "color":              v = v Or DM_COLOR
+      Case "duplex":             v = v Or DM_DUPLEX
+      Case "yresolution":        v = v Or DM_YRESOLUTION
+      Case "ttoption":           v = v Or DM_TTOPTION
+      Case "collate":            v = v Or DM_COLLATE
+      Case "formname":           v = v Or DM_FORMNAME
+      Case "logpixels":          v = v Or DM_LOGPIXELS
+      Case "bitsperpel":         v = v Or DM_BITSPERPEL
+      Case "pelswidth":          v = v Or DM_PELSWIDTH
+      Case "pelsheight":         v = v Or DM_PELSHEIGHT
+      Case "displayflags":       v = v Or DM_DISPLAYFLAGS
+      Case "displayfrequency":   v = v Or DM_DISPLAYFREQUENCY
+      Case "icmmethod":          v = v Or DM_ICMMETHOD
+      Case "icmintent":          v = v Or DM_ICMINTENT
+      Case "mediatype":          v = v Or DM_MEDIATYPE
+      Case "dithertype":         v = v Or DM_DITHERTYPE
+      Case "panningwidth":       v = v Or DM_PANNINGWIDTH
+      Case "panningheight":      v = v Or DM_PANNINGHEIGHT
+    End Select
+  Next i
+  ParseFieldsFlags = v
+End Function
+
+

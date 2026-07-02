@@ -1,0 +1,1534 @@
+﻿Option Compare Database
+Option Explicit
+
+'************************************************
+' UnitTests
+'
+' A single-module unit-testing framework for Microsoft Access / VBA projects.
+' Only this module need be imported into a host project - it has no other
+' dependencies. Tests are run interactively from the Immediate window, or
+' programmatically (eg. from a CI build) via Result().
+'
+' WRITING TESTS
+'
+' Create a standard module whose name ends with the suffix "_test" (the suffix
+' also lets version control exclude tests from production code). Within it,
+' write each test as a zero-arity Function preceded on its own line by '@test.
+' Use Describe to label what a test covers - the label is shown for failures:
+'
+'        '@test
+'        Function Test1()
+'           UnitTests.Describe "Test the built in Mid$() function"
+'           UnitTests.AssertEqual Mid$("Hello!", 2, 2), "el"
+'           UnitTests.AssertEqual Mid$("Hello!", 4), "lo!", "runs to the end"
+'        End Function
+'
+' Helper functions (without '@test) may live in the same module.
+'
+' WRITING DOCTESTS
+'
+' Doctests live in the documentation comments of a target module, Sub or
+' Function, and never form part of released code. A test module enables
+' doctests for a target module with '@doctest followed by a space- and/or
+' comma-delimited list of module names, eg:
+'
+'        '@doctest modMaths
+'        '@doctest mod1, mod2  mod3,mod4
+'
+' Each doctest is introduced by an @example tag.
+'
+' Two styles are supported. Style A ("prompt") writes the call on a ">" line
+' and the expected result on the next ">" line, aligned in the same column;
+' the two are then compared as strings. Style B ("explicit") instead calls an
+' Assert function directly, which is more robust because no conversion to a
+' string is forced. See the Assert functions documented below, and the
+' modExample module, for concrete working examples of both styles.
+'
+' RUNNING TESTS
+'
+' From the Immediate window (Test is the default member, so "Test" alone runs):
+'
+'        UnitTests.Test                     all tests in all "*_test" modules + doctests
+'        UnitTests.Test "modExample_test"   all tests in one module (1st String = Modules)
+'        UnitTests.Test "*", "Test1"        tests named Test1 in any module (2nd String = Tests)
+'        UnitTests.Test False               all tests, but skip doctests
+'        modExample_test.Test1              run a single named test by typing its name
+'
+' A Modules pattern not already ending in "_test" has "_test" appended to it.
+'
+' For CI / programmatic use, Result() takes the same arguments as Test and
+' returns "Pass", or "Fail" with the failure detail; Results() returns the
+' full per-test detail as a Result user-defined type.
+'
+' ASSERT REFERENCE  (each Assert takes an optional trailing String message)
+'
+'        AssertEqual / AssertNotEqual    compare two values (numeric "=" semantics)
+'        AssertStrictEqual               equal AND the same type (see caveat below)
+'        AssertIn / AssertNotIn          item(s) in an Array, Collection or Object
+'        Assert / AssertIsTrue           passes when the expression is Boolean True
+'        AssertIsFalse                   passes when the expression is Boolean False
+'        AssertIsNull / AssertIsNotNull  test for Null
+'        AssertFail / AssertSucceed      always fail / always pass
+'        AssertUnable                    passes when the two values cannot be compared
+'
+' KNOWN LIMITATIONS
+'
+' * Two different Objects of the same Type cannot be deep-compared; AssertEqual
+'   reports "UnitTest is unable to compare two Objects". Use AssertUnable when
+'   that is the expected outcome, or compare individual properties instead.
+' * AssertStrictEqual cannot detect Variant coercion: VBA coerces every argument
+'   into the function's Variant parameters, so a Variant holding a value and the
+'   bare type are indistinguishable inside the function.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+'************************************************
+
+' Outcome - the result of a single comparison (a pass flag plus a failure reason).
+Public Type Outcome
+   Pass As Boolean
+   FailReason As String
+End Type
+
+' Test - the recorded detail of a single Assert within a test run.
+Public Type Test
+    ModuleName As String
+    FunctionName As String
+    Description As String
+    TestType As String
+    Left As String
+    Right As String
+    ShowSide As WhichSide
+    Outcome As Outcome
+    Message As String
+End Type
+    
+Public Type Result
+    TestCount As Long ' the total number of Assert Tests done (PassCount + FailCount = TestCount)
+    Tests() As Test ' an array containing all the tests completed
+    PassCount As Long ' out of the TestCount - how many Passed?
+    FailCount As Long ' out of the TestCount - how many failed?
+    DocTestCount As Long ' out of the TestCount - how many were doc tests? All the remainder must be standard tests
+End Type
+
+Private Enum WhichSide
+  None = 0
+  LeftOnly = 1
+  RightOnly = 2
+  Both = 3
+End Enum
+
+Private mblnRunning As Boolean ' indicates that the test suite is running
+Private mResults As Result
+Private mstrLastDescription As String
+Private mstrLastModuleName As String
+Private mstrLastFunctionName As String
+Private mstrDocTestModules As String ' a comma separated list of modules to do doc tests on
+Private mblnDocTest As Boolean ' indicates doctests are in progress
+
+'************************************************
+' Test
+'
+' The framework entry point. Runs the selected tests and prints the results to
+' the Immediate window. It is the module's default member, so typing Test on
+' its own runs everything.
+'
+' Arguments are supplied through a ParamArray and may be given in any order:
+'   - a Modules name pattern (String, default "*_test")
+'   - a Tests name pattern (String, default "*")
+'   - a Boolean (default True) controlling whether doctests are run
+' When two Strings are supplied the first is the Modules pattern and the second
+' the Tests pattern. A Modules pattern not already ending in "_test" has
+' "_test" appended to it.
+'
+' Usage (Immediate window):
+'   Test                              run every test + the doctests they reference
+'   UnitTests.Test "modExample_test"  all tests in one module
+'   UnitTests.Test "*", "Test1"       tests named Test1 in any test module
+'   UnitTests.Test False              all tests, but skip doctests
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        ParamArray   Optional Modules pattern, Tests pattern and/or doctest flag (see above)
+'************************************************
+Sub Test(ParamArray arrParams() As Variant)
+Attribute Test.VB_Description = "Runs the tests and displays results in the immediate window"
+Attribute Test.VB_UserMemId = 0
+'Attribute Test.VB_Description = "Runs the tests and displays results in the immediate window"
+   Dim strModules As String
+   Dim strTests As String
+   Dim blnDocTests As Boolean
+   Dim varParams As Variant
+   
+   varParams = arrParams
+
+   If Not pvtParseParams(varParams, strModules, strTests, blnDocTests) Then
+      Debug.Print "Invalid Argument"
+      Exit Sub
+   End If
+
+   pvtDoTests strTests, strModules, blnDocTests
+   Debug.Print pvtResultsToString()
+End Sub
+
+'************************************************
+' Result
+'
+' Runs the tests and returns the overall outcome as a String, intended for CI
+' or other programmatic use. Returns "Pass" when at least one test ran and none
+' failed; otherwise returns "Fail", in both cases followed by the failure detail.
+' Call Results afterwards for the full per-test detail.
+'
+' Takes the same arguments as Test (both parse them through pvtParseParams), so
+' the two have a guaranteed-identical calling pattern - see Test for the rules.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        ParamArray   Optional Modules pattern, Tests pattern and/or doctest flag (see Test)
+' @return       String       "Pass", or "Fail" followed by the failure detail
+'************************************************
+Function Result(ParamArray arrParams() As Variant) As String
+   Dim strModules As String
+   Dim strTests As String
+   Dim blnDocTests As Boolean
+   Dim varParams As Variant
+   
+   varParams = arrParams
+
+   If Not pvtParseParams(varParams, strModules, strTests, blnDocTests) Then
+      Result = "Invalid Argument"
+      Exit Function
+   End If
+
+   pvtDoTests strTests, strModules, blnDocTests
+   If mResults.FailCount = 0 And mResults.TestCount <> 0 Then
+      Result = "Pass" & vbCrLf & pvtResultsToString()
+   Else
+      Result = "Fail" & vbCrLf & pvtResultsToString()
+   End If
+End Function
+
+' pvtParseParams - parses the (up to 3) optional arguments shared by Test and
+' Result so that both have a guaranteed-identical, order-independent calling
+' pattern. The caller forwards its ParamArray here. The arguments, in any
+' order, are:
+'   - the first String:  a Modules name pattern (default "*_test"); if it does
+'                         not already end in "_test" that suffix is appended
+'   - the second String: a Tests name pattern (default "*")
+'   - a Boolean:          whether doctests are run (default True). It may be given
+'                         either as a real Boolean or as the (case-insensitive)
+'                         String "True"/"False", so an external caller restricted
+'                         to passing strings can still set it.
+' The position of an argument no longer matters - the two Strings are assigned
+' Modules-then-Tests in the order they appear, and a Boolean may sit anywhere.
+' Returns False, without parsing further, if given more than two Strings, more
+' than one Boolean, or an argument of any other type.
+'
+' Not actually Private - it is left accessible so that the UnitTests _test
+' module can test it directly (the same arrangement as pvtFunctionify).
+Function pvtParseParams(arrParams As Variant, ansModules As String, ansTests As String, ansDocTests As Boolean) As Boolean
+   Dim i As Long
+   Dim lngStrings As Long    ' how many String arguments have been seen so far
+   Dim blnGotBool As Boolean ' True once a Boolean argument has been seen
+   Dim varParam As Variant   ' the current argument, after coercing a Boolean-like String
+
+   ' set defaults
+   ansModules = "*_test"
+   ansTests = "*"
+   ansDocTests = True
+   pvtParseParams = True
+
+   For i = LBound(arrParams) To UBound(arrParams)
+      ' Treat the String "True"/"False" (case-insensitive) as a real Boolean, so an
+      ' external caller restricted to passing strings can still set the doctest flag.
+      varParam = arrParams(i)
+      If VarType(varParam) = vbString Then
+         If StrComp(varParam, "True", vbTextCompare) = 0 Then
+            varParam = True
+         ElseIf StrComp(varParam, "False", vbTextCompare) = 0 Then
+            varParam = False
+         End If
+      End If
+
+      Select Case VarType(varParam)
+         Case vbBoolean
+            If blnGotBool Then
+               pvtParseParams = False
+               Exit Function
+            End If
+            blnGotBool = True
+            ansDocTests = varParam
+         Case vbString
+            Select Case lngStrings
+               Case 0
+                  ansModules = varParam
+                  If Len(ansModules) = 0 Then
+                     ansModules = "*_test"
+                  ElseIf Len(ansModules) < 5 Then
+                     ansModules = ansModules & "_test"
+                  ElseIf Right$(ansModules, 5) <> "_test" Then
+                     ansModules = ansModules & "_test"
+                  End If
+               Case 1
+                  ansTests = varParam
+               Case Else
+                  pvtParseParams = False
+                  Exit Function
+            End Select
+            lngStrings = lngStrings + 1
+         Case Else
+            pvtParseParams = False
+            Exit Function
+      End Select
+   Next
+End Function
+
+'************************************************
+' Describe
+'
+' Records a human-readable description of what the current test covers. The
+' description is shown against any failures reported for that test, making the
+' Immediate-window output easier to read. Call it at the top of a test.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        String   the text describing what the current test covers
+'************************************************
+Sub Describe(strDescription As String)
+    mstrLastDescription = strDescription
+End Sub
+
+'************************************************
+' Results
+'
+' Returns the full detail of the most recent run as a Result user-defined type
+' (the overall counts plus an array of the individual Test records). Call it
+' after Test or Result to inspect exactly what passed or failed.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @return       Result   the populated Result UDT from the last run
+'************************************************
+Function Results() As Result
+    Results = mResults
+End Function
+
+'************************************************
+' Assert
+'
+' Passes when the supplied Boolean expression is True. Functionally identical
+' to AssertIsTrue.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Boolean   the expression to test
+' @param        String    optional message shown if the test fails
+' @return       Boolean   the value tested (True when the test passes)
+' @example
+' UnitTests.Assert 1 = 1
+'************************************************
+Function Assert(bln As Boolean, Optional strMsg As String = vbNullString) As Boolean
+   Assert = bln
+   pvtAddTestResult "Assert", bln, Null, None, pvtCreateOutcome(Assert), strMsg
+End Function
+
+'************************************************
+' AssertIsTrue
+'
+' Passes when the supplied Boolean expression is True. Functionally identical
+' to Assert.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Boolean   the expression to test
+' @param        String    optional message shown if the test fails
+' @return       Boolean   the value tested (True when the test passes)
+' @example
+' UnitTests.AssertIsTrue 1 = 1
+'************************************************
+Function AssertIsTrue(bln As Boolean, Optional strMsg As String = vbNullString) As Boolean
+    AssertIsTrue = bln
+    pvtAddTestResult "AssertIsTrue", bln, Null, None, pvtCreateOutcome(AssertIsTrue), strMsg
+End Function
+
+'************************************************
+' AssertIsFalse
+'
+' Passes when the supplied Boolean expression is False.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Boolean   the expression to test
+' @param        String    optional message shown if the test fails
+' @return       Boolean   True when the test passes (ie. the expression is False)
+' @example
+' UnitTests.AssertIsFalse 1 = 2
+'************************************************
+Function AssertIsFalse(bln As Boolean, Optional strMsg As String = vbNullString) As Boolean
+    AssertIsFalse = Not bln
+    pvtAddTestResult "AssertIsFalse", bln, Null, None, pvtCreateOutcome(AssertIsFalse), strMsg
+End Function
+
+'************************************************
+' AssertIsNull
+'
+' Passes when the supplied value is Null.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Variant   the value to test
+' @param        String    optional message shown if the test fails
+' @return       Boolean   True when the value is Null
+' @example
+' UnitTests.AssertIsNull Null
+'************************************************
+Function AssertIsNull(varIn As Variant, Optional strMsg As String = vbNullString) As Boolean
+   AssertIsNull = IsNull(varIn)
+   pvtAddTestResult "AssertIsNull", varIn, Null, LeftOnly, pvtCreateOutcome(AssertIsNull), strMsg
+End Function
+
+'************************************************
+' AssertIsNotNull
+'
+' Passes when the supplied value is anything other than Null.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Variant   the value to test
+' @param        String    optional message shown if the test fails
+' @return       Boolean   True when the value is not Null
+' @example
+' UnitTests.AssertIsNotNull "x"
+'************************************************
+Function AssertIsNotNull(varIn As Variant, Optional strMsg As String = vbNullString) As Boolean
+   AssertIsNotNull = Not IsNull(varIn)
+   pvtAddTestResult "AssertIsNotNull", varIn, Null, LeftOnly, pvtCreateOutcome(AssertIsNotNull), strMsg
+End Function
+
+'************************************************
+' AssertFail
+'
+' Always records a failure. Useful to mark a code path that should never be
+' reached. Takes only an optional message.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        String    optional message shown with the failure
+' @return       Boolean   always False
+'************************************************
+Function AssertFail(Optional strMsg As String = vbNullString) As Boolean
+   AssertFail = False
+   pvtAddTestResult "AssertFail", Null, Null, None, pvtCreateOutcome(AssertFail), strMsg
+End Function
+
+'************************************************
+' AssertSucceed
+'
+' Always records a pass. Useful to mark a code path that should be reached.
+' Takes no arguments.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @return       Boolean   always True
+'************************************************
+Function AssertSucceed() As Boolean
+   AssertSucceed = True
+   pvtAddTestResult "AssertSucceed", Null, Null, None, pvtCreateOutcome(AssertSucceed), vbNullString
+End Function
+
+'************************************************
+' AssertEqual
+'
+' Passes when the two values are equal. Numeric values use VBA "=" semantics,
+' so 2.0 As Double is equal to 2 As Integer. Arrays are compared element by
+' element. Two different Objects of the same Type cannot be compared - see the
+' module header's Known Limitations.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Variant   the actual (left) value
+' @param        Variant   the expected (right) value
+' @param        String    optional message shown if the test fails
+' @return       Boolean   True when the two values are equal
+' @example
+' UnitTests.AssertEqual 2 + 2, 4
+'************************************************
+Function AssertEqual(ByRef varLeft As Variant, varRight As Variant, Optional strMsg As String = vbNullString) As Boolean
+   Dim ocmThis As Outcome
+
+   ocmThis = pvtIsEqual(varLeft, varRight)
+   pvtAddTestResult "AssertEqual", varLeft, varRight, Both, pvtIsEqual(varLeft, varRight), strMsg
+   
+   AssertEqual = ocmThis.Pass
+End Function
+
+'************************************************
+' AssertNotEqual
+'
+' The inverse of AssertEqual: passes when the two values are not equal, using
+' the same comparison rules.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Variant   the actual (left) value
+' @param        Variant   the value it should not equal (right)
+' @param        String    optional message shown if the test fails
+' @return       Boolean   True when the two values are not equal
+' @example
+' UnitTests.AssertNotEqual 2 + 2, 5
+'************************************************
+Function AssertNotEqual(ByRef varLeft As Variant, varRight As Variant, Optional strMsg As String = vbNullString) As Boolean
+   Dim ocmThis As Outcome
+
+   ocmThis = pvtIsNotEqual(varLeft, varRight)
+   pvtAddTestResult "AssertNotEqual", varLeft, varRight, Both, ocmThis, strMsg
+   
+   AssertNotEqual = ocmThis.Pass
+End Function
+
+'************************************************
+' AssertStrictEqual
+'
+' Passes when the two values are equal AND of the same type. Note that VBA's
+' Variant coercion means a Variant holding a value cannot be distinguished from
+' the bare type (see the module header's Known Limitations), so this does not
+' reliably catch a Variant-vs-non-Variant difference.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Variant   the actual (left) value
+' @param        Variant   the expected (right) value
+' @param        String    optional message shown if the test fails
+' @return       Boolean   True when the values are equal and of the same type
+' @example
+' UnitTests.AssertStrictEqual 2, 2
+'************************************************
+Function AssertStrictEqual(varLeft As Variant, varRight As Variant, Optional strMsg As String = vbNullString) As Boolean
+   AssertStrictEqual = ToString(varLeft) = ToString(varRight)
+   pvtAddTestResult "AssertStrictEqual", varLeft, varRight, Both, pvtCreateOutcome(AssertStrictEqual), strMsg
+End Function
+
+'************************************************
+' AssertIn
+'
+' Passes when every item in the second argument is found in the first. The
+' first argument is the container to look in (an Array, a Collection or an
+' Object); the second is a single item, or an array of items, to look for. For
+' an Object both the obj("name") accessor and any Properties collection are
+' checked.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Variant   the container to look in (Array, Collection or Object)
+' @param        Variant   a single item, or an array of items, to look for
+' @param        String    optional message shown if the test fails
+' @return       Boolean   True when every item is found in the container
+' @example
+' UnitTests.AssertIn Array(1, 2, 3), 2
+'************************************************
+Function AssertIn(varLookIn As Variant, varLookFor As Variant, Optional strMsg As String = vbNullString) As Boolean
+  Dim ocmThis As Outcome
+
+  ocmThis = pvtIsIn(varLookIn, varLookFor)
+  pvtAddTestResult "AssertIn", varLookIn, varLookFor, Both, ocmThis, strMsg
+  AssertIn = ocmThis.Pass
+End Function
+
+'************************************************
+' AssertNotIn
+'
+' The inverse of AssertIn: passes when none of the item(s) in the second
+' argument are found in the container given as the first argument.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Variant   the container to look in (Array, Collection or Object)
+' @param        Variant   a single item, or an array of items, that should be absent
+' @param        String    optional message shown if the test fails
+' @return       Boolean   True when none of the items are found in the container
+' @example
+' UnitTests.AssertNotIn Array(1, 2, 3), 4
+'************************************************
+Function AssertNotIn(varLookIn As Variant, varLookFor As Variant, Optional strMsg As String = vbNullString) As Boolean
+  Dim ocmThis As Outcome
+
+  ocmThis = pvtIsNotIn(varLookIn, varLookFor)
+  pvtAddTestResult "AssertNotIn", varLookIn, varLookFor, Both, ocmThis, strMsg
+  AssertNotIn = ocmThis.Pass
+End Function
+
+'************************************************
+' AssertUnable
+'
+' Passes when the harness is unable to compare the two values - in practice
+' when two different Objects of the same Type are supplied, which the framework
+' cannot deep-compare. Use it to assert that a comparison is genuinely
+' impossible rather than simply unequal.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Variant   the first (left) value
+' @param        Variant   the second (right) value
+' @param        String    optional message shown if the test fails
+' @return       Boolean   True when the two values cannot be compared
+'************************************************
+Function AssertUnable(varLeft As Variant, varRight As Variant, Optional strMsg As String = vbNullString) As Boolean
+   ' to check this run an IsEqual check then override that result
+   Dim ocmThis As Outcome
+   
+   ocmThis = pvtIsEqual(varLeft, varRight)
+   
+   If ocmThis.Pass = False And Left$(ocmThis.FailReason, 18) = "UnitTest is unable" Then
+      ocmThis.Pass = True
+      ocmThis.FailReason = vbNullString
+   Else
+      ocmThis.Pass = False
+   End If
+   pvtAddTestResult "AssertUnable", varLeft, varRight, Both, ocmThis, strMsg
+End Function
+Private Function pvtIsNotEqual(varLeft As Variant, varRight As Variant) As Outcome
+   pvtIsNotEqual = pvtIsEqual(varLeft, varRight)
+   
+   If LenB(pvtIsNotEqual.FailReason) = 0 Then
+      pvtIsNotEqual.Pass = Not pvtIsNotEqual.Pass
+   End If
+End Function
+
+Private Function pvtIsEqual(varLeft As Variant, varRight As Variant) As Outcome
+   Dim blnEqual As Boolean
+   Dim i As Long
+   
+   If pvtIsArray(varLeft) Or pvtIsArray(varRight) Then
+      ' we have at least one array
+      pvtIsEqual = pvtIsEqual_Array(varLeft, varRight)
+   ElseIf pvtIsObject(varLeft) Or pvtIsObject(varRight) Then
+      pvtIsEqual = pvtIsEqual_Object(varLeft, varRight)
+   Else
+      ' not an array or object
+      pvtIsEqual.Pass = (varRight = varLeft)
+   End If
+End Function
+
+Private Function pvtIsIn(varLookIn As Variant, varLookFor As Variant) As Outcome
+  ' LookIn must be either an array, or an object which can be accessed using the obj("bla") pattern
+  ' If LookIn is an array then LookFor can be anything, or an array of anything. If it's an array then each item in the LookFor Array must be in LookIn
+  ' If LookIn is an object then LookFor MUST be a string or an array of strings
+  
+  If pvtIsArray(varLookFor) Then
+    pvtIsIn = pvtItemsAreInSomething(varLookIn, varLookFor)
+  Else
+    pvtIsIn = pvtItemIsInSomething(varLookIn, varLookFor)
+  End If
+End Function
+
+Private Function pvtIsNotIn(varLookIn As Variant, varLookFor As Variant) As Outcome
+  If pvtIsArray(varLookFor) Then
+    pvtIsNotIn = pvtItemsAreNotInSomething(varLookIn, varLookFor)
+  Else
+    pvtIsNotIn = pvtItemIsNotInSomething(varLookIn, varLookFor)
+  End If
+End Function
+
+Private Function pvtItemIsInSomething(varLookIn As Variant, varLookFor As Variant) As Outcome
+  Dim ocmOut As Outcome
+  Dim obj As Object
+  
+  If pvtIsArray(varLookIn) Then
+    ocmOut = pvtItemIsInArray(varLookIn, varLookFor)
+  ElseIf pvtIsCollection(varLookIn) Then
+    If VarType(varLookFor) = vbString Then
+      Set obj = varLookIn
+      ocmOut = pvtItemIsInCollection(obj, CStr(varLookFor))
+    Else
+      ocmOut = pvtCreateOutcome(False, "AssertIn and AssertNotIn can only look for string items in a Collection")
+    End If
+  ElseIf pvtIsObject(varLookIn) Then
+    If VarType(varLookFor) = vbString Then
+      ocmOut = pvtItemIsInObject(varLookIn, CStr(varLookFor))
+    Else
+      ocmOut = pvtCreateOutcome(False, "AssertIn and AssertNotIn can only look for string items in an Object")
+    End If
+  Else
+    ocmOut = pvtCreateOutcome(False, "AssertIn and AssertNotIn can only look in Arrays, Collections, or Objects with the obj(""bla"") access pattern")
+  End If
+  
+  pvtItemIsInSomething = ocmOut
+End Function
+
+Private Function pvtItemIsNotInSomething(varLookIn As Variant, varLookFor As Variant) As Outcome
+  Dim ocmOut As Outcome
+  
+  ocmOut = pvtItemIsInSomething(varLookIn, varLookFor)
+  If LenB(ocmOut.FailReason) = 0 Then ocmOut.Pass = Not ocmOut.Pass
+  
+  pvtItemIsNotInSomething = ocmOut
+End Function
+
+Private Function pvtItemsAreInSomething(varLookIn As Variant, varLookFor As Variant) As Outcome
+  Dim ocmOut As Outcome
+  Dim i As Long
+  
+  If Not pvtIsArray(varLookFor) Then
+  ' we should never get here the calling routing should check that both parameters are arrays
+    pvtItemsAreInSomething = pvtCreateOutcome(False, "UnitTest coding error 1")
+    Exit Function
+  End If
+  
+  For i = LBound(varLookFor) To UBound(varLookFor)
+    If pvtIsArray(varLookFor(i)) Then
+      ' UnitTesting cannot look for an array inside another array. This is because if the second parameter passed to these tests is an array we look for each element individually
+      pvtItemsAreInSomething = pvtCreateOutcome(False, "AssertIn and AssertNotIn cannot look for arrays")
+      Exit Function
+    End If
+    ocmOut = pvtItemIsInSomething(varLookIn, varLookFor(i))
+    If Not ocmOut.Pass Then Exit For
+  Next i
+  
+  pvtItemsAreInSomething = ocmOut
+End Function
+
+Private Function pvtItemsAreNotInSomething(varLookIn As Variant, varLookFor As Variant) As Outcome
+  Dim ocmOut As Outcome
+  Dim i As Long
+  
+  If Not pvtIsArray(varLookFor) Then
+  ' we should never get here the calling routing should check that both parameters are arrays
+    pvtItemsAreNotInSomething = pvtCreateOutcome(False, "UnitTest coding error 2")
+    Exit Function
+  End If
+  
+  For i = LBound(varLookFor) To UBound(varLookFor)
+    If pvtIsArray(varLookFor(i)) Then
+      ' UnitTesting cannot look for an array inside another array. This is because if the second parameter passed to these tests is an array we look for each element individually
+      pvtItemsAreNotInSomething = pvtCreateOutcome(False, "AssertIn and AssertNotIn cannot look for arrays")
+      Exit Function
+    End If
+    ocmOut = pvtItemIsNotInSomething(varLookIn, varLookFor(i))
+    If Not ocmOut.Pass Then Exit For
+  Next i
+  
+  pvtItemsAreNotInSomething = ocmOut
+End Function
+
+Private Function pvtItemIsInArray(varLookIn As Variant, varLookFor As Variant) As Outcome
+  ' caller must have checked that varLookIn is an array, and varLookFor is NOT an array
+  ' but varLookIn could be an array of variants, or an array of something specific
+  ' NB vbVariant means an array of Variants
+  Dim i As Long
+  Dim ocmOut As Outcome
+  
+  If Not pvtIsArray(varLookIn) Or pvtIsArray(varLookFor) Then
+    ' an error has occurred, the caller should have checked we have an array and something that is not an array
+    pvtItemIsInArray = pvtCreateOutcome(False, "UnitTest coding error 3")
+    Exit Function
+  End If
+  
+  If (VarType(varLookIn) And vbVariant = vbVariant) Or (VarType(varLookIn) And VarType(varLookFor) <> 0) Then
+    ' we know the types match
+    For i = LBound(varLookIn) To UBound(varLookIn)
+      ocmOut = pvtIsEqual(varLookIn(i), varLookFor)
+      If ocmOut.Pass Then Exit For
+    Next i
+  Else
+    ocmOut = pvtCreateOutcome(False)
+  End If
+  
+  pvtItemIsInArray = ocmOut
+End Function
+
+Private Function pvtItemIsInObject(varLookIn As Variant, strLookFor As String) As Outcome
+  Dim ocmOut As Outcome
+  Dim objTemp As Object
+  Dim i As Long
+  
+  ' first try to access the strLookFor using the obj("bla") syntax
+  On Error Resume Next
+  Set objTemp = varLookIn(strLookFor)
+  On Error GoTo 0
+  ocmOut = pvtCreateOutcome(Not (objTemp Is Nothing))
+  
+  ' if that hasn't worked see whether this object supports properties
+  If Not ocmOut.Pass And pvtHasProperties(varLookIn) Then
+    ocmOut = pvtItemIsInProperties(varLookIn.Properties, strLookFor)
+  End If
+  
+  ' if that hasn't worked test to see if the object passed is itself a Properties object
+  If Not ocmOut.Pass Then
+    ocmOut = pvtItemIsInProperties(varLookIn, strLookFor)
+  End If
+  
+  pvtItemIsInObject = ocmOut
+End Function
+
+Private Function pvtItemIsInProperties(varLookIn As Variant, strLookFor As String) As Outcome
+  Dim i As Long
+  
+  If pvtIsProperties(varLookIn) Then
+    For i = 0 To varLookIn.Count - 1
+      If varLookIn(i).Name = strLookFor Then
+        pvtItemIsInProperties = pvtCreateOutcome(True)
+        Exit Function
+      End If
+    Next i
+  End If
+  
+  pvtItemIsInProperties = pvtCreateOutcome(False)
+End Function
+
+Private Function pvtItemIsInCollection(clnLookIn As Collection, strLookFor As String) As Outcome
+  Dim v As Variant
+  Dim blnFound As Boolean
+  
+  On Error Resume Next
+  v = clnLookIn.Item(strLookFor)
+  If Err = 0 Then blnFound = True
+  On Error Resume Next
+  Set v = clnLookIn(strLookFor)
+  If Err = 0 Then blnFound = True
+  On Error GoTo 0
+  
+  pvtItemIsInCollection = pvtCreateOutcome(blnFound)
+End Function
+
+Private Function pvtIsEqual_Array(varLeft As Variant, varRight As Variant) As Outcome
+   ' NB caller MUST ascertain that at least one is an array
+   Dim blnPass As Boolean
+   
+   blnPass = (pvtIsArray(varLeft) And pvtIsArray(varRight))
+   If Not blnPass Then
+      ' early exit if either are not arrays
+      pvtIsEqual_Array.Pass = False
+      Exit Function
+   End If
+   
+   If pvtIsDimensioned(varLeft) And pvtIsDimensioned(varRight) Then
+      ' both have been dimensioned
+      If UBound(varLeft) = UBound(varRight) And LBound(varLeft) = LBound(varRight) Then
+         ' need to go through array and check if all values are equal
+         Dim i As Long
+         Dim ocmThis As Outcome
+         For i = LBound(varLeft) To UBound(varLeft)
+            ocmThis = pvtIsEqual(varLeft(i), varRight(i))
+            If ocmThis.FailReason = vbNullString Then
+               blnPass = blnPass And ocmThis.Pass
+            Else
+               ' one of the members couldn't be compared so early exit now
+               ocmThis.FailReason = ocmThis.FailReason & " at index " & i
+               pvtIsEqual_Array = ocmThis
+               Exit Function
+            End If
+            If Not blnPass Then
+                ' found unequal member so exit early
+               pvtIsEqual_Array.Pass = False
+               Exit Function
+            End If
+         Next
+         ' every element compared equal
+         pvtIsEqual_Array.Pass = True
+      Else
+         ' bounds are different
+         pvtIsEqual_Array.Pass = False
+      End If
+   Else
+      ' one or both arrays are not dimensioned
+      pvtIsEqual_Array.Pass = (Not pvtIsDimensioned(varLeft)) And (Not pvtIsDimensioned(varRight))
+   End If
+End Function
+
+Private Function pvtIsEqual_Object(varLeft As Variant, varRight As Variant) As Outcome
+   ' NB caller MUST ascertain that at least one is an object
+   Dim blnPass As Boolean
+   
+   blnPass = (pvtIsObject(varLeft) And pvtIsObject(varRight))
+   If Not blnPass Then
+      ' early exit if either aren't objects
+      pvtIsEqual_Object.Pass = False
+      Exit Function
+   End If
+   
+   If (varLeft Is Nothing) And (varRight Is Nothing) Then
+      ' both are nothing
+      pvtIsEqual_Object.Pass = True
+   ElseIf (varLeft Is Nothing) Or (varRight Is Nothing) Then
+      ' only one is nothing
+      pvtIsEqual_Object.Pass = False
+   Else
+      If (TypeName(varLeft) = TypeName(varRight)) Then
+         ' they are both the same Type of object
+         If ObjPtr(varLeft) = ObjPtr(varRight) Then
+            ' they point to exactly the same object
+            pvtIsEqual_Object.Pass = True
+         Else
+            pvtIsEqual_Object.Pass = False
+            pvtIsEqual_Object.FailReason = "UnitTest is unable to compare two Objects"
+            ' We may be able to do a comparison by writing the object to a text file eg.
+            ' Dim f As Long
+   
+            ' f = FreeFile
+            ' Open strFileName For Binary As f
+            ' Put f, , var
+            ' Close f
+         End If
+      Else
+         ' they are not the same type of object
+         pvtIsEqual_Object.Pass = False
+      End If
+   End If
+End Function
+
+Private Sub pvtDoTests(strTest As String, strModule As String, blnDocTest As Boolean)
+   pvtReset
+   
+   mblnRunning = True
+    
+   Dim objModules As Access.Modules
+   Dim objModule As Access.Module
+   Dim strOpenedByThis As String
+   Dim i As Long
+   
+   strOpenedByThis = pvtOpenModules(strModule, "")
+    
+   Set objModules = Access.Modules
+   For i = 0 To objModules.Count - 1
+      Set objModule = Nothing
+      On Error Resume Next
+      Set objModule = objModules(i)
+      On Error GoTo 0
+      If Not objModule Is Nothing Then
+         If objModule.Name Like strModule And objModule.Name Like "*_test" Then
+            pvtRunTestsForModule objModule, strTest
+         End If
+      End If
+   Next
+   
+   pvtCloseModules strOpenedByThis
+    
+   ' now run doctests
+   If blnDocTest Then
+    mblnDocTest = True
+    If mstrDocTestModules <> vbNullString Then
+       strOpenedByThis = pvtOpenModules("", mstrDocTestModules)
+       For i = 0 To objModules.Count - 1
+          Set objModule = Nothing
+          On Error Resume Next
+          Set objModule = objModules(i)
+          On Error GoTo 0
+          If Not objModule Is Nothing Then
+             If InStr(mstrDocTestModules, "," & objModule.Name & ",") Then
+                pvtRunDocTestsForModule objModule
+             End If
+          End If
+       Next
+       pvtCloseModules strOpenedByThis
+    End If
+  End If
+  
+  mblnRunning = False
+  
+End Sub
+
+Private Function pvtOpenModules(strPattern As String, strModuleNames As String) As String
+  ' opens any modules with a name matching the string pattern supplied, OR with a name in the
+  ' comma separated strModuleNames list supplied
+  ' returns a comma separated list of module names it has opened which were not previously open
+  
+  Dim strResult As String
+  Dim strUserOpenModules As String ' a comma separated list of modules already opened by the user
+  Dim objModule As Access.Module ' an open Module
+  Dim objAccessObject As AccessObject ' any Access object whether open or closed
+  Dim strModuleNamesEx As String ' the list of modules to open with added leading and trailing commas
+  Dim i As Long
+  
+  strUserOpenModules = ","
+  
+  For i = 0 To Access.Modules.Count - 1 ' these are only modules already opened bny the user
+    Set objModule = Nothing
+    On Error Resume Next
+    Set objModule = Access.Modules(i)
+    On Error GoTo 0
+    If Not objModule Is Nothing Then
+      strUserOpenModules = strUserOpenModules & objModule.Name & ","
+    End If
+  Next
+  
+  ' strUserOpenModules contains a list of all modules which have been opened by the user already
+  ' now go through all modules within the project and open ones we need
+  strModuleNamesEx = "," & strModuleNames & ","
+  For Each objAccessObject In Application.CurrentProject.AllModules
+    If InStr(strUserOpenModules, "," & objAccessObject.Name & ",") = 0 Then
+      ' this module is not already open
+      If objAccessObject.Name Like strPattern Or InStr(strModuleNamesEx, "," & objAccessObject.Name & ",") <> 0 Then
+        ' we need to open this module
+        strResult = strResult & objAccessObject.Name & ","
+        DoCmd.OpenModule objAccessObject.Name
+      End If
+    End If
+  Next objAccessObject
+      
+  If LenB(strResult) <> 0 Then
+    pvtOpenModules = Left$(strResult, Len(strResult) - 1)
+  Else
+    pvtOpenModules = ""
+  End If
+End Function
+
+Private Function pvtCloseModules(strModuleNames)
+  ' closes any modules listed in the comma separated list of module names supplied
+  
+  Dim i As Long
+  Dim arrModules As Variant
+  
+  arrModules = Split(strModuleNames, ",")
+  
+  For i = LBound(arrModules) To UBound(arrModules)
+    If arrModules(i) <> "" Then DoCmd.Close acModule, arrModules(i)
+  Next i
+End Function
+
+Private Function pvtResultsToString() As String
+   Dim strOut As String
+   Dim i As Long
+      
+   If mResults.FailCount = 0 Then
+      strOut = " All " & mResults.TestCount & " Passed " & "(" & mResults.DocTestCount & " doctests)"
+   Else
+      For i = 0 To mResults.TestCount - 1
+         With mResults.Tests(i)
+            If Not .Outcome.Pass Then
+               strOut = strOut & vbCrLf & .TestType & " FAILED"
+               If LenB(.Outcome.FailReason) <> 0 Then strOut = strOut & vbCrLf & .Outcome.FailReason
+               If LenB(.Description) <> 0 Then strOut = strOut & vbCrLf & .Description
+               strOut = strOut & vbCrLf & "Module: " & .ModuleName & ", Test: " & .FunctionName
+               If LenB(.Message) <> 0 Then strOut = strOut & vbCrLf & .Message
+               If .ShowSide And LeftOnly = LeftOnly Then strOut = strOut & vbCrLf & "Left:  " & .Left
+               If .ShowSide And RightOnly = RightOnly Then strOut = strOut & vbCrLf & "Right: " & .Right
+               strOut = strOut & vbCrLf
+            End If
+         End With
+      Next
+      strOut = strOut & vbCrLf & "Failed " & mResults.FailCount & " of " & mResults.TestCount & " (" & mResults.DocTestCount & " doctests)"
+   End If
+   
+   pvtResultsToString = strOut
+   
+End Function
+
+Private Sub pvtRunTestsForModule(objModule As Access.Module, strTest As String)
+   ' strTest is a string which is used to pattern match Test Names
+   If objModule.Name = "UnitTests" Then Exit Sub
+   If objModule.Type <> acStandardModule Then Exit Sub
+   If Not (objModule.Name Like "*_test") Then Exit Sub
+    
+   Dim strLines() As String
+   Dim i As Long
+    
+   mstrLastModuleName = objModule.Name
+   strLines = Split(objModule.Lines(1, objModule.CountOfLines), vbCrLf)
+   For i = 0 To UBound(strLines)
+      If pvtHasCommentedText(strLines(i), "@test") Then
+         Call pvtRunEval(strLines(i + 1), strTest)
+      End If
+      If pvtHasCommentedText(strLines(i), "@doctest") Then
+         pvtAddDocTestModule strLines(i)
+      End If
+   Next
+End Sub
+
+Private Sub pvtRunDocTestsForModule(objModule As Access.Module)
+   Dim strLines() As String
+   Dim i As Long
+    
+   mstrLastModuleName = objModule.Name
+   strLines = Split(objModule.Lines(1, objModule.CountOfLines), vbCrLf)
+   For i = 0 To UBound(strLines)
+      If pvtHasCommentedText(strLines(i), "@example") Then
+          Call pvtRunEvalDocTest(strLines, i)
+      End If
+   Next
+End Sub
+
+Private Sub pvtRunEvalDocTest(strLines() As String, ByRef lngLine As Long)
+   Dim i As Long
+
+   lngLine = lngLine + 1
+   
+   i = InStr(strLines(lngLine), "UnitTests.Assert")
+   
+   If i <> 0 Then
+      mstrLastFunctionName = Mid$(strLines(lngLine), i)
+      pvtTryEval pvtFunctionify(mstrLastFunctionName)
+   Else
+      i = InStr(strLines(lngLine), ">")
+      If i <> 0 Then
+         ' now go through following lines to create the expected result
+         Dim strExpected As String
+         Dim strCall As String
+         Dim lngLinesUBound As Long
+         
+         lngLinesUBound = UBound(strLines)
+         
+         strCall = Mid$(strLines(lngLine), i + 1)
+         ' now build the expected result
+         If lngLine < lngLinesUBound Then
+            Do While Mid$(strLines(lngLine + 1), i, 1) = ">"
+               If LenB(strExpected) <> 0 Then strExpected = strExpected & vbCrLf
+               strExpected = strExpected & Mid$(strLines(lngLine + 1), i + 1)
+               lngLine = lngLine + 1
+               If lngLine >= lngLinesUBound Then Exit Do
+            Loop
+         End If
+         ' we have a call and a response
+         mstrLastFunctionName = "AssertEqual(" & strCall & ", """ & strExpected & """)"
+         pvtTryEval "AssertEqual(Cstr(" & strCall & "), """ & pvtEscapeDblQuotes(strExpected) & """)"
+      Else
+         ' do nothing
+      End If
+   End If
+End Sub
+
+Private Function pvtEscapeDblQuotes(strIn As String) As String
+   pvtEscapeDblQuotes = Replace(strIn, """", """""")
+End Function
+
+Private Sub pvtRunEval(strLine As String, strTest As String)
+    Dim lngFrom As Long
+    Dim lngTo As Long
+    Dim lngSub As Long
+    Dim thisFunctionName As String
+    
+    lngFrom = InStr(1, strLine, "Function ")
+    lngSub = InStr(1, strLine, "Sub ")
+    
+    If lngSub <> 0 Then
+      If (lngFrom <> 0 And lngSub < lngFrom) Or lngFrom = 0 Then
+        Debug.Print "Tests must be implemented as a zero arity Function, rather than as a Sub. '" & strLine & "' has not been tested."
+        Exit Sub
+      End If
+    End If
+    
+    If lngFrom <> 0 Then
+        lngTo = InStr(lngFrom + 9, strLine, "()")
+        If lngTo <> 0 Then
+            thisFunctionName = Mid$(strLine, lngFrom + 9, lngTo - lngFrom - 9)
+            If thisFunctionName Like strTest Then
+               mstrLastDescription = vbNullString
+               mstrLastFunctionName = thisFunctionName & "()"
+               pvtTryEval mstrLastFunctionName, mstrLastModuleName
+            End If
+        End If
+    End If
+End Sub
+
+Private Sub pvtAddTestResult(strTestType As String, varLeft As Variant, varRight As Variant, ssShow As WhichSide, ocmOutcome As Outcome, strMsg As String)
+  Dim strOut As String
+  
+  If mblnRunning Then
+    ReDim Preserve mResults.Tests(0 To mResults.TestCount)
+    With mResults.Tests(mResults.TestCount)
+        .Description = mstrLastDescription
+        .ModuleName = mstrLastModuleName
+        .FunctionName = mstrLastFunctionName
+        .TestType = strTestType
+        .Left = ToString(varLeft)
+        .Right = ToString(varRight)
+        .ShowSide = ssShow
+        .Outcome = ocmOutcome
+        .Message = strMsg
+    End With
+    
+    pvtIncrement mResults.TestCount
+    If ocmOutcome.Pass Then
+        pvtIncrement mResults.PassCount
+    Else
+        pvtIncrement mResults.FailCount
+    End If
+    
+    If mblnDocTest Then
+      pvtIncrement mResults.DocTestCount
+    End If
+  Else
+    ' test is not running so this is a result of running a test directly
+    strOut = vbNullString
+    If ssShow And LeftOnly = LeftOnly Then strOut = strOut & ", " & ToString(varLeft, False)
+    If ssShow And RightOnly = RightOnly Then strOut = strOut & ", " & ToString(varRight, False)
+    If LenB(strMsg) <> 0 Then strOut = strOut & ", " & strMsg
+    If ocmOutcome.Pass Then
+      Debug.Print "   Pass " & strTestType & strOut
+    Else
+      Debug.Print "-> FAIL " & strTestType & strOut & " " & ocmOutcome.FailReason
+    End If
+  End If
+    
+End Sub
+
+Private Sub pvtReset()
+   mResults.FailCount = 0
+   mResults.PassCount = 0
+   mResults.TestCount = 0
+   mResults.DocTestCount = 0
+   mblnDocTest = False
+   mstrLastDescription = vbNullString
+   mstrDocTestModules = ","
+   mblnRunning = False
+End Sub
+
+Private Sub pvtIncrement(ByRef lngCounter As Long)
+   lngCounter = lngCounter + 1
+End Sub
+
+'************************************************
+' ToString
+'
+' Converts a Variant to a readable String describing its type and value, eg.
+' Integer 2, String "Hi", or Long(0 to 2) (1, 2, 3). Used internally to render
+' test values for the Immediate-window output, and useful in its own right.
+'
+' Version history:
+'   1.000 BKP 2026-06-12 Initial version
+'
+' @author       BKP <barry.pitfield@talkjcs.com>
+' @version      1.000
+' @param        Variant   the value to render
+' @param        Long      optional VarType to omit from the output (default -1 = always
+'                         include the type; used when rendering array elements)
+' @return       String    the rendered type and value
+' @example
+' > ToString(2)
+' >Long 2
+'
+' @example
+' > ToString("Hello")
+' >String "Hello"
+'************************************************
+Public Function ToString(varIn As Variant, Optional lngExcludeType As Long = -1) As String
+   ' takes a variant and converts it to a string representing its value
+   
+   Dim strOut As String
+   Dim i As Long
+   
+   If pvtIsArray(varIn) Then
+      If pvtIsDimensioned(varIn) Then
+         For i = LBound(varIn) To UBound(varIn)
+            If LenB(strOut) <> 0 Then strOut = strOut & ", "
+            strOut = strOut & ToString(varIn(i), VarType(varIn) - vbArray)
+         Next
+         strOut = "(" & strOut & ")"
+      End If
+   ElseIf TypeName(varIn) = "ErrObject" Then
+      strOut = varIn.Description
+   Else
+      Select Case VarType(varIn)
+         Case 0 ' special case of empty variant
+            strOut = "Empty"
+         Case vbDataObject
+            strOut = "Data Object"
+         Case vbDate
+            strOut = Format$(varIn, "YYYY-MM-DDThh:mm:ss")
+         Case vbEmpty
+            strOut = ""
+         Case vbNull
+            strOut = ""
+         Case vbObject
+            If varIn Is Nothing Then
+               strOut = "Nothing"
+            Else
+               strOut = "{Object}"
+            End If
+         Case vbString
+            strOut = """" & varIn & """"
+         Case vbUserDefinedType
+            strOut = "UDT"
+         Case vbBoolean, vbByte, vbCurrency, vbDecimal, vbDouble, vbInteger, vbLong, vbSingle
+            strOut = "" & varIn
+         Case Else
+            strOut = "ToString() Error"
+      End Select
+   End If
+   
+   Dim lngVarType As Long
+   
+   lngVarType = VarType(varIn)
+   If lngVarType = 0 Then lngVarType = vbVariant
+   
+   If lngVarType <> lngExcludeType Then
+      If LenB(strOut) <> 0 Then
+         strOut = pvtGetTypeName(varIn) & " " & strOut
+      Else
+         strOut = pvtGetTypeName(varIn)
+      End If
+   End If
+   
+   ToString = strOut
+End Function
+
+Private Function pvtGetTypeName(varIn As Variant) As String
+   ' The built in TypeName does a mostly good job but with a few exceptions
+   pvtGetTypeName = TypeName(varIn)
+   
+   If pvtIsArray(varIn) Then
+      If pvtIsDimensioned(varIn) Then
+         pvtGetTypeName = TypeName(varIn)
+         pvtGetTypeName = Left$(pvtGetTypeName, Len(pvtGetTypeName) - 2) & "(" & LBound(varIn) & " to " & UBound(varIn) & ")"
+      End If
+   End If
+   If VarType(varIn) = vbObject Then
+      Dim strTypeName As String
+      
+      strTypeName = TypeName(varIn)
+      If strTypeName = "Nothing" Then
+         pvtGetTypeName = "Object"
+      Else
+         pvtGetTypeName = "Object/" & TypeName(varIn)
+      End If
+   End If
+   If IsEmpty(varIn) Then
+      pvtGetTypeName = "Variant"
+   End If
+End Function
+
+Private Function pvtIsArray(varIn As Variant) As Boolean
+   pvtIsArray = ((VarType(varIn) And vbArray) = vbArray)
+End Function
+
+Private Function pvtIsObject(varIn As Variant) As Boolean
+   pvtIsObject = (VarType(varIn) = vbObject)
+End Function
+
+Private Function pvtIsCollection(varIn As Variant) As Boolean
+  pvtIsCollection = (TypeName(varIn) = "Collection")
+End Function
+
+Private Function pvtIsProperties(varIn As Variant) As Boolean
+  ' check to see if the object passed in a 'properties' like. ie. it has a count property, can be accessed by an index, and the item has a name property
+  Dim v As Variant
+  
+  On Error Resume Next
+  v = varIn.Count
+  v = varIn(0).Name
+  pvtIsProperties = (Err = 0)
+  On Error GoTo 0
+End Function
+
+' Returns True if the object passed exposes a Properties collection
+Private Function pvtHasProperties(varIn As Variant) As Boolean
+  Dim v As Variant
+
+  On Error Resume Next
+  v = varIn.Properties.Count
+  pvtHasProperties = (Err = 0)
+  On Error GoTo 0
+End Function
+
+Private Function pvtIsDimensioned(varArray As Variant) As Boolean
+   ' returns true if the array is dimensioned
+   
+   pvtIsDimensioned = False
+   
+   If pvtIsArray(varArray) Then
+      ' we have an array
+      On Error Resume Next
+      Dim lng As Long
+      lng = UBound(varArray) ' Attempt to get upper bound
+      pvtIsDimensioned = (Err.Number = 0) ' If no error, it's dimensioned
+      On Error GoTo 0 ' Disable error handling
+   End If
+
+End Function
+
+Private Function pvtCreateOutcome(blnPass As Boolean, Optional strFailReason As String = vbNullString) As Outcome
+   pvtCreateOutcome.Pass = blnPass
+   If Not blnPass Then pvtCreateOutcome.FailReason = strFailReason
+End Function
+
+Private Function pvtHasCommentedText(strIn As String, strLookFor As String) As Boolean
+   ' Returns true if the strLookFor is commented in this line
+   Dim i As Long
+   
+   pvtHasCommentedText = False
+   
+   i = InStr(strIn, "'")
+   If i = 0 Then Exit Function
+   pvtHasCommentedText = (InStr(i, strIn, strLookFor) <> 0)
+End Function
+
+Function pvtFunctionify(ByVal strIn As String) As String
+   ' not actually private because it is tested in UnitTests_test
+   ' This function takes a UnitTests.Assert.... call and turns it into a function call
+   Dim i As Long
+   Dim j As Long
+   Dim strC As String
+   Dim blnSpace As Boolean
+   
+   ' check we have a valid function
+   i = InStr(strIn, "UnitTests.Assert")
+   If i = 0 Then Exit Function
+   strIn = Mid$(strIn, i + 10)
+      
+   ' remove any trailing comment
+   j = InStr(strIn, "'")
+   If j <> 0 Then strIn = Left$(strIn, j - 1)
+   
+   ' trim spaces
+   strIn = LTrim$(RTrim$(strIn))
+   
+   ' default return
+   pvtFunctionify = strIn
+      
+   blnSpace = False
+   For j = i + 6 To Len(strIn)
+      strC = Mid$(strIn, j, 1)
+      If strC = "'" Then
+         Exit Function
+      ElseIf strC = " " Then
+         blnSpace = True
+      ElseIf strC = "(" Then
+         ' we've found an ( so this must already be a function
+         Exit Function
+      ElseIf blnSpace Then
+         ' we've found the first character following a space
+         Exit For
+      End If
+   Next
+   ' j is the location of the first character following a space
+   pvtFunctionify = Left$(strIn, j - 2) & "(" & Mid$(strIn, j) & ")"
+End Function
+
+Private Sub pvtAddDocTestModule(strDocTest As String)
+   ' adds Modules which are to be DocTested to the comma separated list
+   Dim i As Long
+   Dim varNewModules As Variant
+   Dim str As String
+   
+   i = InStr(strDocTest, "@doctest ")
+   If i = 0 Then Exit Sub
+   ' split the string following @doctest by both space and comma
+   varNewModules = Split(Replace(Mid$(strDocTest, i + 9), ",", " "), " ")
+   For i = LBound(varNewModules) To UBound(varNewModules)
+      str = RTrim$(LTrim$(varNewModules(i)))
+      If LenB(str) <> 0 And InStr(mstrDocTestModules, "," & str & ",") = 0 Then
+         ' this module is not already in the list so add it
+         mstrDocTestModules = mstrDocTestModules & str & ","
+      End If
+   Next
+End Sub
+
+Private Function pvtEvalEx(strExpression As String, Optional strModuleName As String = "") As Variant
+   ' Provides an improved Eval Function which allows any expression which is valid VBA to be passed to it.
+   ' Also allows ambiguous function calls to be passed to pvtEvalEx as unlike Eval the ModuleName can be passed in to disambiguate
+   ' If evaluation fails, Err is left populated so the caller can surface the failure.
+   On Error Resume Next
+   Err.Clear
+   pvtEvalEx = Eval(strExpression)
+   If Err.Number = 0 Then Exit Function
+
+   Err.Clear
+   If LenB(strModuleName) <> 0 Then
+      ' Module name supplied - the qualified dispatch is authoritative. Whatever it reports
+      ' (success, compile error, or a runtime error raised inside the test) is the answer.
+      ' Falling back to the unqualified form here would mask a real runtime error with a
+      ' compile-time ambiguity error from the unqualified wrapper.
+      pvtEvalEx = pvtDispatch("[" & strModuleName & "]." & strExpression)
+   Else
+      pvtEvalEx = pvtDispatch(strExpression)
+   End If
+   
+End Function
+
+Private Sub pvtTryEval(strExpression As String, Optional strModuleName As String = "")
+   ' Calls pvtEvalEx and, if it raises an error, records a failed test result so that
+   ' runtime errors during a test are surfaced rather than silently skipped.
+   Dim v As Variant
+
+   On Error Resume Next
+   Err.Clear
+   v = pvtEvalEx(strExpression, strModuleName)
+   If Err.Number <> 0 Then
+      pvtAddTestResult "Test", Null, Null, None, _
+                       pvtCreateOutcome(False, "Error " & Err.Number & ": " & Err.Description), _
+                       vbNullString
+      Err.Clear
+   End If
+   On Error GoTo 0
+End Sub
+
+Private Function pvtDispatch(strExpression As String) As Variant
+   ' creates a temporary module containing a simple function which calls the expression passed in
+   ' Unlike Eval it allows the expression to use full VBA features
+   Dim modTemp As Access.Module
+   DoCmd.RunCommand acCmdNewObjectModule
+   Set modTemp = Application.Modules(Application.Modules.Count - 1)
+   modTemp.DeleteLines 1, modTemp.CountOfLines
+   modTemp.AddFromString "Option Compare Database" & vbCrLf & _
+                         "Option Explicit" & vbCrLf & _
+                         "Public Function Dispatch_Temp()" & vbCrLf & _
+                         "  Dispatch_Temp = " & strExpression & vbCrLf & _
+                         "End Function"
+                         
+   DoCmd.Save acModule, modTemp.Name
+   DoCmd.Close acModule, modTemp.Name
+   
+   On Error Resume Next
+   pvtDispatch = Eval("Dispatch_Temp()")
+   Dim lngErr As Long: lngErr = Err.Number
+   Dim strErr As String: strErr = Err.Description
+   
+   DoCmd.DeleteObject acModule, modTemp.Name
+   
+   If lngErr <> 0 Then
+       Err.Raise lngErr, "pvtEvalEx", strErr
+   End If
+End Function

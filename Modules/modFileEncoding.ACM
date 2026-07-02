@@ -3,116 +3,117 @@ Option Explicit
 
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As LongPtr)
 
-Function IsANSI(strFilename As String) As Boolean
-  ' Returns true if the file specified is in ANSI (1 byte per character) format
-  ' NB this works by checking that the file is neither UCS2 nor UTF8 so is not a universal test
-  ' but is sufficient in the context of this project
-  
-  IsANSI = False ' intially set to false
-  
-  If Not IsUCS2(strFilename) Then
-    IsANSI = Not IsUTF8(strFilename)
+Public Enum enmFileEncoding
+  enmFileEncoding_Missing = 0 'file does not exist
+  enmFileEncoding_ANSI = 1    'readable, but no BOM detected
+  enmFileEncoding_UCS2 = 2    'starts with FF FE (UCS-2 little-endian BOM)
+  enmFileEncoding_UTF8 = 3    'starts with EF BB BF (UTF-8 BOM)
+End Enum
+
+Public Function DetectEncoding(byts() As Byte) As enmFileEncoding
+  'Classifies a byte buffer (typically the first 3 bytes of a file) by its BOM.
+  'UCS-2 LE: FF FE. UTF-8: EF BB BF. Anything else (including empty/short) is ANSI.
+  Dim lngLB As Long
+  Dim lngLen As Long
+
+  DetectEncoding = enmFileEncoding_ANSI
+  If (Not byts) = -1 Then Exit Function
+  lngLB = LBound(byts)
+  lngLen = UBound(byts) - lngLB + 1
+  If lngLen < 2 Then Exit Function
+  If byts(lngLB) = 255 And byts(lngLB + 1) = 254 Then
+    DetectEncoding = enmFileEncoding_UCS2
+  ElseIf lngLen >= 3 Then
+    If byts(lngLB) = 239 And byts(lngLB + 1) = 187 And byts(lngLB + 2) = 191 Then
+      DetectEncoding = enmFileEncoding_UTF8
+    End If
   End If
 End Function
 
-Function IsUCS2(strFilename As String) As Boolean
-  ' Returns true if the file specified is in UCS2 little endian format
+Public Function DetectFileEncoding(strFilename As String) As enmFileEncoding
+  'Opens the file once, reads up to the first 3 bytes, and delegates to DetectEncoding.
   Dim f As Long
   Dim byts() As Byte
-  
-  If FileExists(strFilename) Then
-    ' load the file into the bytsFile array
-    f = FreeFile()
-    Open strFilename For Binary Access Read As #f
-    If LOF(f) >= 2 Then
-      ReDim byts(1)
-      Get #f, 1, byts()
-      IsUCS2 = ((byts(0) = 255) And (byts(1) = 254)) ' &HFF and &HFE
-    End If
-    Close #f
-  End If
-End Function
+  Dim lngLen As Long
 
-Function IsUTF8(strFilename As String) As Boolean
-  ' Returns true if the file specified is in UTF8 format
-  ' NB this needs the BOM to be present in order to identify as UTF8 - this is not strictly in accordance with
-  ' UTF8 specififcations, but is the same as many Windows implementations
-  Dim f As Long
-  Dim byts() As Byte
-  
-  If FileExists(strFilename) Then
-    ' load the file into the bytsFile array
-    f = FreeFile()
-    Open strFilename For Binary Access Read As #f
-    If LOF(f) >= 3 Then
-      ReDim byts(2)
-      Get #f, 1, byts()
-      IsUTF8 = ((byts(0) = 239) And (byts(1) = 187) And (byts(2) = 191)) '&HEF, &HBB, &HBF
-    End If
-    Close #f
+  DetectFileEncoding = enmFileEncoding_Missing
+  If Not FileExists(strFilename) Then Exit Function
+
+  f = FreeFile()
+  Open strFilename For Binary Access Read As #f
+  lngLen = LOF(f)
+  If lngLen > 3 Then lngLen = 3
+  If lngLen > 0 Then
+    ReDim byts(lngLen - 1)
+    Get #f, 1, byts()
   End If
+  Close #f
+  DetectFileEncoding = DetectEncoding(byts)
 End Function
 
 Function ConvFile_to_UTF8(strFilename As String, Optional strNewFilename As String) As Boolean
   ' Converts the supplied file from any of ANSI, UTF-8 or UCS2 into UTF-8 format
-  
-  ConvFile_to_UTF8 = False ' initially set to false
 
+  ConvFile_to_UTF8 = False ' initially set to false
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
 
-  ' deal with case where no conversion is required
-  If IsUTF8(strFilename) Then
-    If strFilename = strNewFilename Then
-      ' do nothing the file is already in UCS2 format
-      ConvFile_to_UTF8 = True
-    Else
-      ' copy file to new location without conversion
-      If FileExists(strNewFilename) Then Kill strNewFilename
-      FileCopy strFilename, strNewFilename
-      ConvFile_to_UTF8 = True
-    End If
-    Exit Function
-  End If
-  
-  ' we need to do a conversion
-  If IsUCS2(strFilename) Then
-    ConvFile_to_UTF8 = ConvFileUCS2_to_UTF8(strFilename, strNewFilename)
-  ElseIf IsANSI(strFilename) Then
-    ' a bit clunky by convert via UCS2
-    If Not ConvFileANSI_to_UCS2(strFilename, strNewFilename) Then Exit Function
-    ConvFile_to_UTF8 = ConvFileUCS2_to_UTF8(strNewFilename)
-  End If
-  
+  Select Case DetectFileEncoding(strFilename)
+    Case enmFileEncoding_UTF8
+      ' already in UTF-8: either no-op or plain copy
+      If strFilename = strNewFilename Then
+        ConvFile_to_UTF8 = True
+      Else
+        If FileExists(strNewFilename) Then Kill strNewFilename
+        FileCopy strFilename, strNewFilename
+        ConvFile_to_UTF8 = True
+      End If
+    Case enmFileEncoding_UCS2
+      ConvFile_to_UTF8 = ConvFileUCS2_to_UTF8(strFilename, strNewFilename)
+    Case enmFileEncoding_ANSI
+      ' a bit clunky but convert via UCS2
+      If Not ConvFileANSI_to_UCS2(strFilename, strNewFilename) Then Exit Function
+      ConvFile_to_UTF8 = ConvFileUCS2_to_UTF8(strNewFilename)
+  End Select
 End Function
 
 Function ConvFile_to_UCS2(strFilename As String, Optional strNewFilename As String) As Boolean
   ' Converts the supplied file from any of ANSI, UTF-8 or UCS2 into UCS2 format
-  
-  ConvFile_to_UCS2 = False ' initially set to false
 
+  ConvFile_to_UCS2 = False ' initially set to false
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
 
-  ' deal with case where no conversion is required
-  If IsUCS2(strFilename) Then
-    If strFilename = strNewFilename Then
-      ' do nothing the file is already in UCS2 format
-      ConvFile_to_UCS2 = True
-    Else
-      ' copy file to new location without conversion
-      If FileExists(strNewFilename) Then Kill strNewFilename
-      FileCopy strFilename, strNewFilename
-      ConvFile_to_UCS2 = True
-    End If
-    Exit Function
-  End If
-  
-  ' we need to do a conversion
-  If IsUTF8(strFilename) Then
-    ConvFile_to_UCS2 = ConvFileUTF8_to_UCS2(strFilename, strNewFilename)
-  ElseIf IsANSI(strFilename) Then
-    ConvFile_to_UCS2 = ConvFileANSI_to_UCS2(strFilename, strNewFilename)
-  End If
-  
+  Select Case DetectFileEncoding(strFilename)
+    Case enmFileEncoding_UCS2
+      ' already in UCS2: either no-op or plain copy
+      If strFilename = strNewFilename Then
+        ConvFile_to_UCS2 = True
+      Else
+        If FileExists(strNewFilename) Then Kill strNewFilename
+        FileCopy strFilename, strNewFilename
+        ConvFile_to_UCS2 = True
+      End If
+    Case enmFileEncoding_UTF8
+      ConvFile_to_UCS2 = ConvFileUTF8_to_UCS2(strFilename, strNewFilename)
+    Case enmFileEncoding_ANSI
+      ConvFile_to_UCS2 = ConvFileANSI_to_UCS2(strFilename, strNewFilename)
+  End Select
+End Function
+
+Function Conv_to_UCS2(ByRef byts() As Byte) As Boolean
+  ' In-memory equivalent of ConvFile_to_UCS2: detects the encoding of byts and
+  ' promotes the content to UCS-2 LE. byts is consumed and replaced with the result.
+
+  Conv_to_UCS2 = False
+  If (Not byts) = -1 Then Exit Function
+
+  Select Case DetectEncoding(byts)
+    Case enmFileEncoding_UCS2
+      Conv_to_UCS2 = True ' already UCS-2, nothing to do
+    Case enmFileEncoding_UTF8
+      Conv_to_UCS2 = UTF8_to_UCS2(byts)
+    Case enmFileEncoding_ANSI
+      Conv_to_UCS2 = ANSI_to_UCS2(byts)
+  End Select
 End Function
 
 Function ConvFileANSI_to_UCS2(strFilename As String, Optional strNewFilename As String) As Boolean
@@ -130,6 +131,13 @@ Function ConvFileANSI_to_UCS2(strFilename As String, Optional strNewFilename As 
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
 
   If ReadFromFile(strFilename, byts) Then
+    ' An empty source file yields an undimensioned buffer (see ReadFromFile) with
+    ' no bytes to convert. Skip UBound and still honour strNewFilename with an empty
+    ' output (copy the source, or no-op when converting in place).
+    If (Not byts) = -1 Then
+      ConvFileANSI_to_UCS2 = pvtPassThroughFile(strFilename, strNewFilename)
+      Exit Function
+    End If
     lngLen = UBound(byts) + 1
     lngOutLen = lngLen * 2 + 2 ' 2 bytes for every ANSI byte plus 2 Byte BOM
     ReDim bytsOut(lngOutLen - 1)
@@ -150,72 +158,78 @@ End Function
 Function ConvFileUCS2_to_ANSI(strFilename As String, Optional strNewFilename As String) As Boolean
   ' Converts the supplied file from UCS2 to ANSI format - IF IT CAN!
   ' NB Depending on the file contents it may or may not be possible to actually do this conversion
-  
+
   Dim byts() As Byte
-  Dim bytsOut() As Byte
-  Dim lngOutLen As Long
-  Dim i As Long
-  Dim j As Long
-  
+
   ConvFileUCS2_to_ANSI = False ' initially set to false
-  
+
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
-  
-  ' load the file into the bytsFile array
+
   If ReadFromFile(strFilename, byts) Then
-    If byts(LBound(byts)) = 255 And byts(LBound(byts) + 1) = 254 Then  ' 255 = &HFF, 254 = &HFE (the BOM)
-      lngOutLen = (UBound(byts) - 1) / 2 ' allows for BOM (Byte Order Mark)
-      ReDim bytsOut(lngOutLen - 1)
-      j = 0
-      For i = LBound(byts) + 2 To UBound(byts) Step 2
-        If Not UnicodeCP_to_ANSICP(byts(i + 1), byts(i), bytsOut(j)) Then Exit Function
-        j = j + 1
-      Next i
-      ConvFileUCS2_to_ANSI = WriteToFile(bytsOut, strNewFilename)
+    If (Not byts) = -1 Then
+      ' Empty file: no content to transcode; honour strNewFilename (copy) or no-op.
+      ConvFileUCS2_to_ANSI = pvtPassThroughFile(strFilename, strNewFilename)
+    ElseIf UCS2_to_ANSI(byts) Then
+      ConvFileUCS2_to_ANSI = WriteToFile(byts, strNewFilename)
     End If
   End If
-    
+
 End Function
 
 Function ConvFileUTF8_to_UCS2(strFilename As String, Optional strNewFilename As String) As Boolean
   ' Converts the supplied file from UTF8 to UCS2 format
   Dim byts() As Byte
-  Dim bytsOut() As Byte
-  
+
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
   If ReadFromFile(strFilename, byts) Then
-    If UTF8_to_UCS2(byts, bytsOut) Then
-      ConvFileUTF8_to_UCS2 = WriteToFile(bytsOut, strNewFilename)
+    If (Not byts) = -1 Then
+      ' Empty file: no content to transcode; honour strNewFilename (copy) or no-op.
+      ConvFileUTF8_to_UCS2 = pvtPassThroughFile(strFilename, strNewFilename)
+    ElseIf UTF8_to_UCS2(byts) Then
+      ConvFileUTF8_to_UCS2 = WriteToFile(byts, strNewFilename)
     End If
   End If
-    
+
 End Function
 
 Function ConvFileUCS2_to_UTF8(strFilename As String, Optional strNewFilename As String) As Boolean
   ' Converts the supplied file from UCS2 to UTF8 format
   Dim byts() As Byte
-  Dim bytsOut() As Byte
-  
+
   If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
   If ReadFromFile(strFilename, byts) Then
-    If UCS2_to_UTF8(byts, bytsOut) Then
-      ConvFileUCS2_to_UTF8 = WriteToFile(bytsOut, strNewFilename)
+    If (Not byts) = -1 Then
+      ' Empty file: no content to transcode; honour strNewFilename (copy) or no-op.
+      ConvFileUCS2_to_UTF8 = pvtPassThroughFile(strFilename, strNewFilename)
+    ElseIf UCS2_to_UTF8(byts) Then
+      ConvFileUCS2_to_UTF8 = WriteToFile(byts, strNewFilename)
     End If
   End If
-    
+
 End Function
 
 Function ReadFromFile(strFilename As String, byts() As Byte) As Boolean
-  ' Reads data from the supplied file into the supplied byte array
+  ' Reads data from the supplied file into the supplied byte array.
+  '
+  ' Returns True when the file exists and was read, otherwise False. NOTE: an
+  ' existing but empty (zero-length) file also returns True, but leaves byts
+  ' UNDIMENSIONED - there is no element to index. Callers must test for this
+  ' (e.g. If (Not byts) = -1 Then ...) before calling LBound/UBound on byts.
   
   Dim f As Long
   
   If FileExists(strFilename) Then
-    ' load the file into the bytsFile array
+    ' load the file into the byts array
     f = FreeFile()
     Open strFilename For Binary Access Read As #f
-    ReDim byts(LOF(f) - 1)
-    Get #f, , byts()
+    ' Guard the empty-file case: ReDim byts(-1) would raise a runtime error.
+    If LOF(f) > 0 Then
+      ReDim byts(LOF(f) - 1)
+      Get #f, , byts()
+    Else
+      ' Empty file - hand back an undimensioned array (see the header note above).
+      Erase byts
+    End If
     Close #f
     ReadFromFile = True
   End If
@@ -230,90 +244,175 @@ Function WriteToFile(byts() As Byte, strFilename As String) As Boolean
   ' Open file ready for output
   f = FreeFile()
   Open strFilename For Binary Access Write As #f
-  Put #f, 1, byts
+  ' An undimensioned buffer (e.g. the empty result of converting a BOM-only
+  ' file) has nothing to write - leave a 0-byte file rather than raising.
+  If (Not byts) <> -1 Then Put #f, 1, byts
   Close #f
-  
+
   WriteToFile = True
   
 End Function
 
-Function UCS2_to_UTF8(bytsUCS2() As Byte, ByRef bytsUTF8() As Byte) As Boolean
-  ' This converts a UCS2 Little Endian encoded byte array into UTF8
-  ' Returns True if successful, False if it fails for any reason
-  
+Private Function pvtPassThroughFile(strFilename As String, strNewFilename As String) As Boolean
+  ' Used when there is no content to transcode (e.g. an empty source file) so the
+  ' conversion is a pure pass-through: produces strNewFilename from strFilename so an
+  ' optional output filename is still honoured. Copies the source when the names differ,
+  ' otherwise it is a no-op. Mirrors the pass-through branch of ConvFile_to_UCS2.
+  ' Always returns True.
+  If strFilename <> strNewFilename Then
+    If FileExists(strNewFilename) Then Kill strNewFilename
+    FileCopy strFilename, strNewFilename
+  End If
+  pvtPassThroughFile = True
+End Function
+
+Function UCS2_to_UTF8(ByRef byts() As Byte) As Boolean
+  ' Converts byts from UCS-2 Little Endian to UTF-8 in place.
+  ' The caller's buffer is consumed and replaced with the UTF-8 result.
+  ' Returns True on success, False if the input is not a valid UCS-2 buffer.
+
   Dim lenUCS2 As Long
   Dim b As Long ' The next write position in the UTF8 byte array
   Dim i As Long ' The current byte position in UCS2 byte array
   Dim CP_UCS2(1) As Byte
   Dim CP_UTF8() As Byte
-  
-  UCS2_to_UTF8 = False ' intially set return value to be false
-  
-  lenUCS2 = UBound(bytsUCS2) - LBound(bytsUCS2) + 1
-  
+  Dim bytsResult() As Byte
+
+  UCS2_to_UTF8 = False ' initially set return value to be false
+
+  lenUCS2 = UBound(byts) - LBound(byts) + 1
+
   ' Check that the length of the UCS2 array is at least 2 bytes
   If lenUCS2 < 2 Then Exit Function
-  
+
   ' Check that the length of the UCS2 array is an even number of bytes
   If lenUCS2 Mod 2 <> 0 Then Exit Function
-  
+
   ' Check that the supplied array has the correct Byte Order Mark (BOM)
-  If bytsUCS2(LBound(bytsUCS2)) <> 255 Or bytsUCS2(LBound(bytsUCS2) + 1) <> 254 Then Exit Function '255 = &HFF, 254 = &HFE
-  
-  ' Redim bytsUTF8 to the maximum it can be ( max 3 bytes per character )
+  If byts(LBound(byts)) <> 255 Or byts(LBound(byts) + 1) <> 254 Then Exit Function '255 = &HFF, 254 = &HFE
+
+  ' Redim bytsResult to the maximum it can be ( max 3 bytes per character )
   ' for each 2 bytes in UCS2 need potentially 3 bytes in UTF8
-  ReDim bytsUTF8(lenUCS2 * 3 / 2 - 1)
-  
+  ReDim bytsResult(lenUCS2 * 3 / 2 - 1)
+
   b = 0
-  
-  For i = LBound(bytsUCS2) To UBound(bytsUCS2) Step 2
-    CopyMemory VarPtr(CP_UCS2(0)), VarPtr(bytsUCS2(i)), 2 ' Copy CodePoint into CP array
+
+  For i = LBound(byts) To UBound(byts) Step 2
+    CopyMemory VarPtr(CP_UCS2(0)), VarPtr(byts(i)), 2 ' Copy CodePoint into CP array
     If Not UCS2CP_to_UTF8CP(CP_UCS2, CP_UTF8) Then Exit Function
-    CopyMemory VarPtr(bytsUTF8(b)), VarPtr(CP_UTF8(0)), UBound(CP_UTF8) + 1
+    CopyMemory VarPtr(bytsResult(b)), VarPtr(CP_UTF8(0)), UBound(CP_UTF8) + 1
     b = b + UBound(CP_UTF8) + 1
   Next
-  
-  ReDim Preserve bytsUTF8(b - 1)
+
+  ReDim Preserve bytsResult(b - 1)
+  SwapByteArrays byts, bytsResult
   UCS2_to_UTF8 = True
-  
+
 End Function
 
-Function UTF8_to_UCS2(bytsUTF8() As Byte, ByRef bytsUCS2() As Byte) As Boolean
-  ' This converts a UTF8 encoded byte array into ucs2 Little Endian
-  ' Returns True if successful, False if it fails for any reason
-  
+Function UTF8_to_UCS2(ByRef byts() As Byte) As Boolean
+  ' Converts byts from UTF-8 to UCS-2 Little Endian in place.
+  ' The caller's buffer is consumed and replaced with the UCS-2 result.
+  ' Returns True on success, False if the input is not a valid UTF-8 buffer.
+
   Dim b As Long ' The next write position in the UCS2 array
   Dim CP_UCS2() As Byte
   Dim lenUTF8 As Long
   Dim i As Long
   Dim j As Long
-  
+  Dim bytsResult() As Byte
+
   UTF8_to_UCS2 = False ' intially set return value to be false
-  
-  lenUTF8 = UBound(bytsUTF8) - LBound(bytsUTF8) + 1
-  
+
+  lenUTF8 = UBound(byts) - LBound(byts) + 1
+
   ' Check that the length of the UTF8 array is at least 3 bytes
   If lenUTF8 < 3 Then Exit Function
-  
+
   ' Check that the supplied array has the correct Byte Order Mark (BOM)
-  If bytsUTF8(LBound(bytsUTF8)) <> 239 Or bytsUTF8(LBound(bytsUTF8) + 1) <> 187 Or bytsUTF8(LBound(bytsUTF8) + 2) <> 191 Then Exit Function '239 = &HEF, 187 = &HBB, 191 = &HBF
-  
-  ' Redim bytsUCS2 to the maximum it can be (2 bytes for each byte in UTF8)
-  ReDim bytsUCS2(lenUTF8 * 2 - 1)
-  
+  If byts(LBound(byts)) <> 239 Or byts(LBound(byts) + 1) <> 187 Or byts(LBound(byts) + 2) <> 191 Then Exit Function '239 = &HEF, 187 = &HBB, 191 = &HBF
+
+  ' Redim bytsResult to the maximum it can be (2 bytes for each byte in UTF8)
+  ReDim bytsResult(lenUTF8 * 2 - 1)
+
   b = 0
-  
-  For i = LBound(bytsUTF8) To UBound(bytsUTF8)
-    j = UTF8CP_to_UCS2CP(bytsUTF8, i, CP_UCS2) 'j represents the length of the UTF8 character found (in bytes)
+
+  For i = LBound(byts) To UBound(byts)
+    j = UTF8CP_to_UCS2CP(byts, i, CP_UCS2) 'j represents the length of the UTF8 character found (in bytes)
     If j = 0 Then Exit Function
-    CopyMemory VarPtr(bytsUCS2(b)), VarPtr(CP_UCS2(0)), 2
+    CopyMemory VarPtr(bytsResult(b)), VarPtr(CP_UCS2(0)), 2
     b = b + 2
     i = i + j - 1 ' if UTF8 was more than 1 byte, skip forwards
   Next
-  
-  ReDim Preserve bytsUCS2(b - 1)
+
+  ReDim Preserve bytsResult(b - 1)
+  SwapByteArrays byts, bytsResult
   UTF8_to_UCS2 = True
-  
+
+End Function
+
+Function ANSI_to_UCS2(ByRef byts() As Byte) As Boolean
+  ' Converts byts from ANSI to a UCS-2 LE byte array (with BOM) in place.
+  ' The caller's buffer is consumed and replaced with the UCS-2 result.
+  ' Returns True on success, False if any ANSI byte cannot be mapped.
+
+  Dim lngLen As Long
+  Dim i As Long
+  Dim j As Long
+  Dim bytsResult() As Byte
+
+  ANSI_to_UCS2 = False
+  If (Not byts) = -1 Then Exit Function
+  lngLen = UBound(byts) - LBound(byts) + 1
+  ReDim bytsResult(lngLen * 2 + 1) ' BOM (2 bytes) + 2 bytes per ANSI byte
+  bytsResult(0) = 255 ' &HFF
+  bytsResult(1) = 254 ' &HFE
+  j = 2
+  For i = LBound(byts) To UBound(byts)
+    If Not ANSICP_to_UnicodeCP(byts(i), bytsResult(j + 1), bytsResult(j)) Then Exit Function
+    j = j + 2
+  Next i
+  SwapByteArrays byts, bytsResult
+  ANSI_to_UCS2 = True
+End Function
+
+Function UCS2_to_ANSI(ByRef byts() As Byte) As Boolean
+  ' Converts byts from UCS-2 Little Endian (including BOM) to ANSI in place.
+  ' The caller's buffer is consumed and replaced with the ANSI result.
+  ' Returns True on success, False if the BOM is missing, the length is
+  ' not a multiple of 2, or any code point has no ANSI representation.
+
+  Dim lenUCS2 As Long
+  Dim lngOutLen As Long
+  Dim i As Long
+  Dim j As Long
+  Dim bytsResult() As Byte
+
+  UCS2_to_ANSI = False
+
+  lenUCS2 = UBound(byts) - LBound(byts) + 1
+  If lenUCS2 < 2 Then Exit Function
+  If lenUCS2 Mod 2 <> 0 Then Exit Function
+  If DetectEncoding(byts) <> enmFileEncoding_UCS2 Then Exit Function
+
+  lngOutLen = (lenUCS2 - 2) / 2 ' drop the BOM, 1 ANSI byte per UCS2 code point
+  If lngOutLen = 0 Then
+    ' BOM only (empty content): the ANSI result is empty. Hand back an
+    ' undimensioned buffer rather than ReDim(-1)-ing (which raises) or
+    ' swapping an undimensioned array into byts.
+    Erase byts
+    UCS2_to_ANSI = True
+    Exit Function
+  End If
+  ReDim bytsResult(lngOutLen - 1)
+  j = 0
+  For i = LBound(byts) + 2 To UBound(byts) Step 2
+    If Not UnicodeCP_to_ANSICP(byts(i + 1), byts(i), bytsResult(j)) Then Exit Function
+    j = j + 1
+  Next i
+  SwapByteArrays byts, bytsResult
+  UCS2_to_ANSI = True
+
 End Function
 
 Function PopulateANSI_Unicode_BestFit(ByRef lngsMap() As Long)
@@ -524,12 +623,17 @@ Private Function bit16ShiftR(i As Long, s As Integer) As Long
 End Function
 
 Function ConvFileUTF8_to_ANSI(strFilename As String, Optional strNewFilename As String) As Boolean
-  
+  ' Converts the supplied file from UTF-8 to ANSI
+
+  Dim byts() As Byte
+
   ConvFileUTF8_to_ANSI = False
-  
-  If ConvFileUTF8_to_UCS2(strFilename, strNewFilename) Then
-    If ConvFileUCS2_to_ANSI(strNewFilename, strNewFilename) Then
-      ConvFileUTF8_to_ANSI = True
-    End If
-  End If
+  If LenB(strNewFilename) = 0 Then strNewFilename = strFilename
+
+  If Not ReadFromFile(strFilename, byts) Then Exit Function
+  ' Empty file: no content to transcode; honour strNewFilename (copy) or no-op.
+  If (Not byts) = -1 Then ConvFileUTF8_to_ANSI = pvtPassThroughFile(strFilename, strNewFilename): Exit Function
+  If Not UTF8_to_UCS2(byts) Then Exit Function
+  If Not UCS2_to_ANSI(byts) Then Exit Function
+  ConvFileUTF8_to_ANSI = WriteToFile(byts, strNewFilename)
 End Function

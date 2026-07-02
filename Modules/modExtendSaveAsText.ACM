@@ -33,35 +33,9 @@ Private Type AccObject
   blnAppended As Boolean 'Indicating whether or not ithe object has been appended to its parent yet
 End Type
 
-Private Type Ignore
-  bytsStart() As Byte
-  bytsEnd() As Byte
-End Type
-
-Private Const clngNOTFOUND = -2147483648#
-
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As LongPtr)
 
-Private Sub PopulateIgnoreArr(ByRef Ignores() As Ignore)
-  ReDim Ignores(1) As Ignore
-  
-  Ignores(0).bytsStart = "GUID = Begin" & vbCrLf
-  Ignores(0).bytsEnd = "End" & vbCrLf
-  Ignores(1).bytsStart = "Checksum ="
-  Ignores(1).bytsEnd = vbCrLf
-  'Ignores(2).bytsStart = "PrtDevMode = Begin" & vbCrLf
-  'Ignores(2).bytsEnd = "End" & vbCrLf
-  'Ignores(3).bytsStart = "PrtDevNames = Begin" & vbCrLf
-  'Ignores(3).bytsEnd = "End" & vbCrLf
-  'Ignores(4).bytsStart = "PrtDevModeW = Begin" & vbCrLf
-  'Ignores(4).bytsEnd = "End" & vbCrLf
-  'Ignores(5).bytsStart = "PrtDevNamesW = Begin" & vbCrLf
-  'Ignores(5).bytsEnd = "End" & vbCrLf
-  'Ignores(6).bytsStart = "PrtMip = Begin" & vbCrLf
-  'Ignores(6).bytsEnd = "End" & vbCrLf
-  'Ignores(7).bytsStart = "NameMap = Begin" & vbCrLf
-  'Ignores(7).bytsEnd = "End" & vbCrLf
-End Sub
+Private Const clngNOTFOUND = -2147483648#
 
 
 '************************************************
@@ -74,76 +48,95 @@ End Sub
 '************************************************
 
 Public Sub SaveAsText(objType As asObjectType, objName As String, strFilename As String, enmEncode As asEncode, blnRemoveGUIDs As Boolean)
-  Dim Ignores() As Ignore
   Dim blnSourceIsUCS2 As Boolean
   Dim blnFail As Boolean
   Dim blnSaveAsUTF8 As Boolean
+  Dim byts() As Byte
+  Dim bytsOrigUCS2() As Byte
+  Dim bytsMerged() As Byte
 
-  PopulateIgnoreArr Ignores
-  
   ' For Forms, Report, Macros and Queries the output from the built in SaveAsText is in the 2 byte UCS2 format
   ' on later versions of MS Access, otherwise it is in ANSI
   ' If we already have this file in the repository and it is in UTF-8 we should save it as UTF-8 anyway
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport, asObjectType.acQuery, asObjectType.acMacro
       If FileExists(strFilename) Then
-        If IsUTF8(strFilename) Then
+        If DetectFileEncoding(strFilename) = enmFileEncoding_UTF8 Then
           ' File is already in the repository and it's in UTF8 so force save in that format irrespective of repository setting
           blnSaveAsUTF8 = True
         End If
       End If
   End Select
-      
+
   Select Case objType
     Case asObjectType.acForm, asObjectType.acReport
       Application.SaveAsText objType, objName, strFilename & ".tmp"
-      blnSourceIsUCS2 = IsUCS2(strFilename & ".tmp") ' so we know what format to ultimate output
-      If Not ConvFile_to_UCS2(strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
-      ' now we have a UCS2 file stored with .tmp suffix
-      
+
+      ' Load the Access output once and perform every conversion and transformation in memory
+      If Not ReadFromFile(strFilename & ".tmp", byts) Then blnFail = True: GoTo End_Processing
+      ' An empty export (undimensioned byts) is abnormal for a Form/Report and would crash the
+      ' in-memory pipeline below when it calls UBound - treat it as a processing failure.
+      If (Not byts) = -1 Then blnFail = True: GoTo End_Processing
+      blnSourceIsUCS2 = (DetectEncoding(byts) = enmFileEncoding_UCS2) ' so we know what format to ultimately output
+      If Not Conv_to_UCS2(byts) Then blnFail = True: GoTo End_Processing
+
       If Forms("Access SVN - Options").chkReplaceCodeOnly Then
         ' Replacing code only so there is no requirement to Clean the Form/Report Layout section
-        ' we need to use the existing file as well - ensure it is in UCS2 format
-        If Not ConvFile_to_UCS2(strFilename) Then blnFail = True: GoTo End_Processing
-        
-        ' now both files are in UCS2 we can replace the code section
-        If Not ReplaceCodeSection(strFilename, strFilename & ".tmp") Then blnFail = True: GoTo End_Processing
-      Else
-        If blnRemoveGUIDs Then
-          If Not CleanFormReportFile(strFilename & ".tmp", strFilename, Ignores) Then blnFail = True: GoTo End_Processing
-        Else
-          If FileExists(strFilename) Then
-            Kill strFilename
-          End If
-          Name strFilename & ".tmp" As strFilename
-        End If
+        ' we need to use the existing file as well - promote it to UCS2 in memory
+        If Not ReadFromFile(strFilename, bytsOrigUCS2) Then blnFail = True: GoTo End_Processing
+        ' No existing code section to merge into if the repository file is empty (undimensioned).
+        If (Not bytsOrigUCS2) = -1 Then blnFail = True: GoTo End_Processing
+        If Not Conv_to_UCS2(bytsOrigUCS2) Then blnFail = True: GoTo End_Processing
+
+        ' Both buffers are UCS2 so we can merge in the new code section
+        If Not ReplaceCodeSectionBytes(bytsOrigUCS2, byts, bytsMerged) Then blnFail = True: GoTo End_Processing
+        ' Move the merged result back into byts so the pipeline continues in a single buffer
+        SwapByteArrays byts, bytsMerged
+      ElseIf blnRemoveGUIDs Then
+        If Not ApplyReplaceRules(byts, IEX_ON_EXPORT) Then blnFail = True: GoTo End_Processing
       End If
-          
-      ' we now have the file but it is in UCS2 format
-      ' we may want to convert this to UTF-8
+
+      ' byts now holds the merged UCS-2 content. Encode it according to the caller's preference before the single write.
       blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_UCS2_to_UTF8) Or (enmEncode = asEncode_All_to_UTF8)
-      
-      If Not blnSaveAsUTF8 And Not blnSourceIsUCS2 Then
-        ' we don't want to output in UTF-8 encoding and MS Access originally produced a file which is not UCS2 encoded
-        ' so convert it back to ANSI
-        If ConvFileUCS2_to_ANSI(strFilename, strFilename & ".tmp") Then
-          ' conversion completed successfully so copy file over
-          Kill strFilename
-          Name strFilename & ".tmp" As strFilename
+
+      If blnSaveAsUTF8 Then
+        If Not UCS2_to_UTF8(byts) Then blnFail = True: GoTo End_Processing
+      ElseIf Not blnSourceIsUCS2 Then
+        ' MS Access originally produced a non-UCS2 file so convert the output back to ANSI.
+        ' If the content cannot be represented in ANSI, keep the valid UCS-2 output rather
+        ' than dropping the object (UCS2_to_ANSI leaves byts untouched on failure).
+        If Not UCS2_to_ANSI(byts) Then
+          MsgBox "Unable to convert '" & objName & "' to ANSI encoding; kept as UCS-2. Beware when committing."
         End If
       End If
-      
+
+      If Not WriteToFile(byts, strFilename) Then blnFail = True: GoTo End_Processing
+
+      ' UTF-8 has already been handled inline so suppress the trailing conversion below
+      blnSaveAsUTF8 = False
+
 End_Processing:
       If blnFail Then MsgBox "Processing of '" & objName & "' failed."
-          
+
       If FileExists(strFilename & ".tmp") Then Kill strFilename & ".tmp"
     
-    Case asObjectType.acQuery, asObjectType.acMacro
+    Case asObjectType.acQuery
+      Application.SaveAsText objType, objName, strFilename
+      If blnRemoveGUIDs Then
+        If Not ApplyReplaceRulesToFile(strFilename, IEX_ON_EXPORT) Then
+          MsgBox "Cleaning of '" & objName & "' failed."
+        End If
+      End If
+      blnSaveAsUTF8 = blnSaveAsUTF8 _
+        Or (enmEncode = asEncode_UCS2_to_UTF8 And DetectFileEncoding(strFilename) = enmFileEncoding_UCS2) _
+        Or (enmEncode = asEncode_All_to_UTF8)
+
+    Case asObjectType.acMacro
       Application.SaveAsText objType, objName, strFilename
       blnSaveAsUTF8 = blnSaveAsUTF8 _
-        Or (enmEncode = asEncode_UCS2_to_UTF8 And IsUCS2(strFilename)) _
+        Or (enmEncode = asEncode_UCS2_to_UTF8 And DetectFileEncoding(strFilename) = enmFileEncoding_UCS2) _
         Or (enmEncode = asEncode_All_to_UTF8)
-      
+
     Case asObjectType.acModule
       Application.SaveAsText objType, objName, strFilename
       blnSaveAsUTF8 = blnSaveAsUTF8 Or (enmEncode = asEncode_All_to_UTF8)
@@ -178,27 +171,30 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
   Dim strCatchErr As String
   Dim blnUTF8 As Boolean
   Dim strTempFilename As String
-  
+  Dim blnTmpExists As Boolean    ' True when strTempFilename points at a .tmp that this function owns
+
   ' Forms, Reports, Queries and Reports are produced and read by Access from UCS2 ( 2 byte ) encoded files
   ' These are re-encoded to UTF-8 on saving so that all SVN tools work
   ' Due to the historic files not having been converted we need to check whether these files are in UTF8 or UCS2 format and convert if required
-  
-  blnUTF8 = IsUTF8(strFilename)
-  
+
+  blnUTF8 = (DetectFileEncoding(strFilename) = enmFileEncoding_UTF8)
+
   If blnUTF8 Then
     Select Case objType
-    
+
       Case asObjectType.acForm, asObjectType.acReport, asObjectType.acMacro, asObjectType.acQuery
         If ConvFileUTF8_to_UCS2(strFilename, strFilename & ".tmp") Then
           strTempFilename = strFilename & ".tmp"
+          blnTmpExists = True
         Else
           strErr = "Unable to Convert '" & strFilename & "' from UTF-8 encoding to UCS2 so it has not imported. Please review after import."
         End If
-        
-      
+
+
       Case Else
         If ConvFileUTF8_to_ANSI(strFilename, strFilename & ".tmp") Then
           strTempFilename = strFilename & ".tmp"
+          blnTmpExists = True
         Else
          strErr = "Unable to Convert '" & strFilename & "' from UTF8 encoding to ANSI so it has not imported. Please review after import."
         End If
@@ -206,7 +202,28 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
   Else
    strTempFilename = strFilename
   End If
-  
+
+  ' For forms and reports: expand any <Section>_H human-readable blocks
+  ' back to their Access-native form in place on a working .tmp copy, so
+  ' the source file in the repository stays untouched.
+  If LenB(strErr) = 0 Then
+    Select Case objType
+      Case asObjectType.acForm, asObjectType.acReport
+        If Not blnTmpExists Then
+          If FileExists(strFilename & ".tmp") Then Kill strFilename & ".tmp"
+          FileCopy strFilename, strFilename & ".tmp"
+          strTempFilename = strFilename & ".tmp"
+          blnTmpExists = True
+        End If
+        If Not ApplyReplaceRulesToFile(strTempFilename, IEX_ON_IMPORT) Then
+          strErr = "Failed to apply Replace rules on '" & strFilename & "'. Please review after import."
+          If FileExists(strTempFilename) Then Kill strTempFilename
+          blnTmpExists = False
+          Exit Sub
+        End If
+    End Select
+  End If
+
 
   Select Case objType
     Case asObjectType.acForm
@@ -242,10 +259,10 @@ Public Sub LoadFromText(objType As asObjectType, ByVal objName As String, strFil
       
   End Select
   
-  If blnUTF8 Then
-    Kill strTempFilename
+  If blnTmpExists Then
+    If FileExists(strTempFilename) Then Kill strTempFilename
   End If
-  
+
 End Sub
 
 '************************************************
@@ -655,18 +672,21 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
   Dim Idx As DAO.Index
   Dim rs As DAO.Recordset
   Dim strOut As String
-  Dim booContainsIndex As Boolean
   Dim strPrimaryIndex As String
   Dim strSortString As String
   Dim strDumpSQLQuery As String
   Dim sDelimiter As String
   Dim sSEPERATOR As String
-  Dim b() As Byte
   Dim strIgnoredPrpTables As String
   Dim strIgnoredPrpFields As String
   Dim strIgnoredPrpIndexes As String
   Dim blnSort As Boolean
   Dim arrNames() As Variant
+  Dim arrUniqueIdx() As Variant
+  Dim cntUniqueIdx As Long
+  Dim strLeadingIdx As String
+  Dim strIdxFields As String
+  Dim blnLeadingIdxIsPrimary As Boolean
   Dim i As Long
   
   sDelimiter = Chr(135)
@@ -727,7 +747,6 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
         If blnSort Then QuickSort arrNames(), 0, tdf.Indexes.Count - 1
         For i = 0 To tdf.Indexes.Count - 1
           Set Idx = tdf.Indexes(i)
-          booContainsIndex = True
           If Idx.Primary = True Then strPrimaryIndex = Idx.Name
           Print #f, "    Begin Index"
             Call WriteProperties(Idx, f, 8, strIgnoredPrpIndexes, blnSort)
@@ -742,24 +761,65 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
 
       'Now Data
       If enmMode = asFullWithData Then
-        If booContainsIndex Then
-          If strPrimaryIndex <> "" Then
-            Set Idx = tdf.Indexes(strPrimaryIndex)
-          Else
-            Set Idx = tdf.Indexes.Item(0)
-          End If
-          For Each fld In Idx.Fields
-            If strSortString <> "" Then
-              strSortString = strSortString & ", [" & fld.Name & "]"
-            Else
-              strSortString = "[" & fld.Name & "]"
+        ' Build a deterministic ORDER BY. Prefer the Primary Index (unique and
+        ' non-nullable, so its fields alone are a total order) -> else the
+        ' alphabetically-first Unique index. A non-Primary Unique index can
+        ' hold Null keys (Jet permits multiple Null rows in a unique index) and
+        ' those have no stable order, so we append every remaining sortable
+        ' field as a tie-breaker. With no usable index we sort by every sortable
+        ' field. dbMemo/dbLongBinary are always excluded (Jet cannot ORDER BY
+        ' them), so rows byte-identical except in those fields remain ambiguous.
+        strSortString = ""
+        strLeadingIdx = ""
+        blnLeadingIdxIsPrimary = False
+        If strPrimaryIndex <> "" Then
+          strLeadingIdx = strPrimaryIndex
+          blnLeadingIdxIsPrimary = True
+        ElseIf tdf.Indexes.Count > 0 Then
+          ReDim arrUniqueIdx(0 To tdf.Indexes.Count - 1)
+          cntUniqueIdx = 0
+          For i = 0 To tdf.Indexes.Count - 1
+            If tdf.Indexes(i).Unique Then
+              arrUniqueIdx(cntUniqueIdx) = tdf.Indexes(i).Name
+              cntUniqueIdx = cntUniqueIdx + 1
             End If
           Next
-        Else
-          Set fld = tdf.Fields.Item(0)
-          strSortString = "[" & fld.Name & "]"
+          If cntUniqueIdx > 0 Then
+            QuickSort arrUniqueIdx(), 0, cntUniqueIdx - 1
+            strLeadingIdx = arrUniqueIdx(0)
+          End If
         End If
-        strDumpSQLQuery = "SELECT * FROM [" & TableName & "] ORDER BY " & strSortString & " ASC"
+        ' Fields already contributed by the leading index, tracked as a
+        ' ";Name;" list so the tie-breaker loop below does not repeat them.
+        strIdxFields = ";"
+        If strLeadingIdx <> "" Then
+          For Each fld In tdf.Indexes(strLeadingIdx).Fields
+            If strSortString <> "" Then strSortString = strSortString & ", "
+            strSortString = strSortString & "[" & fld.Name & "]"
+            strIdxFields = strIdxFields & fld.Name & ";"
+          Next
+        End If
+        ' Append the full-field tie-breaker unless a Primary Index (already a
+        ' total order on its own) provided the ordering.
+        If Not blnLeadingIdxIsPrimary Then
+          For i = 0 To tdf.Fields.Count - 1
+            Set fld = tdf.Fields(i)
+            Select Case fld.Type
+              Case dbMemo, dbLongBinary
+                ' unsortable in Jet ORDER BY
+              Case Else
+                If InStr(1, strIdxFields, ";" & fld.Name & ";", vbTextCompare) = 0 Then
+                  If strSortString <> "" Then strSortString = strSortString & ", "
+                  strSortString = strSortString & "[" & fld.Name & "]"
+                End If
+            End Select
+          Next
+        End If
+        If strSortString <> "" Then
+          strDumpSQLQuery = "SELECT * FROM [" & TableName & "] ORDER BY " & strSortString & " ASC"
+        Else
+          strDumpSQLQuery = "SELECT * FROM [" & TableName & "]"
+        End If
         Set rs = dbSource.OpenRecordset(strDumpSQLQuery, dbOpenDynaset, dbReadOnly)
         Print #f, "    Begin Data"
         'Write the field names
@@ -773,39 +833,69 @@ Public Sub SaveTableAsText(TableName As String, FileName As String, Optional enm
         'Now write the data
         Close #f 'We have to close the file becasue we now want to write in Binary Mode
         Open FileName For Binary As #f
+        Seek #f, LOF(f) + 1 'position once at end-of-file so subsequent Puts can omit the recnumber
+        'Pre-convert repeated tokens once so we don't call StrConv per field per row.
+        'The row is built into a single growing byte buffer (amortized O(total bytes))
+        'rather than re-allocating the whole accumulator for every field.
+        Dim bytsRowPrefix() As Byte
+        Dim bytsSep() As Byte
+        Dim bytsDelim() As Byte
+        Dim bytsDelimSep() As Byte
+        Dim bytsNullSep() As Byte
+        Dim bytsCrLf() As Byte
+        Dim bytsEnd() As Byte
+        bytsRowPrefix = StrConv("        ", vbFromUnicode)
+        bytsSep = StrConv(sSEPERATOR, vbFromUnicode)
+        bytsDelim = StrConv(sDelimiter, vbFromUnicode)
+        bytsDelimSep = StrConv(sDelimiter & sSEPERATOR, vbFromUnicode)
+        bytsNullSep = StrConv("#NULL#" & sSEPERATOR, vbFromUnicode)
+        bytsCrLf = StrConv(vbCrLf, vbFromUnicode)
+        bytsEnd = StrConv("    End" & vbCrLf, vbFromUnicode)
+        Dim sepLen As Long
+        sepLen = UBound(bytsSep) - LBound(bytsSep) + 1
+        Dim rowBuf() As Byte
+        Dim rowCap As Long
+        Dim rowUsed As Long
+        Dim outBuf() As Byte
+        rowCap = 1024
+        ReDim rowBuf(0 To rowCap - 1)
         Do While Not rs.EOF
-          'strOut = ""
-          b() = StrConv("        ", vbFromUnicode)
+          rowUsed = 0
+          AppendBytes rowBuf, rowCap, rowUsed, bytsRowPrefix
           For Each fld In rs.Fields
             Select Case fld.Type
               Case dbText, dbMemo ' Null is handled explicitly
                 If IsNull(fld.Value) Or (Not fld.AllowZeroLength And fld.Value = vbNullString) Then
-                  b = ConcatByteArr(b, StrConv("#NULL#" & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsNullSep
                 ElseIf LenB(fld.Value) = 0 Then
-                  b = ConcatByteArr(b, StrConv(vbNullString & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsSep
                 Else
-                  b = ConcatByteArr(b, StrConv(sDelimiter, vbFromUnicode), EncodeText(Replace(Replace(fld.Value, vbCrLf, CRSPLF, 1), sDelimiter, DLMTR, 1)), StrConv(sDelimiter & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsDelim
+                  AppendBytes rowBuf, rowCap, rowUsed, EncodeText(Replace(Replace(fld.Value, vbCrLf, CRSPLF, 1), sDelimiter, DLMTR, 1))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsDelimSep
                 End If
               Case dbDate, dbTime ' Null is handled indirectly and is outputted as ##
-                b = ConcatByteArr(b, StrConv("#" & Format(fld.Value, "mm/dd/yyyy hh:mm:ss") & "#" & sSEPERATOR, vbFromUnicode))
+                AppendBytes rowBuf, rowCap, rowUsed, StrConv("#" & Format(fld.Value, "mm/dd/yyyy hh:mm:ss") & "#" & sSEPERATOR, vbFromUnicode)
               Case dbLongBinary ' Null is handled indeirectly and is outputted as an empty string (vbNullString)
-                b = ConcatByteArr(b, StrConv(VarByteArrToHexString(fld.Value) & sSEPERATOR, vbFromUnicode))
+                AppendBytes rowBuf, rowCap, rowUsed, StrConv(VarByteArrToHexString(fld.Value) & sSEPERATOR, vbFromUnicode)
               Case dbDouble, dbSingle ' store decimal places using dot notation rather than regional formatting
                 If IsNull(fld.Value) Then ' Need to handle Null data specifically
-                  b = ConcatByteArr(b, StrConv(vbNullString & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, bytsSep
                 Else
-                  b = ConcatByteArr(b, StrConv(str$(fld.Value) & sSEPERATOR, vbFromUnicode))
+                  AppendBytes rowBuf, rowCap, rowUsed, StrConv(str$(fld.Value) & sSEPERATOR, vbFromUnicode)
                 End If
               Case Else
-                b = ConcatByteArr(b, StrConv(fld.Value & sSEPERATOR, vbFromUnicode))
+                AppendBytes rowBuf, rowCap, rowUsed, StrConv(fld.Value & sSEPERATOR, vbFromUnicode)
             End Select
           Next
-          ReDim Preserve b(LBound(b) To UBound(b) - Len(sSEPERATOR))
-          Put #f, LOF(f) + 1, b
-          Put #f, LOF(f) + 1, vbCrLf
+          rowUsed = rowUsed - sepLen 'drop the trailing separator written by the last field
+          AppendBytes rowBuf, rowCap, rowUsed, bytsCrLf
+          ReDim outBuf(0 To rowUsed - 1)
+          CopyMemory VarPtr(outBuf(0)), VarPtr(rowBuf(0)), rowUsed
+          Put #f, , outBuf
           rs.MoveNext
         Loop
-        Put #f, LOF(f) + 1, "    End" & vbCrLf
+        Put #f, , bytsEnd
         Close #f
         Open FileName For Append As #f 're-open file in Append Mode
       End If
@@ -853,8 +943,8 @@ Public Sub LoadTableFromText(TableName As String, FileName As String, Optional b
   
   sDelimiterOld = Chr(44)  '  ,
   sSeperatorOld = Chr(34)  '  "
-  sDelimiter = Chr(135)    '  ‡
-  sSEPERATOR = Chr(149)    '  •
+  sDelimiter = Chr(135)    '  â€¡
+  sSEPERATOR = Chr(149)    '  â€¢
   CRSPLF = Chr(213) & Chr(214) & Chr(210) 'This is used as an alternative to vbCRLF where ir is itself found in a field
   DLMTR = Chr(243) & Chr(242) & Chr(241) 'This is used as an alternative to sDelimiter where it is itself found in a field
   
@@ -1119,11 +1209,10 @@ Private Function WriteProperties(obj As Object, fNum As Integer, intOffset As In
   Dim varPropNames() As Variant
 
   ReDim varPropNames(0 To obj.Properties.Count - 1)
+  i = 0
   For Each prp In obj.Properties
-    For i = 0 To obj.Properties.Count - 1
-      varPropNames(i) = obj.Properties(i).Name
-    Next i
-
+    varPropNames(i) = prp.Name
+    i = i + 1
   Next prp
   If blnSort Then
     QuickSort varPropNames, 0, obj.Properties.Count - 1
@@ -1229,246 +1318,100 @@ Private Sub AppendParent(AccObj() As AccObject)
   End With
 End Sub
 
-Public Function CleanFormsReports(strImportPath As String) As Boolean
-  ' cleans out the lines (Sections) specified in the Ignores Array from every Form and Report in the Path Sepcified
-  Dim Ignores() As Ignore
+Public Function CleanExports(strImportPath As String) As Boolean
+  ' Re-runs the Replace engine over every Form, Report and Query text file
+  ' in the supplied path, stripping obsolete sections and applying any
+  ' human-readable substitutions registered in modTextReplace.
   Dim arrSVNItems() As SVNITEM
   Dim strFoldername As String
   Dim strFilename As String
+  Dim arrFolders As Variant
   Dim i As Long
   Dim j As Long
-  
-  PopulateIgnoreArr Ignores
-  
-  For i = 0 To 1
-    strFoldername = appendSlash(strImportPath) & IIf(i = 0, "Forms", "Reports")
-      
+
+  arrFolders = Array("Forms", "Reports", "Queries")
+
+  For i = LBound(arrFolders) To UBound(arrFolders)
+    strFoldername = appendSlash(strImportPath) & arrFolders(i)
+
     SCC_GetAllVersionsSubFolder strFoldername, arrSVNItems
-    
+
     If (Not arrSVNItems) <> -1 Then ' check that the arr is not nothing before looping through it
       For j = LBound(arrSVNItems) To UBound(arrSVNItems)
         If arrSVNItems(j).svName <> "" Then
           strFilename = appendSlash(strFoldername) & arrSVNItems(j).svName
-          If Not CleanFormReportFileEx(strFilename, strFilename, Ignores) Then Exit Function
+          If Not ApplyReplaceRulesToFile(strFilename, IEX_ON_EXPORT) Then Exit Function
         End If
       Next
     End If
   Next
-  
-  CleanFormsReports = True
+
+  CleanExports = True
 
 End Function
 
-Private Function CleanFormReportFileEx(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
-  ' As CleanFormReportFile but accepts any form encoding
-  
-  Dim strEncoding As String
-  
-  CleanFormReportFileEx = False ' intially set to indicate failure
-  
-  If IsUTF8(strFilename) Then
-    strEncoding = "UTF8"
-  ElseIf IsUCS2(strFilename) Then
-    strEncoding = "UCS2"
-  ElseIf IsANSI(strFilename) Then
-    strEncoding = "ANSI"
-  Else
-    Exit Function
-  End If
-  
-  If Not ConvFile_to_UCS2(strFilename, strFilenameNew) Then Exit Function
-  If Not CleanFormReportFile(strFilenameNew, strFilenameNew, Ignores) Then Exit Function
-  
-  Select Case strEncoding
-    Case "UTF8":
-      CleanFormReportFileEx = ConvFileUCS2_to_UTF8(strFilenameNew)
-    Case "UCS2"
-      CleanFormReportFileEx = True
-    Case "ANSI":
-      CleanFormReportFileEx = ConvFileUCS2_to_ANSI(strFilenameNew)
-  End Select
-  
-End Function
-Private Function CleanFormReportFile(strFilename As String, strFilenameNew As String, Ignores() As Ignore) As Boolean
-  ' This function takes a UCS2 encoded file and cleans out the lines (Sections) specified in the Ignores Array
-  
-  Dim bytsFile() As Byte
-  Dim bytsLine() As Byte
-  Dim f As Long
-  Dim lngStartPos As Long ' the start position of the line we are looking at
-  Dim lngNextStartPos As Long ' the start position of the next line we need to look at
-  Dim lngWritePos As Long ' the byte position in the output file for the write
-  Dim lngLineLen As Long
-  Dim x As Long
+Private Function ReplaceCodeSectionBytes(bytsOrig() As Byte, bytsCode() As Byte, ByRef bytsOut() As Byte) As Boolean
+  ' Replaces the CodeBehind section in bytsOrig with the one from bytsCode.
+  ' Both inputs must be UCS-2 encoded; the merged result is returned in bytsOut.
+
+  Dim bytsCodeBehind() As Byte
   Dim bytsCrLf() As Byte
-  Dim blnEOF As Boolean
-  Dim blnCodeBehind As Boolean ' indicates that we are in the CodeBehind section of the file
-  Dim bytsCodeBehind() As Byte
-  
-  bytsCodeBehind = "CodeBehind" ' The text which indicates the start of the code section
-  blnCodeBehind = False
-  bytsCrLf() = vbCrLf
-  
-  ' load the file into the bytsFile array
-  f = FreeFile()
-  Open strFilename For Binary Access Read As #f
-  ReDim bytsFile(LOF(f) - 1)
-  Get #f, , bytsFile()
-  Close #f
-    
-  lngWritePos = 1 ' The next location to write into the output file (starts at 1 ie not zero based)
-  lngStartPos = 0 ' The initial start location (0 based)
-  blnEOF = False
-  
-  ' Open file ready for output
-  f = FreeFile()
-  If FileExists(strFilenameNew) Then Kill strFilenameNew
-  Open strFilenameNew For Binary Access Write As #f
-  
-  ' Loop through line by line
-  Do
-    x = InBytArr(lngStartPos, bytsFile, bytsCrLf) ' look for end of line (CrLf)
-    If x = clngNOTFOUND Then
-      ' we did not find an end of line so we must now be at the end of the file
-      lngNextStartPos = UBound(bytsFile) + 1
-      blnEOF = True
-    Else
-      lngNextStartPos = x + 4 'to allow for the CrLf we found (2 bytes per character)
-      If lngNextStartPos = UBound(bytsFile) + 1 Then blnEOF = True ' File ends with CrLf
-    End If
-    
-    ' extract the line we are looking at into bytsLine
-    lngLineLen = lngNextStartPos - lngStartPos
-    ReDim bytsLine(lngLineLen - 1)
-    CopyMemory VarPtr(bytsLine(0)), VarPtr(bytsFile(lngStartPos)), lngLineLen
-    
-    If Not blnCodeBehind Then
-      'look to see if we are at the codebehind line
-      If InBytArr(0, bytsLine, bytsCodeBehind) = 0 Then blnCodeBehind = True
-    End If
-    
-    If blnCodeBehind Then 'NB we need to do this in 2 sections of the IF because we dont want IgnoreSection to run if blnCodeBehind is true
-      ' Always write line if we are in the code section
-      Put #f, lngWritePos, bytsLine
-      lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
-    ElseIf Not IgnoreSection(bytsFile, bytsLine, lngStartPos, lngNextStartPos, Ignores) Then
-      ' Write the line if it is not part of a section we need to ignore
-      If UBound(bytsLine) > 3 Then ' only write the line if it is not blank
-        Put #f, lngWritePos, bytsLine
-        lngWritePos = lngWritePos + UBound(bytsLine) + 1 'bytsLine is always zero based
-      End If
-    End If
-    
-    lngStartPos = lngNextStartPos ' move on to the next line
-  Loop While Not blnEOF
-  Close #f
-  
-  CleanFormReportFile = True
-End Function
-
-Private Function IgnoreSection(bytsFile() As Byte, bytsLine() As Byte, lngStartPos As Long, ByRef lngNextStartPos As Long, Ignores() As Ignore) As Boolean
-  ' This function looks in the bytsFile array with start point of lngStartPos to see if we need to ignore this section
-  ' If we have to ignore this section it returns true and adjusts lngNextStartPos to the beginning of the next line after the section to ignore
-  ' Otherwise it returns false
-  ' NB bytsLine is the line which starts at point lngStartPos and this function assumes this to be the case
-  
-  Dim lngStartIgnore As Long
-  Dim lngEndIgnore As Long
-  Dim lngIgnoreLen As Long
-  Dim i As Long
-  
-  IgnoreSection = False ' initially set to false
-  
-  For i = LBound(Ignores) To UBound(Ignores)
-    lngStartIgnore = InBytArr(0, bytsLine, Ignores(i).bytsStart)
-    If lngStartIgnore <> clngNOTFOUND Then
-      ' We have found the start string
-      lngEndIgnore = InBytArr(lngStartPos + lngStartIgnore, bytsFile, Ignores(i).bytsEnd)
-      If lngEndIgnore <> clngNOTFOUND Then
-        ' we found the associated end section
-        ' adjust the next (lngNextStartPos) to be after the ignore section
-        lngIgnoreLen = UBound(Ignores(i).bytsEnd) - LBound(Ignores(i).bytsEnd) + 1
-        lngNextStartPos = lngEndIgnore + lngIgnoreLen
-        IgnoreSection = True
-        Exit Function
-      End If
-    End If
-  Next i
-  
-End Function
-
-Public Function ReplaceCodeSection(strOrigFilename As String, strNewCodeFilename As String) As Boolean
-  ' Takes 2 files and puts the code section from the second into the first
-  ' Both file can contain both Form/Report design sections AND code sections
-  ' This only works if both files are UCS2 (2-byte) encoded
-  
-  Dim f As Long
-  Dim bytsFileOrig() As Byte
-  Dim bytsCodeFile() As Byte
-  Dim bytsCodeBehind() As Byte
   Dim lngCodeStart As Long
   Dim lngCodeStartOrig As Long
   Dim lngNewCodeLength As Long
-  Dim bytsCrLf() As Byte
-    
-  ReplaceCodeSection = False ' initially set to indicate fail
-  
+  Dim lngOrigLen As Long
+  Dim lngOutLen As Long
+
+  ReplaceCodeSectionBytes = False
+
+  If DetectEncoding(bytsOrig) <> enmFileEncoding_UCS2 Then Exit Function
+  If DetectEncoding(bytsCode) <> enmFileEncoding_UCS2 Then Exit Function
+
   bytsCodeBehind = "CodeBehind" ' The text which indicates the start of the code section
   bytsCrLf() = vbCrLf
-  
-  If Not IsUCS2(strOrigFilename) Then Exit Function
-  If Not IsUCS2(strNewCodeFilename) Then Exit Function
-  
-  ' Load file containing code into Byte Array
-  f = FreeFile()
-  Open strNewCodeFilename For Binary Access Read As #f
-  ReDim bytsCodeFile(LOF(f) - 1)
-  Get #f, , bytsCodeFile()
-  Close #f
-  
-  lngCodeStart = InBytArr(0, bytsCodeFile, bytsCodeBehind)
+
+  lngCodeStart = InBytArr(0, bytsCode, bytsCodeBehind)
   If lngCodeStart = clngNOTFOUND Then
-    ' there is no code section in the code file supplied
+    ' there is no code section in the code byte array supplied
     lngNewCodeLength = 0
   Else
-    lngNewCodeLength = UBound(bytsCodeFile) - lngCodeStart + 1
+    lngNewCodeLength = UBound(bytsCode) - lngCodeStart + 1
   End If
-  
-  ' Load original file into Byte Array
-  f = FreeFile()
-  Open strOrigFilename For Binary Access Read As #f
-  ReDim bytsFileOrig(LOF(f) - 1)
-  Get #f, , bytsFileOrig()
-  Close #f
-  
-  lngCodeStartOrig = InBytArr(0, bytsFileOrig, bytsCodeBehind)
-  
+
+  lngOrigLen = UBound(bytsOrig) + 1
+  lngCodeStartOrig = InBytArr(0, bytsOrig, bytsCodeBehind)
+
   If lngCodeStartOrig = clngNOTFOUND Then
-    ' There is no new code section in the source file at present so add one
-    If lngNewCodeLength <> 0 Then
-      lngCodeStartOrig = UBound(bytsFileOrig) + 1
-      ReDim Preserve bytsFileOrig(UBound(bytsFileOrig) + lngNewCodeLength + 4)
-      ' Copy in a CrLf before adding the new code section
-      CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCrLf(0)), 4
-      lngCodeStartOrig = lngCodeStartOrig + 4 ' to allow for CrLf added
+    ' There is no existing code section in the original, so append the new one
+    If lngNewCodeLength = 0 Then
+      ' Nothing to merge: output matches original
+      bytsOut = bytsOrig
+      ReplaceCodeSectionBytes = True
+      Exit Function
     End If
+    lngOutLen = lngOrigLen + 4 + lngNewCodeLength ' +4 for CrLf separator
+    ReDim bytsOut(lngOutLen - 1)
+    CopyMemory VarPtr(bytsOut(0)), VarPtr(bytsOrig(0)), lngOrigLen
+    CopyMemory VarPtr(bytsOut(lngOrigLen)), VarPtr(bytsCrLf(0)), 4
+    CopyMemory VarPtr(bytsOut(lngOrigLen + 4)), VarPtr(bytsCode(lngCodeStart)), lngNewCodeLength
   Else
-    ' There is a code section in the source file so we will overwrite it
-    ReDim Preserve bytsFileOrig(lngCodeStartOrig + lngNewCodeLength - 1)
+    ' There is an existing code section; truncate original before it and append the new one
+    lngOutLen = lngCodeStartOrig + lngNewCodeLength
+    If lngOutLen = 0 Then
+      Erase bytsOut
+      ReplaceCodeSectionBytes = True
+      Exit Function
+    End If
+    ReDim bytsOut(lngOutLen - 1)
+    If lngCodeStartOrig > 0 Then
+      CopyMemory VarPtr(bytsOut(0)), VarPtr(bytsOrig(0)), lngCodeStartOrig
+    End If
+    If lngNewCodeLength > 0 Then
+      CopyMemory VarPtr(bytsOut(lngCodeStartOrig)), VarPtr(bytsCode(lngCodeStart)), lngNewCodeLength
+    End If
   End If
-  
-  ' Copy the new code section into orig array
-  If lngNewCodeLength <> 0 Then CopyMemory VarPtr(bytsFileOrig(lngCodeStartOrig)), VarPtr(bytsCodeFile(lngCodeStart)), lngNewCodeLength
-  
-  Kill strOrigFilename
-  
-  f = FreeFile()
-  Open strOrigFilename For Binary Access Write As #f
-  Put #f, 1, bytsFileOrig
-  Close #f
-  
-  ReplaceCodeSection = True
-  
+
+  ReplaceCodeSectionBytes = True
 End Function
 
 '************************************************
@@ -1554,11 +1497,27 @@ Private Sub QuickSort(ByRef MyArray() As Variant, ByVal lngLBound As Long, ByVal
     Dim k As Long
     Dim P As Long
     Dim varTemp As Variant
-    
+
     If lngLBound >= lngUBound Then
         Exit Sub
     End If
-    
+
+    ' For small ranges, insertion sort beats recursive partitioning
+    If lngUBound - lngLBound < 16 Then
+        Dim insI As Long, insJ As Long
+        For insI = lngLBound + 1 To lngUBound
+            varTemp = MyArray(insI)
+            insJ = insI - 1
+            Do While insJ >= lngLBound
+                If MyArray(insJ) <= varTemp Then Exit Do
+                MyArray(insJ + 1) = MyArray(insJ)
+                insJ = insJ - 1
+            Loop
+            MyArray(insJ + 1) = varTemp
+        Next insI
+        Exit Sub
+    End If
+
     k = lngLBound + 1
     
     If lngUBound = k Then
@@ -1669,37 +1628,71 @@ Private Function MidBytArr(arr() As Byte, lngStart As Long, lngEnd As Long, lngN
 
   MidBytArr = arrOut
 End Function
-Private Function InBytArr(ByVal lngStart As Long, arr1() As Byte, arr2() As Byte) As Long
+Public Function InBytArr(ByVal lngStart As Long, arr1() As Byte, arr2() As Byte) As Long
   'Returns the position of ByteArray 2 within BytArray 1
   'If not found it returns clngNOTFOUND (-2147483648)
+  'Hot path: used by the line-by-line parse loops with a 2-byte CrLf needle,
+  'so 1- and 2-byte needles are specialized to skip the generic inner loop.
   Dim i As Long
   Dim j As Long
   Dim lngLBound2 As Long
-  Dim lngUBound2 As Long
-  Dim byt1 As Byte       'The first Byte of the second array
-  Dim blnFound As Boolean
-  
+  Dim lngLen2 As Long    'needle length minus 1 (UBound - LBound)
+  Dim lngEnd As Long     'last starting position where the needle can still fit
+  Dim byt1 As Byte       'first byte of needle (fast prefilter)
+  Dim byt2 As Byte       'second byte of needle, used when lngLen2 = 1
+
   InBytArr = clngNOTFOUND
-  
+
   If (Not arr1) = -1 Then Exit Function
   If (Not arr2) = -1 Then Exit Function
   lngLBound2 = LBound(arr2)
-  lngUBound2 = UBound(arr2)
+  lngLen2 = UBound(arr2) - lngLBound2
   byt1 = arr2(lngLBound2)
   If lngStart < LBound(arr1) Then lngStart = LBound(arr1)
-  For i = lngStart To UBound(arr1) - (lngUBound2 - lngLBound2)
-    If arr1(i) = byt1 Then
-      blnFound = True
-      For j = 1 To (lngUBound2 - lngLBound2)
-        If arr1(i + j) <> arr2(lngLBound2 + j) Then
-          blnFound = False
-          Exit For
+  lngEnd = UBound(arr1) - lngLen2
+
+  Select Case lngLen2
+    Case 0 '1-byte needle
+      For i = lngStart To lngEnd
+        If arr1(i) = byt1 Then InBytArr = i: Exit Function
+      Next
+    Case 1 '2-byte needle (CrLf is the hot path)
+      byt2 = arr2(lngLBound2 + 1)
+      For i = lngStart To lngEnd
+        If arr1(i) = byt1 Then
+          If arr1(i + 1) = byt2 Then InBytArr = i: Exit Function
         End If
       Next
-      If blnFound Then InBytArr = i: Exit Function
-    End If
-  Next
+    Case Else 'generic n-byte needle
+      For i = lngStart To lngEnd
+        If arr1(i) = byt1 Then
+          For j = 1 To lngLen2
+            If arr1(i + j) <> arr2(lngLBound2 + j) Then Exit For
+          Next
+          If j > lngLen2 Then InBytArr = i: Exit Function 'inner For ran to completion
+        End If
+      Next
+  End Select
 End Function
+Public Sub AppendBytes(ByRef buf() As Byte, ByRef cap As Long, ByRef used As Long, src() As Byte)
+  'Appends src into buf starting at offset `used`, doubling `cap` as needed.
+  '`used` tracks the actual byte count (buf may be oversized); the caller is
+  'responsible for copying the first `used` bytes out before writing.
+  'Why: per-field ConcatByteArr reallocated the full row accumulator for every
+  'field, giving O(fields^2) work per row. A growing buffer is amortized O(n).
+  If (Not src) = -1 Then Exit Sub
+  Dim sLen As Long
+  sLen = UBound(src) - LBound(src) + 1
+  If sLen <= 0 Then Exit Sub
+  If used + sLen > cap Then
+    Do While cap < used + sLen
+      cap = cap * 2
+    Loop
+    ReDim Preserve buf(0 To cap - 1)
+  End If
+  CopyMemory VarPtr(buf(used)), VarPtr(src(LBound(src))), sLen
+  used = used + sLen
+End Sub
 Private Function ConcatByteArr(ParamArray arr()) As Byte()
 
 'This function concatenates byte arrays.  The LBound of the result will be the same as the LBound of the first array passed

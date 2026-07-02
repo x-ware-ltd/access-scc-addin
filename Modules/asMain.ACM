@@ -162,14 +162,16 @@ End Function
     
 Public Function asRunExport()
   Dim strSVNPath As String
+  Dim frmOptions As Form
 
   DoCmd.OpenForm "Access SVN - Results", acNormal
 
-  If Application.Forms![Access SVN - Options].chkAllowDebug.Value = True Then
+  Set frmOptions = Application.Forms![Access SVN - Options]
+  If frmOptions.chkAllowDebug.Value = True Then
     MsgBox "Debug Stop" & vbCrLf & vbCrLf & "Press Ctrl Break to go into debug mode", vbExclamation, "Subversion for Access"
   End If
 
-  strSVNPath = Application.Forms![Access SVN - Options].txtOutputLocation.Value
+  strSVNPath = frmOptions.txtOutputLocation.Value
   Echo False
   asExportAllObjects appendSlash(strSVNPath)
 
@@ -178,12 +180,14 @@ Public Function asRunExport()
 End Function
 
 Sub DoCommit()
-  If Application.Forms![Access SVN - Options].chkCommit.Value = True Then
-    SCC_Commit Application.Forms![Access SVN - Options].txtOutputLocation.Value, Application.Forms![Access SVN - Options].chkShowCommit.Value
-    
-    If Application.Forms![Access SVN - Options].chkNoImportExternalChanges.Value = False Then
+  Dim frmOptions As Form
+  Set frmOptions = Application.Forms![Access SVN - Options]
+  If frmOptions.chkCommit.Value = True Then
+    SCC_Commit frmOptions.txtOutputLocation.Value, frmOptions.chkShowCommit.Value
+
+    If frmOptions.chkNoImportExternalChanges.Value = False Then
       Echo False ' Update the revision data after the export and commit
-      asUpdateVersionsFromExport appendSlash(Application.Forms![Access SVN - Options].txtOutputLocation.Value)
+      asUpdateVersionsFromExport appendSlash(frmOptions.txtOutputLocation.Value)
       Echo True
     End If
   End If
@@ -191,14 +195,16 @@ End Sub
 
 Public Function asRunImport()
     Dim strSVNPath As String
-    
+    Dim frmOptions As Form
+
     DoCmd.OpenForm "Access SVN - Results", acNormal
-    
-    If Application.Forms![Access SVN - Options].chkAllowDebug.Value = True Then
+
+    Set frmOptions = Application.Forms![Access SVN - Options]
+    If frmOptions.chkAllowDebug.Value = True Then
       MsgBox "Debug Stop" & vbCrLf & vbCrLf & "Press Ctrl Break to go into debug mode", vbExclamation, "Subversion for Access"
     End If
-    
-    strSVNPath = Application.Forms![Access SVN - Options].txtOutputLocation.Value
+
+    strSVNPath = frmOptions.txtOutputLocation.Value
     Echo False
     asImportAllFromText appendSlash(strSVNPath)
     Echo True
@@ -1839,9 +1845,11 @@ Private Sub SetStatus(strStatus As String)
   'This is needed as when running silently the form is not loaded
   On Error Resume Next
 
-  Application.Forms![Access SVN - Results].txtStatus = strStatus
+  Dim frmResults As Form
+  Set frmResults = Application.Forms![Access SVN - Results]
+  frmResults.txtStatus = strStatus
   Echo True
-  Application.Forms![Access SVN - Results].Repaint
+  frmResults.Repaint
   Echo False
 End Sub
 
@@ -1850,5 +1858,7 @@ Private Sub AddResult(strResult As String, Optional ByRef strError As String)
   'This is needed as when running silently the form is not loaded
   On Error Resume Next
   strError = strError & strResult
-  Application.Forms![Access SVN - Results].txtResults.Value = Application.Forms![Access SVN - Results].txtResults.Value & strResult
+  With Application.Forms![Access SVN - Results].txtResults
+    .Value = .Value & strResult
+  End With
 End Sub
