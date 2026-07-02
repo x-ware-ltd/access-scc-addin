@@ -1,4 +1,4 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Any, ByVal Source As Any, ByVal Length As LongPtr)
@@ -36,6 +36,9 @@ Private Const asFileFormatAccess2007 As Integer = 12
 
 
 Public Function Init()
+  ' Record the installed version in the registry on every load, so external
+  ' tools can read which version of the add-in is installed (see modVersion).
+  StampInstalledVersion
   If asSupportedFileFormat() Then
     CreateLocalSCCTables
     DoCmd.OpenForm "Access SVN - Options", acNormal, , , , acHidden
@@ -920,7 +923,7 @@ Private Sub asImportObjects(objImportType As asObjectDBType, strImportPath As St
   
   If objImportType = objQuery Then
     ' Disable Monaco SQL Editor, to prevent lost focus errors when
-    ' converting text to queries. 
+    ' converting text to queries.
     ' Ignore errors here, in case option does not exist, as in older
     ' Access versions.
     On Error Resume Next

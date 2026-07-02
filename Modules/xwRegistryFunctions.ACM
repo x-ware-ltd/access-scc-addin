@@ -1,4 +1,4 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 Public Const REG_SZ As Long = 1 'String
@@ -35,7 +35,10 @@ Declare PtrSafe Function RegOpenKeyEx Lib "advapi32.dll" Alias "RegOpenKeyExA" (
 Declare PtrSafe Function RegQueryValueExString Lib "advapi32.dll" Alias "RegQueryValueExA" (ByVal hKey As LongPtr, ByVal lpValueName As String, ByVal lpReserved As LongPtr, lpType As Long, ByVal lpData As String, lpcbData As Long) As Long
 Declare PtrSafe Function RegQueryValueExLong Lib "advapi32.dll" Alias "RegQueryValueExA" (ByVal hKey As LongPtr, ByVal lpValueName As String, ByVal lpReserved As LongPtr, lpType As Long, lpData As Long, lpcbData As Long) As Long
 Declare PtrSafe Function RegQueryValueExNULL Lib "advapi32.dll" Alias "RegQueryValueExA" (ByVal hKey As LongPtr, ByVal lpValueName As String, ByVal lpReserved As LongPtr, lpType As Long, ByVal lpData As Long, lpcbData As Long) As Long
-   
+Declare PtrSafe Function RegCreateKeyEx Lib "advapi32.dll" Alias "RegCreateKeyExA" (ByVal hKey As LongPtr, ByVal lpSubKey As String, ByVal Reserved As Long, ByVal lpClass As String, ByVal dwOptions As Long, ByVal samDesired As Long, ByVal lpSecurityAttributes As LongPtr, phkResult As LongPtr, lpdwDisposition As Long) As Long
+Declare PtrSafe Function RegSetValueExString Lib "advapi32.dll" Alias "RegSetValueExA" (ByVal hKey As LongPtr, ByVal lpValueName As String, ByVal Reserved As Long, ByVal dwType As Long, ByVal lpData As String, ByVal cbData As Long) As Long
+Declare PtrSafe Function RegDeleteKey Lib "advapi32.dll" Alias "RegDeleteKeyA" (ByVal hKey As LongPtr, ByVal lpSubKey As String) As Long
+
 '************************************************
 ' Query Registry Value
 '
@@ -166,3 +169,71 @@ Private Sub xwRegError(ErrCode As Long, strProcName As String)
   End Select
   MsgBox strErr, vbCritical, strProcName
 End Sub
+
+'************************************************
+' Set Registry String Value
+'
+' Creates the given key (and any missing parent keys) if it does not
+' already exist, then writes a REG_SZ (string) value to it.
+'
+' With this procedure, a call of:
+' xwRegSetStringValue HKEY_CURRENT_USER, "Software\x-ware-ltd\AccessSCC", "InstalledVersion", "0.79.0"
+' will create the key if required and set "InstalledVersion" to "0.79.0".
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version      1.00
+' @param        Long a predefined key handle: HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE or HKEY_USERS
+' @param        String the key path beneath the predefined key
+' @param        String the name of the value to write
+' @param        String the string data to store
+' @return       Boolean True if the value was written successfully, otherwise False
+'************************************************
+Public Function xwRegSetStringValue(ByVal lPredefinedKey As Long, sKeyName As String, sValueName As String, sValue As String) As Boolean
+    Dim lRetVal As Long         'result of the API functions
+    Dim hKey As LongPtr         'handle of opened/created key
+    Dim lDisposition As Long    'whether the key was created or already existed
+
+    xwRegSetStringValue = False
+
+    lRetVal = RegCreateKeyEx(lPredefinedKey, sKeyName, 0, vbNullString, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, 0, hKey, lDisposition)
+    If lRetVal <> ERROR_NONE Then
+      Call xwRegError(lRetVal, "xwRegSetStringValue")
+      Exit Function
+    End If
+
+    ' cbData for a REG_SZ value is the ANSI byte length including the terminating null
+    lRetVal = RegSetValueExString(hKey, sValueName, 0, REG_SZ, sValue, Len(sValue) + 1)
+    Call xwRegError(lRetVal, "xwRegSetStringValue")
+    RegCloseKey (hKey)
+
+    xwRegSetStringValue = (lRetVal = ERROR_NONE)
+End Function
+
+'************************************************
+' Delete Registry Key
+'
+' Deletes the specified subkey along with its values. On platforms where
+' RegDeleteKey will not remove a key that still has child subkeys, the
+' subkey must be empty of children first. A key that does not exist is
+' treated as success, as the desired end state (key absent) already holds.
+'
+' This is primarily used to tidy up throwaway keys, for example those
+' written by unit tests.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version      1.00
+' @param        Long a predefined key handle: HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE or HKEY_USERS
+' @param        String the key path to delete, beneath the predefined key
+' @return       Boolean True if the key was deleted or was already absent, otherwise False
+'************************************************
+Public Function xwRegDeleteKey(ByVal lPredefinedKey As Long, sKeyName As String) As Boolean
+    Dim lRetVal As Long         'result of the API function
+
+    lRetVal = RegDeleteKey(lPredefinedKey, sKeyName)
+    ' ERROR_BADKEY (2) is returned when the key does not exist - treat as success
+    xwRegDeleteKey = (lRetVal = ERROR_NONE) Or (lRetVal = ERROR_BADKEY)
+End Function

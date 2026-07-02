@@ -1,0 +1,35 @@
+﻿Option Compare Database
+Option Explicit
+
+' The single canonical product version for the Access SCC Add-in.
+' This is the one source of truth for the add-in version: the GitHub release
+' tag (vMAJOR.MINOR.PATCH) MUST equal this value, and Init() stamps this value
+' into the registry on every load (see StampInstalledVersion).
+Public Const VERSION As String = "0.79.0"
+
+' Registry location where the installed version is recorded on load.
+Private Const VERSION_REG_KEY As String = "Software\x-ware-ltd\AccessSCC"
+Private Const VERSION_REG_VALUE As String = "InstalledVersion"
+
+'************************************************
+' Stamp Installed Version
+'
+' Records the current product version (VERSION) in the registry at
+' HKCU\Software\x-ware-ltd\AccessSCC\InstalledVersion (REG_SZ). The add-in's
+' Init() entry point calls this on every load, so the value always reflects
+' the version of the add-in that is actually installed and running. External
+' tools (for example the jcshelper `check` command) read this value to verify
+' the installed version.
+'
+' Any failure to write the registry is deliberately swallowed so that a
+' registry problem can never prevent the add-in from loading.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version      1.00
+'************************************************
+Public Sub StampInstalledVersion()
+  On Error Resume Next
+  xwRegSetStringValue HKEY_CURRENT_USER, VERSION_REG_KEY, VERSION_REG_VALUE, VERSION
+End Sub
