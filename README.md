@@ -51,7 +51,9 @@ installed. External tooling (for example the `jcshelper check` command) reads th
 which version is present.
 
 ## Release procedure (manual)
-There is no CI/release automation, so releases are cut by hand:
+The add-in is built by hand, but a GitHub Actions workflow
+([`.github/workflows/release.yml`](.github/workflows/release.yml)) guards the tag-equals-`VERSION`
+rule: pushing a `v*` tag whose version does not match `modVersion.VERSION` fails the check.
 
 1. **Bump the version** — update `Public Const VERSION` in `Modules/modVersion.ACM` to the new
    `MAJOR.MINOR.PATCH`, and add a matching row to the `USysReleaseHistory` table.
@@ -59,9 +61,11 @@ There is no CI/release automation, so releases are cut by hand:
    to `master`.
 3. **Build the add-in** — produce `AccessSCC.mda` from the source (via `accessc`).
 4. **Create the GitHub Release** — tag it `vMAJOR.MINOR.PATCH` so that the tag **equals**
-   `modVersion.VERSION`, and attach the built `AccessSCC.mda` as a release asset.
+   `modVersion.VERSION`, and attach the built `AccessSCC.mda` as a release asset. The `release`
+   workflow runs on the pushed tag and will fail if the tag and `VERSION` disagree.
 
-The tag-equals-`VERSION` rule is what lets the version be verified after installation.
+The tag-equals-`VERSION` rule is what lets the version be verified after installation, and the
+workflow enforces it automatically.
 
 # Version Control Systems
 The only VCS that has enhanced support at the moment is Subversion/TortoiseSVN using `SVN` mode. This includes:
