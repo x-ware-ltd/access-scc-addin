@@ -1,0 +1,32 @@
+name: release
+
+# Guards releases against the versioning standard: a v* tag must match the single
+# in-code source of truth (the VERSION constant in Modules/modVersion.ACM). The tag
+# is rejected when the two disagree.
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag matches the VERSION constant
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          file="Modules/modVersion.ACM"
+          code_version="$(grep -oP 'Public Const VERSION As String\s*=\s*"\K[^"]+' "$file")"
+          echo "Tag version:  $tag"
+          echo "Code version: $code_version"
+          if [ -z "$code_version" ]; then
+            echo "::error::Could not find the VERSION constant in $file"
+            exit 1
+          fi
+          if [ "$tag" != "$code_version" ]; then
+            echo "::error::Tag v$tag does not match VERSION \"$code_version\" in $file"
+            exit 1
+          fi
+          echo "OK: tag matches VERSION"

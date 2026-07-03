@@ -1,6 +1,5 @@
-Version =20
+﻿Version =20
 VersionRequired =20
-Checksum =968832292
 Begin Form
     PopUp = NotDefault
     RecordSelectors = NotDefault
@@ -2252,14 +2251,14 @@ Private Sub Form_Load()
   Dim rst As DAO.Recordset
   
   Set db = CodeDb()
-  Set rst = db.OpenRecordset("SELECT TOP 5 * FROM USysReleaseHistory ORDER BY Version_Number DESC")
+  Set rst = db.OpenRecordset("SELECT TOP 5 * FROM USysReleaseHistory ORDER BY Version_ID DESC")
   Me.lblReleaseHistory.Caption = "Release History:" & vbCrLf
   Do While Not rst.EOF
-    Me.lblReleaseHistory.Caption = Me.lblReleaseHistory.Caption & " " & Format(rst!Version_Number, "0.00") & " - " & rst!Version_History & vbCrLf
+    Me.lblReleaseHistory.Caption = Me.lblReleaseHistory.Caption & " " & rst!Version_Number & " - " & rst!Version_History & vbCrLf
     rst.MoveNext
   Loop
   rst.MoveFirst
-  Me.lblCurrentRelease.Caption = "Version: " & Format(rst!Version_Number, "0.00") & "  (" & rst!Version_Date & ")"
+  Me.lblCurrentRelease.Caption = "Version: " & rst!Version_Number & "  (" & rst!Version_Date & ")"
   rst.Close: Set rst = Nothing
   db.Close: Set db = Nothing
 End Sub

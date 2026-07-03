@@ -1,0 +1,77 @@
+﻿Option Compare Database
+Option Explicit
+
+'************************************************
+' modVersion_test
+'
+' Tests for the product version (modVersion) and the registry write/delete
+' helpers it relies on (xwRegSetStringValue / xwRegDeleteKey in
+' xwRegistryFunctions).
+'
+' These tests are deliberately NON-DESTRUCTIVE: they never write the real
+' installed-version value (HKCU\Software\x-ware-ltd\AccessSCC\InstalledVersion)
+' and never call StampInstalledVersion. Instead they round-trip through a
+' throwaway subkey (...\AccessSCC\_UnitTest) and delete it afterwards, so a
+' developer's actual installed version is left untouched.
+'
+' Run: UnitTests.Test "modVersion_test"
+'
+' @author Claude (TL-7945)
+'************************************************
+
+' Throwaway registry location used only by these tests.
+Private Const TEST_REG_KEY As String = "Software\x-ware-ltd\AccessSCC\_UnitTest"
+Private Const TEST_REG_VALUE As String = "TestValue"
+
+' Is s a three-part numeric semver (MAJOR.MINOR.PATCH), each part a
+' non-negative integer with no extra characters?
+Private Function pvtIsSemVer(ByVal s As String) As Boolean
+  Dim parts() As String
+  Dim i As Integer
+
+  pvtIsSemVer = False
+  parts = Split(s, ".")
+  If UBound(parts) - LBound(parts) + 1 <> 3 Then Exit Function
+
+  For i = LBound(parts) To UBound(parts)
+    ' each part must be a non-empty run of digits
+    If Len(parts(i)) = 0 Then Exit Function
+    If Not (parts(i) Like String(Len(parts(i)), "#")) Then Exit Function
+  Next i
+
+  pvtIsSemVer = True
+End Function
+
+'@test
+Function TestVersionIsSemVer()
+  UnitTests.Describe "modVersion.VERSION is a three-part numeric semver"
+  UnitTests.AssertIsTrue pvtIsSemVer(VERSION), "VERSION '" & VERSION & "' is MAJOR.MINOR.PATCH"
+End Function
+
+'@test
+Function TestSemVerHelper()
+  UnitTests.Describe "pvtIsSemVer accepts valid and rejects invalid version strings"
+  UnitTests.AssertIsTrue pvtIsSemVer("0.79.0"), "0.79.0 is valid"
+  UnitTests.AssertIsTrue pvtIsSemVer("10.2.135"), "10.2.135 is valid"
+  UnitTests.AssertIsFalse pvtIsSemVer("0.79"), "two parts is invalid"
+  UnitTests.AssertIsFalse pvtIsSemVer("0.79.0.1"), "four parts is invalid"
+  UnitTests.AssertIsFalse pvtIsSemVer("0.79.x"), "non-numeric part is invalid"
+  UnitTests.AssertIsFalse pvtIsSemVer("0..0"), "empty part is invalid"
+End Function
+
+'@test
+Function TestRegistryRoundTrip()
+  UnitTests.Describe "xwRegSetStringValue writes a value that xwRegQueryValue reads back"
+  Dim strExpected As String
+
+  ' start clean in case a previous aborted run left the key behind
+  xwRegDeleteKey HKEY_CURRENT_USER, TEST_REG_KEY
+
+  strExpected = "0.79.0-test"
+  UnitTests.AssertIsTrue xwRegSetStringValue(HKEY_CURRENT_USER, TEST_REG_KEY, TEST_REG_VALUE, strExpected), "write succeeds"
+  UnitTests.AssertEqual xwRegQueryValue(HKEY_CURRENT_USER, TEST_REG_KEY, TEST_REG_VALUE), strExpected, "value round-trips"
+
+  ' clean up: delete the throwaway key and confirm it is gone
+  UnitTests.AssertIsTrue xwRegDeleteKey(HKEY_CURRENT_USER, TEST_REG_KEY), "cleanup deletes the test key"
+  UnitTests.AssertEqual xwRegQueryValue(HKEY_CURRENT_USER, TEST_REG_KEY, TEST_REG_VALUE), vbNullString, "value is gone after cleanup"
+End Function

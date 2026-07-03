@@ -1,4 +1,4 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 Public Const REG_SZ As Long = 1 'String
@@ -9,17 +9,22 @@ Public Const HKEY_CURRENT_USER = &H80000001
 Public Const HKEY_LOCAL_MACHINE = &H80000002
 Public Const HKEY_USERS = &H80000003
 
+' All values below are the true Win32 system error codes returned by the Reg*
+' APIs, so that xwRegError matches whatever an API actually returns. The BADDB
+' /BADKEY/CANTOPEN/CANTREAD/CANTWRITE family live in the 0x3F1-0x3F5 range - the
+' old sequential values 1,2,3,4,5 they were originally given were placeholders.
 Private Const ERROR_NONE = 0
-Private Const ERROR_BADDB = 1
-Private Const ERROR_BADKEY = 2
-Private Const ERROR_CANTOPEN = 3
-Private Const ERROR_CANTREAD = 4
-Private Const ERROR_CANTWRITE = 5
-Private Const ERROR_OUTOFMEMORY = 6
-Private Const ERROR_ARENA_TRASHED = 7
-Private Const ERROR_ACCESS_DENIED = 8
-Private Const ERROR_INVALID_PARAMETERS = 87
-Private Const ERROR_NO_MORE_ITEMS = 259
+Private Const ERROR_FILE_NOT_FOUND = 2       '0x2:   the Reg* APIs return this when a key/value does not exist
+Private Const ERROR_ACCESS_DENIED = 5        '0x5
+Private Const ERROR_ARENA_TRASHED = 7        '0x7:   the storage control blocks were destroyed
+Private Const ERROR_OUTOFMEMORY = 14         '0xE
+Private Const ERROR_INVALID_PARAMETERS = 87  '0x57
+Private Const ERROR_NO_MORE_ITEMS = 259      '0x103
+Private Const ERROR_BADDB = 1009             '0x3F1: the registry database is corrupt
+Private Const ERROR_BADKEY = 1010            '0x3F2: the registry key is invalid
+Private Const ERROR_CANTOPEN = 1011          '0x3F3: the registry key could not be opened
+Private Const ERROR_CANTREAD = 1012          '0x3F4: the registry key could not be read
+Private Const ERROR_CANTWRITE = 1013         '0x3F5: the registry key could not be written
 
 Private Const KEY_QUERY_VALUE = &H1
 Private Const KEY_SET_VALUE = &H2
@@ -35,7 +40,10 @@ Declare PtrSafe Function RegOpenKeyEx Lib "advapi32.dll" Alias "RegOpenKeyExA" (
 Declare PtrSafe Function RegQueryValueExString Lib "advapi32.dll" Alias "RegQueryValueExA" (ByVal hKey As LongPtr, ByVal lpValueName As String, ByVal lpReserved As LongPtr, lpType As Long, ByVal lpData As String, lpcbData As Long) As Long
 Declare PtrSafe Function RegQueryValueExLong Lib "advapi32.dll" Alias "RegQueryValueExA" (ByVal hKey As LongPtr, ByVal lpValueName As String, ByVal lpReserved As LongPtr, lpType As Long, lpData As Long, lpcbData As Long) As Long
 Declare PtrSafe Function RegQueryValueExNULL Lib "advapi32.dll" Alias "RegQueryValueExA" (ByVal hKey As LongPtr, ByVal lpValueName As String, ByVal lpReserved As LongPtr, lpType As Long, ByVal lpData As Long, lpcbData As Long) As Long
-   
+Declare PtrSafe Function RegCreateKeyEx Lib "advapi32.dll" Alias "RegCreateKeyExA" (ByVal hKey As LongPtr, ByVal lpSubKey As String, ByVal Reserved As Long, ByVal lpClass As String, ByVal dwOptions As Long, ByVal samDesired As Long, ByVal lpSecurityAttributes As LongPtr, phkResult As LongPtr, lpdwDisposition As Long) As Long
+Declare PtrSafe Function RegSetValueExString Lib "advapi32.dll" Alias "RegSetValueExA" (ByVal hKey As LongPtr, ByVal lpValueName As String, ByVal Reserved As Long, ByVal dwType As Long, ByVal lpData As String, ByVal cbData As Long) As Long
+Declare PtrSafe Function RegDeleteKey Lib "advapi32.dll" Alias "RegDeleteKeyA" (ByVal hKey As LongPtr, ByVal lpSubKey As String) As Long
+
 '************************************************
 ' Query Registry Value
 '
@@ -63,10 +71,10 @@ Public Function xwRegQueryValue(ByVal lPredefinedKey As Long, sKeyName As String
     Dim vValue As Variant       'setting of queried value
 
     lRetVal = RegOpenKeyEx(lPredefinedKey, sKeyName, 0, KEY_QUERY_VALUE, hKey)
-    If lRetVal = ERROR_BADKEY Then 'Key doesnt exist
+    If lRetVal = ERROR_FILE_NOT_FOUND Then 'Key doesnt exist
       ' Try for the 64 bit version of the key
       lRetVal = RegOpenKeyEx(lPredefinedKey, sKeyName, 0, KEY_QUERY_VALUE + KEY_WOW64_64KEY, hKey)
-      If lRetVal = ERROR_BADKEY Then 'Key really doesnt exist
+      If lRetVal = ERROR_FILE_NOT_FOUND Then 'Key really doesnt exist
         xwRegQueryValue = vbNullString
         Exit Function
       End If
@@ -153,7 +161,8 @@ Private Sub xwRegError(ErrCode As Long, strProcName As String)
   Select Case ErrCode
     Case ERROR_NONE: Exit Sub
     Case ERROR_BADDB: strErr = "Corrupt Registry File"
-    Case ERROR_BADKEY: Exit Sub  'This error happens if the registry key doesnt exist
+    Case ERROR_FILE_NOT_FOUND: Exit Sub  'This error happens if the registry key does not exist
+    Case ERROR_BADKEY: strErr = "Invalid Registry Key"
     Case ERROR_CANTOPEN: strErr = "Unable to Open the Registry"
     Case ERROR_CANTREAD: strErr = "Unable to Read the Registry"
     Case ERROR_CANTWRITE: strErr = "Unable to write to the Registry"
@@ -166,3 +175,70 @@ Private Sub xwRegError(ErrCode As Long, strProcName As String)
   End Select
   MsgBox strErr, vbCritical, strProcName
 End Sub
+
+'************************************************
+' Set Registry String Value
+'
+' Creates the given key (and any missing parent keys) if it does not
+' already exist, then writes a REG_SZ (string) value to it.
+'
+' With this procedure, a call of:
+' xwRegSetStringValue HKEY_CURRENT_USER, "Software\x-ware-ltd\AccessSCC", "InstalledVersion", "0.79.0"
+' will create the key if required and set "InstalledVersion" to "0.79.0".
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version      1.00
+' @param        Long a predefined key handle: HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE or HKEY_USERS
+' @param        String the key path beneath the predefined key
+' @param        String the name of the value to write
+' @param        String the string data to store
+' @return       Boolean True if the value was written successfully, otherwise False
+'************************************************
+Public Function xwRegSetStringValue(ByVal lPredefinedKey As Long, sKeyName As String, sValueName As String, sValue As String) As Boolean
+    Dim lRetVal As Long         'result of the API functions
+    Dim hKey As LongPtr         'handle of opened/created key
+    Dim lDisposition As Long    'whether the key was created or already existed
+
+    xwRegSetStringValue = False
+
+    lRetVal = RegCreateKeyEx(lPredefinedKey, sKeyName, 0, vbNullString, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, 0, hKey, lDisposition)
+    If lRetVal <> ERROR_NONE Then
+      Exit Function
+    End If
+
+    ' cbData for a REG_SZ value is the ANSI byte length including the terminating null
+    lRetVal = RegSetValueExString(hKey, sValueName, 0, REG_SZ, sValue, Len(sValue) + 1)
+    RegCloseKey (hKey)
+
+    xwRegSetStringValue = (lRetVal = ERROR_NONE)
+End Function
+
+'************************************************
+' Delete Registry Key
+'
+' Deletes the specified subkey along with its values. On platforms where
+' RegDeleteKey will not remove a key that still has child subkeys, the
+' subkey must be empty of children first. A key that does not exist is
+' treated as success, as the desired end state (key absent) already holds.
+'
+' This is primarily used to tidy up throwaway keys, for example those
+' written by unit tests.
+'
+' Version history:
+'   - 1.00 initial version
+'
+' @version      1.00
+' @param        Long a predefined key handle: HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE or HKEY_USERS
+' @param        String the key path to delete, beneath the predefined key
+' @return       Boolean True if the key was deleted or was already absent, otherwise False
+'************************************************
+Public Function xwRegDeleteKey(ByVal lPredefinedKey As Long, sKeyName As String) As Boolean
+    Dim lRetVal As Long         'result of the API function
+
+    lRetVal = RegDeleteKey(lPredefinedKey, sKeyName)
+    ' A missing key returns ERROR_FILE_NOT_FOUND - treat as success, since the
+    ' desired end state (key absent) already holds
+    xwRegDeleteKey = (lRetVal = ERROR_NONE) Or (lRetVal = ERROR_FILE_NOT_FOUND)
+End Function

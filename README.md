@@ -14,6 +14,59 @@ Unlike the Visual Sourcesafe Addin
 # Recent Release History
 See [the releases page](https://github.com/x-ware-ltd/access-scc-addin/releases) for a list of releases and descriptions of what has changed.
 
+# Versioning & Releases
+
+## Version numbering
+The add-in uses [Semantic Versioning](https://semver.org) (`MAJOR.MINOR.PATCH`, e.g. `0.79.0`).
+
+There is a single, canonical source of truth for the product version: the constant
+`VERSION` in `Modules/modVersion.ACM`:
+
+```vba
+Public Const VERSION As String = "0.79.0"
+```
+
+Every GitHub release tag (`vMAJOR.MINOR.PATCH`) **must** equal this constant.
+
+## Installation (manual)
+The add-in is installed manually by the user through the Microsoft Access **Add-In Manager**:
+
+1. Obtain `AccessSCC.mda` (the built add-in — attached as an asset to each GitHub release).
+2. In Access, open **Database Tools &rarr; Add-ins &rarr; Add-in Manager**, then **Add New...** and
+   select `AccessSCC.mda`. Access copies it to `%APPDATA%\Microsoft\AddIns\AccessSCC.mda` and
+   registers it under `HKCU\Software\Microsoft\Office\16.0\Access\Menu Add-Ins\&Access SCC`
+   (with `Expression = =Init()`).
+
+## Installed-version registry stamp
+Because installation is manual and there is no command-line interface, the installed version is
+exposed to other tools through the registry. Every time the add-in loads, its `Init()` entry point
+(the `=Init()` expression registered above) records the current `VERSION` at:
+
+```
+HKCU\Software\x-ware-ltd\AccessSCC\InstalledVersion   (REG_SZ)
+```
+
+So after installing and opening the add-in once, this value reflects the version that is actually
+installed. External tooling (for example the `jcshelper check` command) reads this value to verify
+which version is present.
+
+## Release procedure (manual)
+The add-in is built by hand, but a GitHub Actions workflow
+([`.github/workflows/release.yml`](.github/workflows/release.yml)) guards the tag-equals-`VERSION`
+rule: pushing a `v*` tag whose version does not match `modVersion.VERSION` fails the check.
+
+1. **Bump the version** — update `Public Const VERSION` in `Modules/modVersion.ACM` to the new
+   `MAJOR.MINOR.PATCH`, and add a matching row to the `USysReleaseHistory` table.
+2. **Export & commit** the Access source tree (this repository) using the add-in itself, and merge
+   to `master`.
+3. **Build the add-in** — produce `AccessSCC.mda` from the source (via `accessc`).
+4. **Create the GitHub Release** — tag it `vMAJOR.MINOR.PATCH` so that the tag **equals**
+   `modVersion.VERSION`, and attach the built `AccessSCC.mda` as a release asset. The `release`
+   workflow runs on the pushed tag and will fail if the tag and `VERSION` disagree.
+
+The tag-equals-`VERSION` rule is what lets the version be verified after installation, and the
+workflow enforces it automatically.
+
 # Version Control Systems
 The only VCS that has enhanced support at the moment is Subversion/TortoiseSVN using `SVN` mode. This includes:
 - doing an SVN import before importing into Access
