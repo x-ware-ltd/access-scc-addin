@@ -9,17 +9,22 @@ Public Const HKEY_CURRENT_USER = &H80000001
 Public Const HKEY_LOCAL_MACHINE = &H80000002
 Public Const HKEY_USERS = &H80000003
 
+' All values below are the true Win32 system error codes returned by the Reg*
+' APIs, so that xwRegError matches whatever an API actually returns. The BADDB
+' /BADKEY/CANTOPEN/CANTREAD/CANTWRITE family live in the 0x3F1-0x3F5 range - the
+' old sequential values 1,2,3,4,5 they were originally given were placeholders.
 Private Const ERROR_NONE = 0
-Private Const ERROR_BADDB = 1
-Private Const ERROR_BADKEY = 2
-Private Const ERROR_CANTOPEN = 3
-Private Const ERROR_CANTREAD = 4
-Private Const ERROR_CANTWRITE = 5
-Private Const ERROR_OUTOFMEMORY = 6
-Private Const ERROR_ARENA_TRASHED = 7
-Private Const ERROR_ACCESS_DENIED = 8
-Private Const ERROR_INVALID_PARAMETERS = 87
-Private Const ERROR_NO_MORE_ITEMS = 259
+Private Const ERROR_FILE_NOT_FOUND = 2       '0x2:   the Reg* APIs return this when a key/value does not exist
+Private Const ERROR_ACCESS_DENIED = 5        '0x5
+Private Const ERROR_ARENA_TRASHED = 7        '0x7:   the storage control blocks were destroyed
+Private Const ERROR_OUTOFMEMORY = 14         '0xE
+Private Const ERROR_INVALID_PARAMETERS = 87  '0x57
+Private Const ERROR_NO_MORE_ITEMS = 259      '0x103
+Private Const ERROR_BADDB = 1009             '0x3F1: the registry database is corrupt
+Private Const ERROR_BADKEY = 1010            '0x3F2: the registry key is invalid
+Private Const ERROR_CANTOPEN = 1011          '0x3F3: the registry key could not be opened
+Private Const ERROR_CANTREAD = 1012          '0x3F4: the registry key could not be read
+Private Const ERROR_CANTWRITE = 1013         '0x3F5: the registry key could not be written
 
 Private Const KEY_QUERY_VALUE = &H1
 Private Const KEY_SET_VALUE = &H2
@@ -66,10 +71,10 @@ Public Function xwRegQueryValue(ByVal lPredefinedKey As Long, sKeyName As String
     Dim vValue As Variant       'setting of queried value
 
     lRetVal = RegOpenKeyEx(lPredefinedKey, sKeyName, 0, KEY_QUERY_VALUE, hKey)
-    If lRetVal = ERROR_BADKEY Then 'Key doesnt exist
+    If lRetVal = ERROR_FILE_NOT_FOUND Then 'Key doesnt exist
       ' Try for the 64 bit version of the key
       lRetVal = RegOpenKeyEx(lPredefinedKey, sKeyName, 0, KEY_QUERY_VALUE + KEY_WOW64_64KEY, hKey)
-      If lRetVal = ERROR_BADKEY Then 'Key really doesnt exist
+      If lRetVal = ERROR_FILE_NOT_FOUND Then 'Key really doesnt exist
         xwRegQueryValue = vbNullString
         Exit Function
       End If
@@ -156,7 +161,8 @@ Private Sub xwRegError(ErrCode As Long, strProcName As String)
   Select Case ErrCode
     Case ERROR_NONE: Exit Sub
     Case ERROR_BADDB: strErr = "Corrupt Registry File"
-    Case ERROR_BADKEY: Exit Sub  'This error happens if the registry key doesnt exist
+    Case ERROR_FILE_NOT_FOUND: Exit Sub  'This error happens if the registry key does not exist
+    Case ERROR_BADKEY: strErr = "Invalid Registry Key"
     Case ERROR_CANTOPEN: strErr = "Unable to Open the Registry"
     Case ERROR_CANTREAD: strErr = "Unable to Read the Registry"
     Case ERROR_CANTWRITE: strErr = "Unable to write to the Registry"
@@ -199,13 +205,11 @@ Public Function xwRegSetStringValue(ByVal lPredefinedKey As Long, sKeyName As St
 
     lRetVal = RegCreateKeyEx(lPredefinedKey, sKeyName, 0, vbNullString, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, 0, hKey, lDisposition)
     If lRetVal <> ERROR_NONE Then
-      Call xwRegError(lRetVal, "xwRegSetStringValue")
       Exit Function
     End If
 
     ' cbData for a REG_SZ value is the ANSI byte length including the terminating null
     lRetVal = RegSetValueExString(hKey, sValueName, 0, REG_SZ, sValue, Len(sValue) + 1)
-    Call xwRegError(lRetVal, "xwRegSetStringValue")
     RegCloseKey (hKey)
 
     xwRegSetStringValue = (lRetVal = ERROR_NONE)
@@ -234,6 +238,7 @@ Public Function xwRegDeleteKey(ByVal lPredefinedKey As Long, sKeyName As String)
     Dim lRetVal As Long         'result of the API function
 
     lRetVal = RegDeleteKey(lPredefinedKey, sKeyName)
-    ' ERROR_BADKEY (2) is returned when the key does not exist - treat as success
-    xwRegDeleteKey = (lRetVal = ERROR_NONE) Or (lRetVal = ERROR_BADKEY)
+    ' A missing key returns ERROR_FILE_NOT_FOUND - treat as success, since the
+    ' desired end state (key absent) already holds
+    xwRegDeleteKey = (lRetVal = ERROR_NONE) Or (lRetVal = ERROR_FILE_NOT_FOUND)
 End Function
